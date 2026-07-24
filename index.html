@@ -288,6 +288,20 @@
   .more-card{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:10px; }
   .more-link{ display:block; width:100%; text-align:left; background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:8px; font-size:14px; font-weight:600; color:var(--green-dark); text-decoration:none; }
   .more-signout{ color:var(--danger); }
+  .more-sec{ background:#fff; border:1px solid var(--border); border-radius:12px; margin-bottom:8px; overflow:hidden; }
+  .more-sec > summary{ padding:14px; font-size:14px; font-weight:600; color:var(--green-dark); cursor:pointer; list-style:none; }
+  .more-sec > summary::-webkit-details-marker{ display:none; }
+  .more-sec > summary::after{ content:"⌄"; float:right; color:var(--muted); }
+  .more-sec[open] > summary{ border-bottom:1px solid var(--border); }
+  .more-sec > *:not(summary){ margin:0 14px; }
+  .more-sec > *:not(summary):first-of-type{ margin-top:12px; }
+  .more-sec > *:last-child{ margin-bottom:14px; }
+  .more-hint{ color:var(--muted); font-size:12.5px; }
+  .m-lbl{ display:block; font-size:12.5px; font-weight:600; margin:8px 0 4px; }
+  .m-input{ width:100%; box-sizing:border-box; padding:11px; min-height:46px; font-size:16px; border:1px solid var(--border); border-radius:10px; background:#fff; }
+  .m-btn{ width:100%; margin-top:12px; min-height:46px; border-radius:10px; font-weight:600; }
+  .row2{ display:flex; gap:10px; }
+  .row2 > div{ flex:1; min-width:0; }
   .badge-green, .badge-amber{ display:inline-block; border-radius:8px; padding:2px 8px; font-size:11px; font-weight:700; margin-bottom:3px; }
   .badge-green{ background:var(--green-light); color:var(--green-dark); }
   .badge-amber{ background:var(--bg); color:var(--muted); border:1px solid var(--border); }
@@ -1058,15 +1072,186 @@
     }).join("");
   }
 
+  // set of party ids at or below `root` in the parent_id tree
+  function descendants(list, root){
+    var kids = {}; list.forEach(function(p){ (kids[p.parent_id]=kids[p.parent_id]||[]).push(p.id); });
+    var out = new Set(), stack = [root];
+    while (stack.length){ var id = stack.pop(); if (out.has(id)) continue; out.add(id); (kids[id]||[]).forEach(function(k){ stack.push(k); }); }
+    return out;
+  }
+  var ROLE_BELOW = { importer:["distributor","dealer","shopkeeper"], distributor:["dealer","shopkeeper"], dealer:["shopkeeper"] };
+  function storeLink(){ return location.origin + location.pathname.replace(/[^/]*$/, "index.html") + "?s=" + state.account.id; }
+  function skuOptionsHtml(list){
+    return list.map(function(c){ return '<option value="'+esc(c.sku)+'">'+esc(c.product_code||c.sku)+' — '+esc((c.particular||"").slice(0,40))+'</option>'; }).join("");
+  }
+
   function renderMore(){
-    var name = (state.account && state.account.company) || (state.session && state.session.id) || "";
-    var role = ROLE_LABELS[state.account && state.account.role] || "";
-    // Business setup (network, transfers, storefront link) still lives in the console for now.
-    $("more-body").innerHTML =
-      '<div class="more-card"><div style="font-weight:700;">'+esc(name)+'</div><div style="color:var(--muted);font-size:13px;">'+esc(role)+'</div></div>'+
-      '<a class="more-link" href="ledger.html">Business tools — network, transfers, shop link / नेटवर्क, ट्रांसफर, दुकान लिंक <span aria-hidden="true">→</span></a>'+
-      '<button class="more-link more-signout" id="more-signout">Sign out / साइन आउट</button>';
+    if (!isSupplier()) return;
+    var a = state.account, name = a.company || "", role = ROLE_LABELS[a.role] || a.role;
+    var isImporter = (a.role === "importer") || (a.parentId == null);
+    var below = ROLE_BELOW[a.role] || [];
+    var mine = descendants(state.parties || [], a.id); mine.delete(a.id);
+    var partyOpts = (state.parties || []).filter(function(p){ return mine.has(p.id); })
+      .map(function(p){ return '<option value="'+p.id+'">'+esc(p.name)+' ('+esc(p.role)+')</option>'; }).join("") || '<option value="">— no downstream parties yet —</option>';
+    var skuOpts = skuOptionsHtml(state.catalog || []);
+
+    var html = '<div class="more-card"><div style="font-weight:700;">'+esc(name)+'</div><div style="color:var(--muted);font-size:13px;">'+esc(role)+'</div></div>';
+
+    html += '<details class="more-sec"><summary>Stock &amp; my network / स्टॉक व नेटवर्क</summary>'+
+      '<input type="search" id="m-stock-filter" placeholder="Filter — part or party / खोजें" autocomplete="off" class="m-input">'+
+      '<div id="m-stock-card"><div style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</div></div></details>';
+
+    if (below.length) html += '<details class="more-sec"><summary>Add a dealer / shopkeeper — नया जोड़ें</summary>'+
+      '<p class="more-hint">They activate their login by opening the app, tapping <b>Create an account</b>, and using the email you enter here.</p>'+
+      '<label class="m-lbl">Business name / नाम</label><input type="text" id="m-d-name" class="m-input" placeholder="e.g. Sharma Agro">'+
+      '<div class="row2"><div><label class="m-lbl">Role</label><select id="m-d-role" class="m-input">'+below.map(function(r){return '<option value="'+r+'">'+r+'</option>';}).join("")+'</select></div>'+
+        '<div><label class="m-lbl">Margin % (blank=default)</label><input type="number" id="m-d-margin" class="m-input" min="0" placeholder="default"></div></div>'+
+      '<label class="m-lbl">Their email</label><input type="email" id="m-d-email" class="m-input" placeholder="they@example.com">'+
+      '<div class="row2"><div><label class="m-lbl">Phone</label><input type="text" id="m-d-phone" class="m-input" inputmode="tel"></div>'+
+        '<div><label class="m-lbl">City</label><input type="text" id="m-d-city" class="m-input"></div></div>'+
+      '<button class="btn-primary m-btn" id="m-d-add">Add / जोड़ें</button><div class="req-msg" id="m-d-msg"></div></details>';
+
+    if (below.length) html += '<details class="more-sec"><summary>Bill / transfer stock — ट्रांसफर</summary>'+
+      '<p class="more-hint">Billing moves stock: it leaves you and lands on the receiving party.</p>'+
+      '<label class="m-lbl">Bill to</label><select id="m-t-to" class="m-input">'+partyOpts+'</select>'+
+      '<label class="m-lbl">Part</label><input type="text" id="m-t-search" class="m-input" placeholder="Type code or name to filter…" autocomplete="off">'+
+      '<select id="m-t-sku" class="m-input">'+skuOpts+'</select>'+
+      '<div class="row2"><div><label class="m-lbl">Qty</label><input type="number" id="m-t-qty" class="m-input" min="1" value="1" inputmode="numeric"></div>'+
+        '<div><label class="m-lbl">PI (optional)</label><input type="text" id="m-t-pi" class="m-input" placeholder="PI-…"></div></div>'+
+      '<button class="btn-primary m-btn" id="m-t-btn">Record transfer / ट्रांसफर करें</button><div class="req-msg" id="m-t-msg"></div></details>';
+
+    if (isImporter) html += '<details class="more-sec"><summary>Add external stock (importer) — नया स्टॉक</summary>'+
+      '<p class="more-hint">Bring newly-imported stock into the network at your own balance.</p>'+
+      '<label class="m-lbl">Part</label><input type="text" id="m-o-search" class="m-input" placeholder="Type code or name to filter…" autocomplete="off">'+
+      '<select id="m-o-sku" class="m-input">'+skuOpts+'</select>'+
+      '<label class="m-lbl">Qty</label><input type="number" id="m-o-qty" class="m-input" min="1" value="1" inputmode="numeric">'+
+      '<button class="btn-primary m-btn" id="m-o-btn">Add stock / जोड़ें</button><div class="req-msg" id="m-o-msg"></div></details>';
+
+    html += '<details class="more-sec"><summary>Your retail shop link — दुकान लिंक</summary>'+
+      '<p class="more-hint">Share on WhatsApp. Customers see MRP and their orders come to you.</p>'+
+      '<input type="text" id="m-store-link" class="m-input" readonly value="'+esc(storeLink())+'">'+
+      '<div class="row2"><button class="btn-primary m-btn" id="m-store-copy">Copy link / कॉपी</button>'+
+        '<button class="btn-soft m-btn" id="m-store-wa">Share on WhatsApp</button></div></details>';
+
+    if (isImporter) html += '<details class="more-sec"><summary>Pending registrations — पंजीकरण</summary>'+
+      '<div id="m-approvals-card"><div style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</div></div></details>';
+
+    html += '<button class="more-link more-signout" id="more-signout">Sign out / साइन आउट</button>';
+    $("more-body").innerHTML = html;
+    wireMore(isImporter);
+  }
+
+  function wireMore(isImporter){
     $("more-signout").onclick = doSignOut;
+    // stock list
+    renderMoreStock();
+    var sf = $("m-stock-filter"), sTimer = null;
+    if (sf) sf.addEventListener("input", function(){ clearTimeout(sTimer); sTimer = setTimeout(drawMoreStock, 150); });
+    // sku search filters
+    [["m-t-search","m-t-sku"],["m-o-search","m-o-sku"]].forEach(function(pair){
+      var s = $(pair[0]); if (!s) return;
+      s.oninput = function(){ var q = this.value.trim().toLowerCase();
+        var list = q ? (state.catalog||[]).filter(function(c){ return ((c.product_code||"")+" "+(c.particular||"")).toLowerCase().indexOf(q) !== -1; }).slice(0,200) : (state.catalog||[]);
+        $(pair[1]).innerHTML = skuOptionsHtml(list); };
+    });
+    // add downstream
+    if ($("m-d-add")) $("m-d-add").onclick = async function(){
+      var name = $("m-d-name").value.trim(), email = $("m-d-email").value.trim(), role = $("m-d-role").value;
+      var margin = $("m-d-margin").value !== "" ? Number($("m-d-margin").value) : null;
+      var m = $("m-d-msg"); m.className = "req-msg";
+      if (!name || !email || !role){ m.className="req-msg err"; m.textContent = "Name, email and role are required."; return; }
+      var r = await sb.rpc("add_downstream", { p_name:name, p_role:role, p_email:email, p_phone:$("m-d-phone").value.trim()||null, p_city:$("m-d-city").value.trim()||null, p_margin:margin });
+      if (r.error){ m.className="req-msg err"; m.textContent = friendlyErr(r.error); return; }
+      m.className="req-msg"; m.textContent = "✓ Added. Tell them to open the app, tap Create an account, and sign up with "+email+".";
+      ["m-d-name","m-d-email","m-d-phone","m-d-city","m-d-margin"].forEach(function(id){ $(id).value=""; });
+      await loadParty(); showToast("Dealer added ✓ / जोड़ा गया");
+    };
+    // transfer
+    if ($("m-t-btn")) $("m-t-btn").onclick = async function(){
+      var to = $("m-t-to").value, sku = $("m-t-sku").value, qty = parseInt($("m-t-qty").value,10);
+      var m = $("m-t-msg"); m.className="req-msg";
+      if (!to){ m.className="req-msg err"; m.textContent = "No party to bill."; return; }
+      if (qty > 100 && !confirm("Transfer "+qty+" units — are you sure? / बड़ी मात्रा — पक्का?")) return;
+      var r = await sb.rpc("transfer", { p_to:to, p_sku:sku, p_qty:qty, p_pi:$("m-t-pi").value.trim()||null });
+      if (r.error){ m.className="req-msg err"; m.textContent = friendlyErr(r.error); return; }
+      m.textContent = "Transferred "+qty+" ✓"; $("m-t-pi").value=""; showToast("Transferred "+qty+" ✓ / ट्रांसफर हुआ");
+      renderMoreStock();
+    };
+    // add external stock
+    if ($("m-o-btn")) $("m-o-btn").onclick = async function(){
+      var sku = $("m-o-sku").value, qty = parseInt($("m-o-qty").value,10);
+      var m = $("m-o-msg"); m.className="req-msg";
+      var r = await sb.rpc("open_stock", { p_sku:sku, p_qty:qty });
+      if (r.error){ m.className="req-msg err"; m.textContent = friendlyErr(r.error); return; }
+      m.textContent = "Added "+qty+" ✓"; showToast("Stock added ✓ / स्टॉक जोड़ा"); renderMoreStock();
+    };
+    // shop link
+    if ($("m-store-copy")) $("m-store-copy").onclick = function(){
+      var el = $("m-store-link"); el.select();
+      if (navigator.clipboard) navigator.clipboard.writeText(el.value).catch(function(){}); else document.execCommand("copy");
+      this.textContent = "Copied ✓"; var b = this; setTimeout(function(){ b.textContent = "Copy link / कॉपी"; }, 1500);
+    };
+    if ($("m-store-wa")) $("m-store-wa").onclick = function(){
+      window.open("https://wa.me/?text="+encodeURIComponent("Order farm spare parts here: "+$("m-store-link").value), "_blank");
+    };
+    if (isImporter){ renderMoreApprovals(); var ac = $("m-approvals-card"); if (ac) ac.addEventListener("click", onApprovalsClick); }
+  }
+
+  var _moreStock = [];
+  async function renderMoreStock(){
+    var card = $("m-stock-card"); if (!card) return;
+    var r = await sb.from("current_stock").select("party_id, sku, qty").range(0, 99999);
+    if (r.error){ card.innerHTML = '<div class="req-msg err">'+esc(friendlyErr(r.error))+'</div>'; return; }
+    var pName = {}; (state.parties||[]).forEach(function(p){ pName[p.id]=p.name; });
+    _moreStock = (r.data||[]).filter(function(x){ return x.qty !== 0 && pName[x.party_id] !== undefined; })
+      .map(function(x){ return { party:pName[x.party_id]||x.party_id, part:skuName(x.sku), qty:x.qty }; })
+      .sort(function(a,b){ return a.party.localeCompare(b.party) || String(a.part).localeCompare(String(b.part)); });
+    drawMoreStock();
+  }
+  function drawMoreStock(){
+    var card = $("m-stock-card"); if (!card) return;
+    var q = (($("m-stock-filter")||{}).value||"").trim().toLowerCase();
+    var rows = q ? _moreStock.filter(function(r){ return (r.party+" "+r.part).toLowerCase().indexOf(q) !== -1; }) : _moreStock;
+    if (!_moreStock.length){ card.innerHTML = '<div style="color:var(--muted);font-size:13px;">No stock recorded yet.</div>'; return; }
+    if (!rows.length){ card.innerHTML = '<div style="color:var(--muted);font-size:13px;">No match for "'+esc(q)+'".</div>'; return; }
+    var count = q ? rows.length+" of "+_moreStock.length : String(_moreStock.length);
+    card.innerHTML = '<div style="color:var(--muted);font-size:12.5px;margin-bottom:6px;">'+count+' stock line'+(_moreStock.length===1?"":"s")+'</div>'+
+      '<div class="tscroll"><table><thead><tr><th>Party</th><th>Part</th><th class="num">Qty</th></tr></thead><tbody>'+
+      rows.map(function(r){ return '<tr><td>'+esc(r.party)+'</td><td>'+esc(r.part)+'</td><td class="num">'+r.qty+'</td></tr>'; }).join("")+
+      '</tbody></table></div>';
+  }
+  async function renderMoreApprovals(){
+    var card = $("m-approvals-card"); if (!card) return;
+    var r = await sb.from("signup_requests").select("*").eq("status","pending").order("created_at");
+    if (r.error){ card.innerHTML = '<div class="req-msg err">'+esc(friendlyErr(r.error))+'</div>'; return; }
+    var rows = r.data || [];
+    if (!rows.length){ card.innerHTML = '<div style="color:var(--muted);font-size:13px;">No pending registrations.</div>'; return; }
+    card.innerHTML = rows.map(function(x){ return '<div class="req-card"><div><b>'+esc(x.business_name||"(no name)")+'</b> — '+esc(x.requested_role)+'</div>'+
+      '<div style="color:var(--muted);font-size:12.5px;">'+esc(x.email||"")+(x.phone?' · '+esc(x.phone):'')+'</div>'+
+      '<label class="m-lbl">Margin % (blank=default)</label><input type="number" id="m-am-'+x.id+'" class="m-input" min="0" placeholder="default">'+
+      '<div class="req-actions"><button class="btn-primary" data-approve="'+x.id+'">Approve / स्वीकृत</button>'+
+      '<button class="btn-danger" data-reject-signup="'+x.id+'">Reject / अस्वीकार</button></div><div class="req-msg" id="m-amsg-'+x.id+'"></div></div>'; }).join("");
+  }
+  async function onApprovalsClick(e){
+    var ap = e.target.closest && e.target.closest("[data-approve]");
+    if (ap){
+      var id = Number(ap.getAttribute("data-approve"));
+      var mEl = $("m-am-"+id), margin = mEl && mEl.value !== "" ? Number(mEl.value) : null;
+      if (!confirm("Approve this registration at "+(margin!=null?margin+"%":"default margin")+"? / स्वीकृत करें?")) return;
+      var msg = $("m-amsg-"+id); if (msg){ msg.className="req-msg"; msg.textContent = "Approving…"; }
+      var r = await sb.rpc("approve_signup", { p_id:id, p_margin:margin });
+      if (r.error){ if (msg){ msg.className="req-msg err"; msg.textContent = friendlyErr(r.error); } return; }
+      await loadParty(); renderMoreApprovals(); renderMoreStock(); showToast("Dealer approved ✓ / स्वीकृत");
+      return;
+    }
+    var rj = e.target.closest && e.target.closest("[data-reject-signup]");
+    if (rj){
+      var rid = Number(rj.getAttribute("data-reject-signup"));
+      if (!confirm("Reject this registration? / अस्वीकार करें?")) return;
+      var rr = await sb.rpc("reject_signup", { p_id:rid });
+      if (rr.error){ showToast(friendlyErr(rr.error)); return; }
+      renderMoreApprovals(); showToast("Registration rejected / अस्वीकृत");
+    }
   }
 
   // ---- seller actions (event delegation on the Requests view) ----
