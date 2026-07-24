@@ -50,7 +50,7 @@
   header.app-header h1{ font-size:16px; margin:0; font-weight:700; line-height:1.2; }
   header.app-header .sub{ font-size:11px; opacity:.85; font-weight:400; }
   header.app-header.authed .sub{ display:none; }
-  header.app-header.authed .brand-btn{ min-height:auto; }
+  header.app-header.authed .brand-btn{ min-height:44px; }
   .brand-btn{ background:none; border:none; padding:0; margin:0; text-align:left; color:#fff; min-height:44px; min-width:0; overflow:hidden; }
   .brand-btn h1{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .header-actions{ display:flex; align-items:center; gap:6px; flex-shrink:0; }
@@ -195,7 +195,7 @@
   }
   .item-thumb:focus-visible{ outline:3px solid var(--focus, #2b6cff); outline-offset:2px; }
   /* fallback when no per-part photo exists — a calm group icon, never a misleading page crop */
-  .thumb-ph{ display:flex; align-items:center; justify-content:center; cursor:default; color:var(--muted); }
+  .thumb-ph{ display:flex; align-items:center; justify-content:center; cursor:default; color:var(--green-dark); background:var(--green-light); }
   .thumb-ph .t-icon{ width:30px; height:30px; }
   .item-main{ flex:1 1 auto; min-width:0; }
   .item-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
@@ -249,8 +249,11 @@
   /* live count of orders waiting to be billed — the reason to open Requests */
   .nav-badge{
     position:absolute; top:4px; left:50%; margin-left:4px; min-width:16px; height:16px; padding:0 4px;
-    background:#d64524; color:#fff; border-radius:9px; font-size:10.5px; font-weight:700; line-height:16px; text-align:center;
+    background:var(--danger); color:#fff; border-radius:9px; font-size:10.5px; font-weight:700; line-height:16px; text-align:center;
   }
+  /* nav labels: English over Hindi, uniformly two lines so nothing wraps raggedly */
+  nav.bottom-nav button .nl{ display:block; line-height:1.15; }
+  nav.bottom-nav button .nl-hi{ display:block; font-size:10px; font-weight:600; opacity:.85; line-height:1.15; }
 
   /* cart */
   .cart-item{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:8px; }
@@ -276,11 +279,20 @@
   .req-card th.num, .req-card td.num{ text-align:right; }
   .req-card .tscroll{ overflow-x:auto; }
   .ship-to{ background:var(--green-light); border:1px solid var(--border); border-radius:8px; padding:8px 10px; margin:8px 0 2px; font-weight:600; font-size:13px; }
-  .req-actions{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-  .req-actions button{ flex:1 1 46%; min-height:44px; border-radius:10px; font-size:13.5px; font-weight:600; }
+  /* one clear primary (irreversible stock move), the rest demoted below it */
+  .req-actions{ margin-top:10px; }
+  .req-primary{ width:100%; margin-top:0; min-height:48px; border-radius:10px; font-weight:700; }
+  .req-gloss{ font-size:11.5px; color:var(--muted); margin-top:6px; }
+  .req-sub{ display:flex; gap:8px; margin-top:10px; }
+  .req-sub button{ flex:1; min-height:44px; border-radius:10px; font-size:12.5px; font-weight:600; }
   .btn-soft{ background:var(--green-light); color:var(--green-dark); border:1px solid var(--border); }
   .btn-danger{ background:#fdeceb; color:var(--danger); border:1px solid #f0b4ac; }
   .req-card .btn-primary{ width:auto; margin-top:0; }
+  /* branded in-app confirm sheet — replaces native confirm() for stock-moving actions */
+  .cf-box{ max-width:340px; width:calc(100% - 32px); padding:18px; }
+  .cf-msg{ font-size:14.5px; line-height:1.5; white-space:pre-line; color:var(--ink); margin-bottom:16px; }
+  .cf-row{ display:flex; gap:10px; }
+  .cf-row button{ flex:1; min-height:46px; border-radius:10px; font-weight:600; font-size:14px; }
   .req-msg{ font-size:12.5px; margin-top:6px; color:var(--muted); }
   .req-msg.err{ color:var(--danger); }
   .fwd-eu{ margin-top:8px; border-top:1px dashed var(--border); padding-top:8px; }
@@ -494,11 +506,11 @@
 <input type="file" id="bill-file" accept="application/pdf,image/*" class="hidden" aria-hidden="true">
 
 <nav class="bottom-nav hidden" id="bottom-nav">
-  <button id="nav-catalog" class="active"><span class="ico" data-ico="home" aria-hidden="true"></span>Shop / दुकान</button>
-  <button id="nav-cart"><span class="ico" data-ico="cart" aria-hidden="true"></span>Cart / कार्ट</button>
-  <button id="nav-orders" class="hidden"><span class="ico" data-ico="orders" aria-hidden="true"></span>Orders / ऑर्डर</button>
-  <button id="nav-requests" class="hidden"><span class="ico" data-ico="bell" aria-hidden="true"></span><span class="nav-badge hidden" id="req-badge">0</span>Requests / अनुरोध</button>
-  <button id="nav-more" class="hidden"><span class="ico" data-ico="more" aria-hidden="true"></span>More / अधिक</button>
+  <button id="nav-catalog" class="active"><span class="ico" data-ico="home" aria-hidden="true"></span><span class="nl">Shop</span><span class="nl-hi">दुकान</span></button>
+  <button id="nav-cart"><span class="ico" data-ico="cart" aria-hidden="true"></span><span class="nl">Cart</span><span class="nl-hi">कार्ट</span></button>
+  <button id="nav-orders" class="hidden"><span class="ico" data-ico="orders" aria-hidden="true"></span><span class="nl">Orders</span><span class="nl-hi">ऑर्डर</span></button>
+  <button id="nav-requests" class="hidden"><span class="ico" data-ico="bell" aria-hidden="true"></span><span class="nav-badge hidden" id="req-badge">0</span><span class="nl">Requests</span><span class="nl-hi">अनुरोध</span></button>
+  <button id="nav-more" class="hidden"><span class="ico" data-ico="more" aria-hidden="true"></span><span class="nl">More</span><span class="nl-hi">अधिक</span></button>
 </nav>
 
 <div id="modal-root"></div>
@@ -640,6 +652,36 @@
     if (/already forwarded/i.test(m)) return "Already forwarded / पहले ही भेजा जा चुका";
     if (/nothing to forward/i.test(m)) return "Nothing to forward — you already hold enough. / भेजने को कुछ नहीं।";
     return m;
+  }
+  // branded, bilingual in-app confirm — replaces native confirm() so a stock-moving
+  // action is gated by the app's own surface, not un-styled OS chrome. Promise<boolean>.
+  function askConfirm(msg, opts){
+    opts = opts || {};
+    return new Promise(function(resolve){
+      lastFocus = document.activeElement;
+      var root = $("modal-root");
+      root.innerHTML =
+        '<div class="modal-overlay" id="cf-overlay" role="dialog" aria-modal="true" aria-label="Confirm / पक्का करें">' +
+          '<div class="modal-box cf-box">' +
+            '<div class="cf-msg">' + esc(msg) + '</div>' +
+            '<div class="cf-row">' +
+              '<button class="btn-soft" id="cf-cancel" type="button">Cancel / रद्द</button>' +
+              '<button class="' + (opts.danger ? "btn-danger" : "btn-primary") + '" id="cf-ok" type="button">' + esc(opts.okLabel || "Confirm / पक्का करें") + '</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      var f = [$("cf-cancel"), $("cf-ok")];
+      function done(v){ document.removeEventListener("keydown", onKey, true); root.innerHTML = ""; if (lastFocus && lastFocus.focus) lastFocus.focus(); resolve(v); }
+      function onKey(e){
+        if (e.key === "Escape"){ e.preventDefault(); done(false); return; }
+        if (e.key === "Tab"){ e.preventDefault(); var i = f.indexOf(document.activeElement); f[i === 0 ? 1 : 0].focus(); }
+      }
+      $("cf-ok").onclick = function(){ done(true); };
+      $("cf-cancel").onclick = function(){ done(false); };
+      $("cf-overlay").addEventListener("click", function(e){ if (e.target.id === "cf-overlay") done(false); });
+      document.addEventListener("keydown", onKey, true);
+      $("cf-ok").focus();
+    });
   }
   // toast with an Undo action (5s window) — used for reversible cart-line removal
   function undoToast(msg, onUndo){
@@ -1050,10 +1092,13 @@
         '<div><b>'+esc(pName[o.dealer_party]||"dealer")+'</b> · '+esc(o.pi_number||"")+(o.amended?' · <span style="color:var(--muted)">adjusted / बदला</span>':'')+bill+'</div>'+ship+
         '<div class="tscroll"><table><thead><tr><th>Part</th><th class="num">Qty</th></tr></thead><tbody>'+lineHtml+'</tbody></table></div>'+
         '<div class="req-actions">'+
-          '<button class="btn-primary" data-fulfill="'+o.id+'">Bill &amp; ship / बिल करें</button>'+
-          '<button class="btn-soft" data-forward="'+o.id+'">Forward ↑ / ऊपर भेजें</button>'+
-          '<button class="btn-soft" data-billattach="'+o.id+'">Attach bill / बिल लगाएँ</button>'+
-          '<button class="btn-danger" data-reject-order="'+o.id+'">Reject / अस्वीकार</button>'+
+          '<button class="btn-primary req-primary" data-fulfill="'+o.id+'">Bill &amp; ship / बिल करें</button>'+
+          '<div class="req-gloss">Moves stock to the buyer now — can’t be undone. / स्टॉक अभी जाएगा, वापस नहीं।</div>'+
+          '<div class="req-sub">'+
+            '<button class="btn-soft" data-forward="'+o.id+'">Forward ↑</button>'+
+            '<button class="btn-soft" data-billattach="'+o.id+'">Attach bill</button>'+
+            '<button class="btn-danger" data-reject-order="'+o.id+'">Reject</button>'+
+          '</div>'+
         '</div><div class="req-msg" id="rm-'+o.id+'"></div></div>';
     }).join("");
 
@@ -1068,7 +1113,7 @@
         '</tbody></table></div>'+
         '<button class="btn-soft" data-forward-eu="'+o.id+'" style="margin-top:6px;">Forward ↑ / ऊपर भेजें</button></div>' : "";
       return '<div class="req-card"><div><b>'+esc(o.customer_name||"customer")+'</b>'+(o.customer_phone?' · '+esc(o.customer_phone):'')+' — <b>'+inr(o.grand)+'</b></div>'+
-        '<div style="font-size:12.5px;color:var(--muted);">'+esc(o.pi_number||"")+' · '+summ+'</div>'+fwd+'</div>';
+        '<div style="font-size:12.5px;color:var(--muted);">'+esc(o.pi_number||"")+' · '+summ+'</div>'+fwd+'<div class="req-msg" id="rem-'+o.id+'"></div></div>';
     }).join("");
   }
 
@@ -1171,7 +1216,7 @@
       var to = $("m-t-to").value, sku = $("m-t-sku").value, qty = parseInt($("m-t-qty").value,10);
       var m = $("m-t-msg"); m.className="req-msg";
       if (!to){ m.className="req-msg err"; m.textContent = "No party to bill."; return; }
-      if (qty > 100 && !confirm("Transfer "+qty+" units — are you sure? / बड़ी मात्रा — पक्का?")) return;
+      if (qty > 100 && !(await askConfirm("Transfer "+qty+" units to this party?\nThis is a large quantity — please confirm.\n\nबड़ी मात्रा — पक्का करें?", { okLabel:"Transfer / ट्रांसफर" }))) return;
       var r = await sb.rpc("transfer", { p_to:to, p_sku:sku, p_qty:qty, p_pi:$("m-t-pi").value.trim()||null });
       if (r.error){ m.className="req-msg err"; m.textContent = friendlyErr(r.error); return; }
       m.textContent = "Transferred "+qty+" ✓"; $("m-t-pi").value=""; showToast("Transferred "+qty+" ✓ / ट्रांसफर हुआ");
@@ -1237,7 +1282,7 @@
     if (ap){
       var id = Number(ap.getAttribute("data-approve"));
       var mEl = $("m-am-"+id), margin = mEl && mEl.value !== "" ? Number(mEl.value) : null;
-      if (!confirm("Approve this registration at "+(margin!=null?margin+"%":"default margin")+"? / स्वीकृत करें?")) return;
+      if (!(await askConfirm("Approve this registration at "+(margin!=null?margin+"%":"default margin")+"?\n\nस्वीकृत करें?", { okLabel:"Approve / स्वीकृत" }))) return;
       var msg = $("m-amsg-"+id); if (msg){ msg.className="req-msg"; msg.textContent = "Approving…"; }
       var r = await sb.rpc("approve_signup", { p_id:id, p_margin:margin });
       if (r.error){ if (msg){ msg.className="req-msg err"; msg.textContent = friendlyErr(r.error); } return; }
@@ -1247,7 +1292,7 @@
     var rj = e.target.closest && e.target.closest("[data-reject-signup]");
     if (rj){
       var rid = Number(rj.getAttribute("data-reject-signup"));
-      if (!confirm("Reject this registration? / अस्वीकार करें?")) return;
+      if (!(await askConfirm("Reject this registration?\n\nयह पंजीकरण अस्वीकार करें?", { danger:true, okLabel:"Reject / अस्वीकार" }))) return;
       var rr = await sb.rpc("reject_signup", { p_id:rid });
       if (rr.error){ showToast(friendlyErr(rr.error)); return; }
       renderMoreApprovals(); showToast("Registration rejected / अस्वीकृत");
@@ -1267,8 +1312,8 @@
         var q = Math.max(0, Math.min(500, parseInt(inp.value,10)||0));
         if (q !== Number(inp.defaultValue)) changed.push({ sku: inp.getAttribute("data-sku"), qty: q });
       });
-      var note = changed.length ? " Quantities were adjusted — the buyer will see the change." : "";
-      if (!confirm("Bill & ship this order? Stock moves now and can't be undone."+note+"\nबिल करें? स्टॉक अभी जाएगा।")) return;
+      var note = changed.length ? "\nQuantities were adjusted — the buyer will see the change." : "";
+      if (!(await askConfirm("Bill & ship this order?\nStock leaves you and moves to the buyer now — this can't be undone."+note+"\n\nबिल करें? स्टॉक अभी जाएगा, वापस नहीं होगा।", { okLabel:"Bill & ship / बिल करें" }))) return;
       var m = $("rm-"+id); if (m){ m.className="req-msg"; m.textContent = "Billing…"; }
       if (changed.length){
         var a = await sb.rpc("amend_order_qty", { p_order_id:id, p_lines:changed });
@@ -1285,10 +1330,11 @@
       var fid = Number(fw.getAttribute(isEu ? "data-forward-eu" : "data-forward"));
       var pLines = null, box = fw.closest(".fwd-eu");
       if (box){ pLines = {}; box.querySelectorAll(".fw-qty").forEach(function(inp){ pLines[inp.getAttribute("data-sku")] = Math.max(0, Math.min(500, parseInt(inp.value,10)||0)); }); }
-      if (!confirm("Forward to your supplier at your buy rate? It's billed to you under your own name — they never see the customer.\nअपने सप्लायर को भेजें?")) return;
+      if (!(await askConfirm("Forward to your supplier at your buy rate?\nIt's billed to you under your own name — they never see the customer.\n\nअपने सप्लायर को भेजें?", { okLabel:"Forward / भेजें" }))) return;
       fw.disabled = true;
+      var fmsg = isEu ? $("rem-"+fid) : $("rm-"+fid);
       var r = await sb.rpc("forward_order", { p_kind: isEu?"enduser":"dealer", p_order_id: fid, p_lines: pLines });
-      if (r.error){ fw.disabled = false; showToast(friendlyErr(r.error)); return; }
+      if (r.error){ fw.disabled = false; if (fmsg){ fmsg.className="req-msg err"; fmsg.textContent = friendlyErr(r.error); } else showToast(friendlyErr(r.error)); return; }
       showToast("Forwarded ↑ — it's now in My Orders / भेज दिया"); renderRequests(); updateRequestBadge();
       return;
     }
@@ -1297,9 +1343,10 @@
     var ro = t.closest && t.closest("[data-reject-order]");
     if (ro){
       var rid = Number(ro.getAttribute("data-reject-order"));
-      if (!confirm("Reject this request? / यह अनुरोध अस्वीकार करें?")) return;
+      if (!(await askConfirm("Reject this request?\nThe buyer will be told it was declined.\n\nयह अनुरोध अस्वीकार करें?", { danger:true, okLabel:"Reject / अस्वीकार" }))) return;
+      var rmsg = $("rm-"+rid);
       var rr = await sb.rpc("reject_order", { p_order_id: rid });
-      if (rr.error){ showToast(friendlyErr(rr.error)); return; }
+      if (rr.error){ if (rmsg){ rmsg.className="req-msg err"; rmsg.textContent = friendlyErr(rr.error); } else showToast(friendlyErr(rr.error)); return; }
       showToast("Rejected / अस्वीकृत"); renderRequests(); updateRequestBadge();
       return;
     }
