@@ -275,6 +275,16 @@
   /* cart count is informational (green), not an alert like the red Requests badge */
   #cart-badge{ background:var(--green-dark); }
 
+  /* tabular figures: this is a price/stock/invoice app — digits must line up in every
+     column (rates, cart lines, PI qty/rate/amount, totals, request tables) and not jitter
+     in width as counts change. One declaration, no layout risk. */
+  .rate, .line-total, #cart-grand-total, .grand-total-bar, .num, .pi-grand, .pi-totals .row,
+  .stepper input, .stock-row input, .m-input, .rq-qty, .fw-qty, .nav-badge, .cart-badge,
+  .t-count, .acct-id, .order-row{ font-variant-numeric: tabular-nums; }
+  /* Devanagari has tall matras and below-baseline marks; give the bilingual lines room */
+  nav.bottom-nav button .nl-hi{ line-height:1.3; }
+  main#main h2, main#main h3{ line-height:1.3; }
+
   /* ---- motion: functional feedback only, 100–250ms, all reduced-motion guarded ---- */
   :root{ --ease-quint: cubic-bezier(0.22,1,0.36,1); }
   /* toast slides up as it appears; state feedback, not decoration */
@@ -1337,10 +1347,14 @@
     var rows = q ? _moreStock.filter(function(r){ return (r.party+" "+r.part).toLowerCase().indexOf(q) !== -1; }) : _moreStock;
     if (!_moreStock.length){ card.innerHTML = '<div style="color:var(--muted);font-size:13px;">No stock recorded yet.</div>'; return; }
     if (!rows.length){ card.innerHTML = '<div style="color:var(--muted);font-size:13px;">No match for "'+esc(q)+'".</div>'; return; }
+    // cap the DOM: the importer can hold a row per SKU (~1,700). Render at most CAP and
+    // lean on the filter box for the rest — keeps the tab snappy on a cheap phone.
+    var CAP = 200, shown = rows.slice(0, CAP);
     var count = q ? rows.length+" of "+_moreStock.length : String(_moreStock.length);
-    card.innerHTML = '<div style="color:var(--muted);font-size:12.5px;margin-bottom:6px;">'+count+' stock line'+(_moreStock.length===1?"":"s")+'</div>'+
+    var note = rows.length > CAP ? ' — showing first '+CAP+', type above to find a part / छाँटें' : '';
+    card.innerHTML = '<div style="color:var(--muted);font-size:12.5px;margin-bottom:6px;">'+count+' stock line'+(_moreStock.length===1?"":"s")+note+'</div>'+
       '<div class="tscroll"><table><thead><tr><th>Party</th><th>Part</th><th class="num">Qty</th></tr></thead><tbody>'+
-      rows.map(function(r){ return '<tr><td>'+esc(r.party)+'</td><td>'+esc(r.part)+'</td><td class="num">'+r.qty+'</td></tr>'; }).join("")+
+      shown.map(function(r){ return '<tr><td>'+esc(r.party)+'</td><td>'+esc(r.part)+'</td><td class="num">'+r.qty+'</td></tr>'; }).join("")+
       '</tbody></table></div>';
   }
   async function renderMoreApprovals(){
