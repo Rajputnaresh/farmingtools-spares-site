@@ -308,7 +308,7 @@
   .req-card.req-done{ animation:cardOut .18s ease forwards; pointer-events:none; }
   @media (prefers-reduced-motion: reduce){
     #toast:not(.hidden), #cf-overlay, #cf-overlay .cf-box, .nav-badge.bump, #req-badge.pulse, .req-card.req-done{ animation:none !important; }
-    .btn-primary, .req-primary, .req-sub button, .add-btn, .cf-row button, .m-btn, .generate-btn{ transition:none !important; }
+    .btn-primary, .req-primary, .req-sub button, .add-btn, .cf-row button, .m-btn, .generate-btn, .more-sec > summary::after{ transition:none !important; }
   }
   /* subtle view-in so tab switches read as intentional, not a jump-cut */
   @keyframes kgViewIn{ from{ opacity:0; transform:translateY(5px); } to{ opacity:1; transform:none; } }
@@ -363,7 +363,8 @@
   .more-sec{ background:#fff; border:1px solid var(--border); border-radius:12px; margin-bottom:8px; overflow:hidden; }
   .more-sec > summary{ padding:14px; font-size:14px; font-weight:600; color:var(--green-dark); cursor:pointer; list-style:none; }
   .more-sec > summary::-webkit-details-marker{ display:none; }
-  .more-sec > summary::after{ content:"⌄"; float:right; color:var(--muted); }
+  .more-sec > summary::after{ content:"⌄"; float:right; color:var(--muted); transition:transform .2s var(--ease-quint); transform-origin:center; }
+  .more-sec[open] > summary::after{ transform:rotate(180deg); }
   .more-sec[open] > summary{ border-bottom:1px solid var(--border); }
   .more-sec > *:not(summary){ margin:0 14px; }
   .more-sec > *:not(summary):first-of-type{ margin-top:12px; }
