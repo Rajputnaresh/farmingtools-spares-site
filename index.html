@@ -254,6 +254,8 @@
   /* nav labels: English over Hindi, uniformly two lines so nothing wraps raggedly */
   nav.bottom-nav button .nl{ display:block; line-height:1.15; }
   nav.bottom-nav button .nl-hi{ display:block; font-size:10px; font-weight:600; opacity:.85; line-height:1.15; }
+  /* cart count is informational (green), not an alert like the red Requests badge */
+  #cart-badge{ background:var(--green-dark); }
   /* subtle view-in so tab switches read as intentional, not a jump-cut */
   @keyframes kgViewIn{ from{ opacity:0; transform:translateY(5px); } to{ opacity:1; transform:none; } }
   main#main > section:not(.hidden){ animation:kgViewIn .18s ease-out; }
@@ -391,7 +393,6 @@
     <div class="sub">Spare parts ordering / स्पेयर पार्ट्स ऑर्डर</div>
   </button>
   <div class="header-actions hidden" id="header-actions">
-    <button class="cart-btn" id="cart-btn" aria-label="Cart / कार्ट" title="Cart / कार्ट"><span class="ico" data-ico="cart" aria-hidden="true"></span><span class="cart-badge hidden" id="cart-badge">0</span></button>
     <button class="logout-link" id="auth-btn" aria-label="Sign Out / साइन आउट" title="Sign Out / साइन आउट"><span class="ico" data-ico="logout" aria-hidden="true"></span></button>
   </div>
 </header>
@@ -511,7 +512,7 @@
 
 <nav class="bottom-nav hidden" id="bottom-nav">
   <button id="nav-catalog" class="active"><span class="ico" data-ico="home" aria-hidden="true"></span><span class="nl">Shop</span><span class="nl-hi">दुकान</span></button>
-  <button id="nav-cart"><span class="ico" data-ico="cart" aria-hidden="true"></span><span class="nl">Cart</span><span class="nl-hi">कार्ट</span></button>
+  <button id="nav-cart"><span class="ico" data-ico="cart" aria-hidden="true"></span><span class="nav-badge hidden" id="cart-badge">0</span><span class="nl">Cart</span><span class="nl-hi">कार्ट</span></button>
   <button id="nav-orders" class="hidden"><span class="ico" data-ico="orders" aria-hidden="true"></span><span class="nl">Orders</span><span class="nl-hi">ऑर्डर</span></button>
   <button id="nav-requests" class="hidden"><span class="ico" data-ico="bell" aria-hidden="true"></span><span class="nav-badge hidden" id="req-badge">0</span><span class="nl">Requests</span><span class="nl-hi">अनुरोध</span></button>
   <button id="nav-more" class="hidden"><span class="ico" data-ico="more" aria-hidden="true"></span><span class="nl">More</span><span class="nl-hi">अधिक</span></button>
@@ -2046,7 +2047,6 @@
     });
     $("auth-btn").onclick = doSignOut; // attached once here; updateAuthButton() only toggles visibility
     $("home-brand").onclick = function(){ if (state.session && state.session.role !== "admin") showCatalog(); };
-    $("cart-btn").onclick = showCart;
     $("nav-catalog").onclick = showCatalog;
     $("nav-cart").onclick = showCart;
     $("nav-orders").onclick = showOrders;
