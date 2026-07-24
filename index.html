@@ -241,11 +241,16 @@
     display:flex; z-index:var(--z-nav);
   }
   nav.bottom-nav button{
-    flex:1; background:none; border:none; padding:8px 4px; min-height:52px; font-size:12px; font-weight:600; color:var(--muted);
+    flex:1; position:relative; background:none; border:none; padding:8px 2px; min-height:52px; font-size:11.5px; font-weight:600; color:var(--muted);
     display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
   }
   nav.bottom-nav button.active .ico svg{ stroke:var(--green-dark); }
   nav.bottom-nav button.active{ color:var(--green-dark); }
+  /* live count of orders waiting to be billed — the reason to open Requests */
+  .nav-badge{
+    position:absolute; top:4px; left:50%; margin-left:4px; min-width:16px; height:16px; padding:0 4px;
+    background:#d64524; color:#fff; border-radius:9px; font-size:10.5px; font-weight:700; line-height:16px; text-align:center;
+  }
 
   /* cart */
   .cart-item{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:8px; }
@@ -264,6 +269,25 @@
 
   /* orders */
   .order-row{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; gap:8px; font-size:13.5px; }
+  /* Requests (supplier) cards */
+  .req-card{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:10px; font-size:13.5px; }
+  .req-card table{ width:100%; border-collapse:collapse; font-size:13px; margin-top:6px; }
+  .req-card th, .req-card td{ text-align:left; padding:4px 6px; border-bottom:1px solid var(--border); }
+  .req-card th.num, .req-card td.num{ text-align:right; }
+  .req-card .tscroll{ overflow-x:auto; }
+  .ship-to{ background:var(--green-light); border:1px solid var(--border); border-radius:8px; padding:8px 10px; margin:8px 0 2px; font-weight:600; font-size:13px; }
+  .req-actions{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .req-actions button{ flex:1 1 46%; min-height:44px; border-radius:10px; font-size:13.5px; font-weight:600; }
+  .btn-soft{ background:var(--green-light); color:var(--green-dark); border:1px solid var(--border); }
+  .btn-danger{ background:#fdeceb; color:var(--danger); border:1px solid #f0b4ac; }
+  .req-card .btn-primary{ width:auto; margin-top:0; }
+  .req-msg{ font-size:12.5px; margin-top:6px; color:var(--muted); }
+  .req-msg.err{ color:var(--danger); }
+  .fwd-eu{ margin-top:8px; border-top:1px dashed var(--border); padding-top:8px; }
+  /* More hub */
+  .more-card{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:10px; }
+  .more-link{ display:block; width:100%; text-align:left; background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:8px; font-size:14px; font-weight:600; color:var(--green-dark); text-decoration:none; }
+  .more-signout{ color:var(--danger); }
   .badge-green, .badge-amber{ display:inline-block; border-radius:8px; padding:2px 8px; font-size:11px; font-weight:700; margin-bottom:3px; }
   .badge-green{ background:var(--green-light); color:var(--green-dark); }
   .badge-amber{ background:var(--bg); color:var(--muted); border:1px solid var(--border); }
@@ -437,13 +461,30 @@
     <div id="orders-list"></div>
   </section>
 
+  <!-- Requests (supplier: orders placed to me + retail orders on my shop) -->
+  <section id="view-requests" class="hidden">
+    <h2 style="color:var(--green-dark);font-size:17px;margin:4px 0 10px;">Requests / अनुरोध</h2>
+    <div id="req-dealer-list"></div>
+    <h3 style="color:var(--green-dark);font-size:15px;margin:18px 0 6px;">Retail orders / खुदरा ऑर्डर</h3>
+    <div id="req-retail-list"></div>
+  </section>
+
+  <!-- More (business hub) -->
+  <section id="view-more" class="hidden">
+    <h2 style="color:var(--green-dark);font-size:17px;margin:4px 0 10px;">More / अधिक</h2>
+    <div id="more-body"></div>
+  </section>
+
 </main>
 
+<input type="file" id="bill-file" accept="application/pdf,image/*" class="hidden" aria-hidden="true">
+
 <nav class="bottom-nav hidden" id="bottom-nav">
-  <button id="nav-catalog" class="active"><span class="ico" data-ico="home" aria-hidden="true"></span>Home / होम</button>
+  <button id="nav-catalog" class="active"><span class="ico" data-ico="home" aria-hidden="true"></span>Shop / दुकान</button>
   <button id="nav-cart"><span class="ico" data-ico="cart" aria-hidden="true"></span>Cart / कार्ट</button>
-  <button id="nav-orders" class="hidden"><span class="ico" data-ico="orders" aria-hidden="true"></span>My Orders / मेरे ऑर्डर</button>
-  <button id="nav-manage" class="hidden"><span class="ico" data-ico="manage" aria-hidden="true"></span>Manage / प्रबंधन</button>
+  <button id="nav-orders" class="hidden"><span class="ico" data-ico="orders" aria-hidden="true"></span>Orders / ऑर्डर</button>
+  <button id="nav-requests" class="hidden"><span class="ico" data-ico="bell" aria-hidden="true"></span><span class="nav-badge hidden" id="req-badge">0</span>Requests / अनुरोध</button>
+  <button id="nav-more" class="hidden"><span class="ico" data-ico="more" aria-hidden="true"></span>More / अधिक</button>
 </nav>
 
 <div id="modal-root"></div>
@@ -505,7 +546,9 @@
     whatsapp:'<path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.6L3 21l1.9-5.6A8.5 8.5 0 1 1 21 11.5z"/>',
     phone:   '<path d="M15.5 21A13.5 13.5 0 0 1 3 8.5 2 2 0 0 1 5 6.5h2.2a1 1 0 0 1 1 .8l.7 3a1 1 0 0 1-.28 1L7.2 12.8a11 11 0 0 0 4 4l1.5-1.4a1 1 0 0 1 1-.28l3 .7a1 1 0 0 1 .8 1V19a2 2 0 0 1-2 2z"/>',
     orders:  '<path d="M8 3h8a1 1 0 0 1 1 1v16l-4.5-2.5L8 20V4a1 1 0 0 1 1-1z"/><path d="M9 8h6M9 12h6"/>',
-    manage:  '<circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a1.7 1.7 0 0 1 0-3l1-.6-1-1.7-1.1.4a1.7 1.7 0 0 1-2.6-1l-.1-1.1h-2l-.1 1.1a1.7 1.7 0 0 1-2.6 1l-1.1-.4-1 1.7 1 .6a1.7 1.7 0 0 1 0 3l-1 .6 1 1.7 1.1-.4a1.7 1.7 0 0 1 2.6 1l.1 1.1h2l.1-1.1a1.7 1.7 0 0 1 2.6-1l1.1.4 1-1.7z"/>'
+    manage:  '<circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a1.7 1.7 0 0 1 0-3l1-.6-1-1.7-1.1.4a1.7 1.7 0 0 1-2.6-1l-.1-1.1h-2l-.1 1.1a1.7 1.7 0 0 1-2.6 1l-1.1-.4-1 1.7 1 .6a1.7 1.7 0 0 1 0 3l-1 .6 1 1.7 1.1-.4a1.7 1.7 0 0 1 2.6 1l.1 1.1h2l.1-1.1a1.7 1.7 0 0 1 2.6-1l1.1.4 1-1.7z"/>',
+    bell:    '<path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+    more:    '<circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/>'
   };
   function svgRaw(name){
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -575,6 +618,14 @@
       t.classList.add("fade");
       setTimeout(function(){ t.classList.add("hidden"); }, 260);
     }, 1600);
+  }
+  // plain-language error from a Supabase/postgres error object
+  function friendlyErr(e){
+    var m = (e && (e.message || e.error_description || e.msg)) || "Something went wrong. Please try again.";
+    if (/JWT|expired|not authenticated/i.test(m)) return "Session expired — please sign in again. / फिर से साइन इन करें।";
+    if (/already forwarded/i.test(m)) return "Already forwarded / पहले ही भेजा जा चुका";
+    if (/nothing to forward/i.test(m)) return "Nothing to forward — you already hold enough. / भेजने को कुछ नहीं।";
+    return m;
   }
   // toast with an Undo action (5s window) — used for reversible cart-line removal
   function undoToast(msg, onUndo){
@@ -677,9 +728,11 @@
   function loadData(){
     state.loading = true; state.loadError = false;
     var catP = fetch("catalog.json").then(function(r){ if(!r.ok) throw new Error("http"); return r.json(); }).catch(function(){ return null; });
-    // retail link: MRP (3×) from enduser_prices + the supplier's in/out; else the dealer's own price + supplier stock
+    // retail link: MRP (3×) from enduser_prices, and NO availability at all — a retail
+    // customer never sees stock/quantity and can order any part in or out of stock.
+    // dealers: own price + supplier stock.
     var priceP = state.enduser ? sb.rpc("enduser_prices") : (sb ? sb.rpc("my_prices") : Promise.resolve({ data: [] }));
-    var availP = state.enduser ? sb.rpc("supplier_availability", { p_supplier: state.enduser })
+    var availP = state.enduser ? Promise.resolve({ data: [] })
                                : (sb ? sb.rpc("importer_availability") : Promise.resolve({ data: [] }));
     return Promise.all([catP, priceP, availP]).then(function(res){
       state.loading = false;
@@ -703,7 +756,8 @@
     return sb.from("parties").select("id,name,role,parent_id,auth_uid").then(function(res){
       var rows = (res && res.data) || [], uid = state.session && state.session.id, mine = null;
       rows.forEach(function(p){ if (p.auth_uid === uid) mine = p; });
-      state.account = mine ? { company: mine.name, role: mine.role, id: mine.id } : null;
+      state.parties = rows; // used to name the buyer on incoming requests
+      state.account = mine ? { company: mine.name, role: mine.role, id: mine.id, parentId: mine.parent_id } : null;
       if (state.session && mine) state.session.role = mine.role;
     }).catch(function(){ state.account = null; });
   }
@@ -812,19 +866,24 @@
 
   // ---------- views ----------
   function hideAll(){
-    ["view-login","view-catalog","view-cart","view-pi","view-orders"].forEach(function(id){ var el = $(id); if (el) el.classList.add("hidden"); });
+    ["view-login","view-catalog","view-cart","view-pi","view-orders","view-requests","view-more"].forEach(function(id){ var el = $(id); if (el) el.classList.add("hidden"); });
     $("bottom-nav").classList.add("hidden");
     $("header-actions").classList.add("hidden");
     $("app-header").classList.remove("authed");
   }
-  // role-adaptive bottom nav: retail sees Home+Cart only; a logged-in buyer also gets My Orders;
-  // Manage (-> ledger.html) only for suppliers who also run a network (importer/distributor/dealer)
+  // role-adaptive bottom nav: retail sees Shop+Cart only; a logged-in buyer also gets Orders;
+  // suppliers who run a network (importer/distributor/dealer) also get Requests + More.
   var MANAGE_ROLES = { importer:1, distributor:1, dealer:1 };
   function updateNavVisibility(){
     var isRetail = !!state.enduser;
     var isBuyer = !isRetail && !!state.account;
+    var supplier = isBuyer && state.account.role && MANAGE_ROLES[state.account.role];
     $("nav-orders").classList.toggle("hidden", !isBuyer);
-    $("nav-manage").classList.toggle("hidden", !(isBuyer && state.account.role && MANAGE_ROLES[state.account.role]));
+    $("nav-requests").classList.toggle("hidden", !supplier);
+    $("nav-more").classList.toggle("hidden", !supplier);
+    // retail customers don't see stock, so the in/out-of-stock filter is meaningless to them
+    $("filter-stock").classList.toggle("hidden", isRetail);
+    if (supplier){ subscribeSellerAlerts(); updateRequestBadge(); }
   }
   function showLogin(){
     hideAll();
@@ -882,7 +941,7 @@
     renderMyOrders();
   }
   function setActiveNav(id){
-    ["nav-catalog","nav-cart","nav-orders","nav-manage"].forEach(function(nid){
+    ["nav-catalog","nav-cart","nav-orders","nav-requests","nav-more"].forEach(function(nid){
       var el = $(nid); if (el) el.classList.toggle("active", nid === id);
     });
   }
@@ -921,6 +980,186 @@
         '<div style="font-weight:600;">' + inr(o.grand) + '</div></div>' +
         '</div>';
     }).join("");
+  }
+
+  // ================= SUPPLIER SIDE (Requests) — folded in from the old console =================
+  function isSupplier(){ return !!(state.account && state.account.role && MANAGE_ROLES[state.account.role]); }
+  function skuName(sku){ var i = skuToIndex(sku); var r = i >= 0 ? state.catalog[i] : null; return (r && (r.product_code || r.particular)) || sku; }
+
+  function showRequests(){
+    hideAll();
+    $("view-requests").classList.remove("hidden");
+    $("bottom-nav").classList.remove("hidden");
+    $("header-actions").classList.remove("hidden");
+    updateAuthButton(); updateNavVisibility();
+    setActiveNav("nav-requests");
+    renderRequests();
+  }
+  function showMore(){
+    hideAll();
+    $("view-more").classList.remove("hidden");
+    $("bottom-nav").classList.remove("hidden");
+    $("header-actions").classList.remove("hidden");
+    updateAuthButton(); updateNavVisibility();
+    setActiveNav("nav-more");
+    renderMore();
+  }
+
+  async function renderRequests(){
+    if (!isSupplier()) return;
+    var dbox = $("req-dealer-list"), rbox = $("req-retail-list");
+    dbox.innerHTML = '<p style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</p>'; rbox.innerHTML = "";
+    var mine = state.account.id;
+    // scoped server-side: only open requests placed to me + retail orders on my shop, newest first
+    var r1 = await sb.from("orders").select("id,pi_number,dealer_party,grand,status,ship_to,bill_url,amended,created_at")
+      .eq("importer_party", mine).eq("status", "placed").order("created_at", { ascending:false });
+    var ords = (r1.data) || [];
+    var r2 = await sb.from("enduser_orders").select("*").eq("supplier_party", mine).order("created_at", { ascending:false });
+    var eu = (r2.data) || [];
+    var lineIds = ords.map(function(o){ return o.id; });
+    var euIds = eu.map(function(o){ return o.id; });
+    var oLines = lineIds.length ? ((await sb.from("order_lines").select("order_id,sku,qty").in("order_id", lineIds)).data || []) : [];
+    var eLines = euIds.length ? ((await sb.from("enduser_order_lines").select("order_id,sku,qty").in("order_id", euIds)).data || []) : [];
+    var byO = {}; oLines.forEach(function(l){ (byO[l.order_id]=byO[l.order_id]||[]).push(l); });
+    var byE = {}; eLines.forEach(function(l){ (byE[l.order_id]=byE[l.order_id]||[]).push(l); });
+    // party names for "from <dealer>"
+    var pName = {}; (state.parties || []).forEach(function(p){ pName[p.id] = p.name; });
+
+    if (!ords.length){ dbox.innerHTML = '<p style="color:var(--muted);font-size:14px;margin:8px 2px;">No pending requests / कोई अनुरोध नहीं</p>'; }
+    else dbox.innerHTML = ords.map(function(o){
+      var ls = byO[o.id] || [];
+      var lineHtml = ls.map(function(l){ return '<tr><td>'+esc(skuName(l.sku))+'</td>'+
+        '<td class="num"><input type="number" class="rq-qty" data-sku="'+esc(l.sku)+'" value="'+l.qty+'" min="0" max="500" inputmode="numeric" aria-label="Quantity" style="width:64px;padding:6px;min-height:40px;text-align:right;"></td></tr>'; }).join("");
+      var ship = o.ship_to ? '<div class="ship-to">'+esc(o.ship_to)+'</div>' : "";
+      var bill = o.bill_url ? ' · <a href="'+esc(o.bill_url)+'" target="_blank" rel="noopener">Bill / बिल</a>' : "";
+      return '<div class="req-card">'+
+        '<div><b>'+esc(pName[o.dealer_party]||"dealer")+'</b> · '+esc(o.pi_number||"")+(o.amended?' · <span style="color:var(--muted)">adjusted / बदला</span>':'')+bill+'</div>'+ship+
+        '<div class="tscroll"><table><thead><tr><th>Part</th><th class="num">Qty</th></tr></thead><tbody>'+lineHtml+'</tbody></table></div>'+
+        '<div class="req-actions">'+
+          '<button class="btn-primary" data-fulfill="'+o.id+'">Bill &amp; ship / बिल करें</button>'+
+          '<button class="btn-soft" data-forward="'+o.id+'">Forward ↑ / ऊपर भेजें</button>'+
+          '<button class="btn-soft" data-billattach="'+o.id+'">Attach bill / बिल लगाएँ</button>'+
+          '<button class="btn-danger" data-reject-order="'+o.id+'">Reject / अस्वीकार</button>'+
+        '</div><div class="req-msg" id="rm-'+o.id+'"></div></div>';
+    }).join("");
+
+    if (!eu.length){ rbox.innerHTML = '<p style="color:var(--muted);font-size:14px;margin:8px 2px;">No retail orders / कोई खुदरा ऑर्डर नहीं</p>'; }
+    else rbox.innerHTML = eu.map(function(o){
+      var ls = byE[o.id] || [];
+      var summ = ls.map(function(l){ return esc(skuName(l.sku))+'×'+l.qty; }).join(", ");
+      var fwd = state.account.parentId ? '<div class="fwd-eu" data-order="'+o.id+'">'+
+        '<div class="tscroll"><table><thead><tr><th>Part</th><th class="num">Ask supplier</th></tr></thead><tbody>'+
+          ls.map(function(l){ return '<tr><td>'+esc(skuName(l.sku))+'</td>'+
+            '<td class="num"><input type="number" class="fw-qty" data-sku="'+esc(l.sku)+'" value="'+l.qty+'" min="0" max="500" inputmode="numeric" aria-label="Quantity" style="width:64px;padding:6px;min-height:40px;text-align:right;"></td></tr>'; }).join("")+
+        '</tbody></table></div>'+
+        '<button class="btn-soft" data-forward-eu="'+o.id+'" style="margin-top:6px;">Forward ↑ / ऊपर भेजें</button></div>' : "";
+      return '<div class="req-card"><div><b>'+esc(o.customer_name||"customer")+'</b>'+(o.customer_phone?' · '+esc(o.customer_phone):'')+' — <b>'+inr(o.grand)+'</b></div>'+
+        '<div style="font-size:12.5px;color:var(--muted);">'+esc(o.pi_number||"")+' · '+summ+'</div>'+fwd+'</div>';
+    }).join("");
+  }
+
+  function renderMore(){
+    var name = (state.account && state.account.company) || (state.session && state.session.id) || "";
+    var role = ROLE_LABELS[state.account && state.account.role] || "";
+    // Business setup (network, transfers, storefront link) still lives in the console for now.
+    $("more-body").innerHTML =
+      '<div class="more-card"><div style="font-weight:700;">'+esc(name)+'</div><div style="color:var(--muted);font-size:13px;">'+esc(role)+'</div></div>'+
+      '<a class="more-link" href="ledger.html">Business tools — network, transfers, shop link / नेटवर्क, ट्रांसफर, दुकान लिंक <span aria-hidden="true">→</span></a>'+
+      '<button class="more-link more-signout" id="more-signout">Sign out / साइन आउट</button>';
+    $("more-signout").onclick = doSignOut;
+  }
+
+  // ---- seller actions (event delegation on the Requests view) ----
+  var billTargetOrder = null;
+  async function onRequestsClick(e){
+    var t = e.target;
+    var ff = t.closest && t.closest("[data-fulfill]");
+    if (ff){
+      var id = Number(ff.getAttribute("data-fulfill"));
+      var card = ff.closest(".req-card");
+      var changed = [];
+      card.querySelectorAll(".rq-qty").forEach(function(inp){
+        var q = Math.max(0, Math.min(500, parseInt(inp.value,10)||0));
+        if (q !== Number(inp.defaultValue)) changed.push({ sku: inp.getAttribute("data-sku"), qty: q });
+      });
+      var note = changed.length ? " Quantities were adjusted — the buyer will see the change." : "";
+      if (!confirm("Bill & ship this order? Stock moves now and can't be undone."+note+"\nबिल करें? स्टॉक अभी जाएगा।")) return;
+      var m = $("rm-"+id); if (m){ m.className="req-msg"; m.textContent = "Billing…"; }
+      if (changed.length){
+        var a = await sb.rpc("amend_order_qty", { p_order_id:id, p_lines:changed });
+        if (a.error){ if (m){ m.className="req-msg err"; m.textContent = friendlyErr(a.error); } return; }
+      }
+      var f = await sb.rpc("fulfill_order", { p_order_id:id });
+      if (f.error){ if (m){ m.className="req-msg err"; m.textContent = friendlyErr(f.error); } return; }
+      showToast("Billed & shipped ✓ / बिल हो गया"); renderRequests(); updateRequestBadge();
+      return;
+    }
+    var fw = t.closest && (t.closest("[data-forward]") || t.closest("[data-forward-eu]"));
+    if (fw){
+      var isEu = fw.hasAttribute("data-forward-eu");
+      var fid = Number(fw.getAttribute(isEu ? "data-forward-eu" : "data-forward"));
+      var pLines = null, box = fw.closest(".fwd-eu");
+      if (box){ pLines = {}; box.querySelectorAll(".fw-qty").forEach(function(inp){ pLines[inp.getAttribute("data-sku")] = Math.max(0, Math.min(500, parseInt(inp.value,10)||0)); }); }
+      if (!confirm("Forward to your supplier at your buy rate? It's billed to you under your own name — they never see the customer.\nअपने सप्लायर को भेजें?")) return;
+      fw.disabled = true;
+      var r = await sb.rpc("forward_order", { p_kind: isEu?"enduser":"dealer", p_order_id: fid, p_lines: pLines });
+      if (r.error){ fw.disabled = false; showToast(friendlyErr(r.error)); return; }
+      showToast("Forwarded ↑ — it's now in My Orders / भेज दिया"); renderRequests(); updateRequestBadge();
+      return;
+    }
+    var ba = t.closest && t.closest("[data-billattach]");
+    if (ba){ billTargetOrder = Number(ba.getAttribute("data-billattach")); $("bill-file").click(); return; }
+    var ro = t.closest && t.closest("[data-reject-order]");
+    if (ro){
+      var rid = Number(ro.getAttribute("data-reject-order"));
+      if (!confirm("Reject this request? / यह अनुरोध अस्वीकार करें?")) return;
+      var rr = await sb.rpc("reject_order", { p_order_id: rid });
+      if (rr.error){ showToast(friendlyErr(rr.error)); return; }
+      showToast("Rejected / अस्वीकृत"); renderRequests(); updateRequestBadge();
+      return;
+    }
+  }
+  async function onBillFileChosen(){
+    var inp = $("bill-file"), file = inp.files && inp.files[0], id = billTargetOrder;
+    inp.value = ""; billTargetOrder = null;
+    if (!file || !id) return;
+    if (file.size > 10*1024*1024){ showToast("File too large (max 10MB) / फ़ाइल बहुत बड़ी"); return; }
+    showToast("Uploading bill… / अपलोड हो रहा है");
+    var ext = (file.name.split(".").pop() || "pdf").toLowerCase();
+    var path = "o"+id+"-"+(crypto.randomUUID ? crypto.randomUUID() : Date.now())+"."+ext;
+    var up = await sb.storage.from("bills").upload(path, file, { upsert:false });
+    if (up.error){ showToast(friendlyErr(up.error)); return; }
+    var pub = sb.storage.from("bills").getPublicUrl(path);
+    var url = pub.data && pub.data.publicUrl;
+    var at = await sb.rpc("attach_bill", { p_order_id:id, p_url:url });
+    if (at.error){ showToast(friendlyErr(at.error)); return; }
+    showToast("Bill attached ✓ / बिल लग गया"); renderRequests();
+  }
+
+  // ---- realtime: new order → toast + beep + nav badge, no refresh needed ----
+  function beep(){
+    try { var a = new (window.AudioContext||window.webkitAudioContext)(); var o = a.createOscillator(); var g = a.createGain();
+      o.connect(g); g.connect(a.destination); o.frequency.value = 880; g.gain.value = 0.05; o.start(); o.stop(a.currentTime + 0.25); } catch(e){}
+  }
+  async function updateRequestBadge(){
+    if (!isSupplier()){ $("req-badge").classList.add("hidden"); return; }
+    var r = await sb.from("orders").select("id", { count:"exact", head:true }).eq("importer_party", state.account.id).eq("status","placed");
+    var n = r.count || 0;
+    var b = $("req-badge");
+    b.textContent = n > 99 ? "99+" : String(n);
+    b.classList.toggle("hidden", n === 0);
+  }
+  function subscribeSellerAlerts(){
+    if (window._sellerSub || !isSupplier() || !sb) return;
+    var mine = state.account.id;
+    window._sellerSub = sb.channel("seller-alerts")
+      .on("postgres_changes", { event:"INSERT", schema:"public", table:"orders" }, function(p){
+        if (p.new && p.new.importer_party === mine){ beep(); showToast("New request from a buyer / नया अनुरोध"); updateRequestBadge(); if (!$("view-requests").classList.contains("hidden")) renderRequests(); }
+      })
+      .on("postgres_changes", { event:"INSERT", schema:"public", table:"enduser_orders" }, function(p){
+        if (p.new && p.new.supplier_party === mine){ beep(); showToast("New retail order / नया खुदरा ऑर्डर"); if (!$("view-requests").classList.contains("hidden")) renderRequests(); }
+      })
+      .subscribe();
   }
 
   function renderDealerStrip(){
@@ -1547,7 +1786,10 @@
     $("nav-catalog").onclick = showCatalog;
     $("nav-cart").onclick = showCart;
     $("nav-orders").onclick = showOrders;
-    $("nav-manage").onclick = function(){ location.href = "ledger.html"; };
+    $("nav-requests").onclick = showRequests;
+    $("nav-more").onclick = showMore;
+    $("view-requests").addEventListener("click", onRequestsClick);
+    $("bill-file").addEventListener("change", onBillFileChosen);
     $("generate-pi-btn").onclick = function(){
       if (!Object.keys(state.cart).some(function(k){ return state.cart[k] > 0; })) return;
       if (state.enduser && !(($("eu-name") || {}).value || "").trim()){

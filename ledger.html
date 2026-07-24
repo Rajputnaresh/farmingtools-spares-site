@@ -512,12 +512,19 @@ function boot(){
     const byOrder = {}; (lines||[]).forEach((l) => { (byOrder[l.order_id]=byOrder[l.order_id]||[]).push(l); });
     const cName = Object.fromEntries(catalog.map((c) => [c.sku, c.product_code || c.sku]));
     $("euorders-card").innerHTML = rows.map((o) => {
-      const ls = (byOrder[o.id]||[]).map((l) => `${esc(cName[l.sku]||l.sku)}×${l.qty}`).join(", ");
-      // no stock for a retail order? forward it upstream as a purchase request that
-      // carries the customer's name/phone as ship-to (drop-ship; source stays hidden)
-      const fwd = me && me.parent_id
-        ? `<button class="btn-soft" data-forward-eu="${o.id}" style="margin-top:6px;">Forward ↑ / ऊपर भेजें</button>`
-        : "";
+      const ols = byOrder[o.id] || [];
+      const ls = ols.map((l) => `${esc(cName[l.sku]||l.sku)}×${l.qty}`).join(", ");
+      // short of stock? forward the shortfall upstream. The qty asked from the importer
+      // is editable per part — the customer's ordered qty is only the starting value.
+      // Forwarding bills to me (my name, my rate); the importer never sees the customer.
+      const canFwd = me && me.parent_id;
+      const fwd = canFwd ? `<div class="fwd-eu" data-order="${o.id}">
+          <div class="tscroll"><table><thead><tr><th>Part</th><th class="num">Ask importer</th></tr></thead><tbody>${
+            ols.map((l) => `<tr><td>${esc(cName[l.sku]||l.sku)}</td>
+              <td class="num"><input type="number" class="fw-qty" data-sku="${esc(l.sku)}" value="${l.qty}" min="0" max="500" inputmode="numeric" aria-label="Quantity to forward" style="width:64px;padding:6px;min-height:40px;text-align:right;"></td></tr>`).join("")
+          }</tbody></table></div>
+          <button class="btn-soft" data-forward-eu="${o.id}" style="margin-top:6px;">Forward ↑ / ऊपर भेजें</button>
+        </div>` : "";
       return `<div style="padding:6px 0;border-bottom:1px solid var(--border);">
         <b>${esc(o.customer_name||"customer")}</b>${o.customer_phone?" · "+esc(o.customer_phone):""} — <b>₹${Number(o.grand).toLocaleString("en-IN")}</b>
         <div class="muted">${esc(o.pi_number)} · ${esc(ls)}</div>${fwd}</div>`;
@@ -668,9 +675,19 @@ function boot(){
     if (fw){
       const isEu = fw.hasAttribute("data-forward-eu");
       const id = Number(fw.getAttribute(isEu ? "data-forward-eu" : "data-forward"));
-      if (!(await ask("Forward this order to your supplier? A purchase request at your buy rate is created, carrying the customer's ship-to. They never see your source.\nयह ऑर्डर अपने सप्लायर को भेजें?", { okLabel: "Forward / भेजें" }))) return;
+      // retail card: forward exactly the quantities the dealer typed per part (0 skips).
+      // dealer card: no per-line inputs → null, server forwards the auto-deficit.
+      let pLines = null;
+      const box = fw.closest(".fwd-eu");
+      if (box){
+        pLines = {};
+        box.querySelectorAll(".fw-qty").forEach((inp) => {
+          pLines[inp.getAttribute("data-sku")] = Math.max(0, Math.min(500, parseInt(inp.value, 10) || 0));
+        });
+      }
+      if (!(await ask("Forward to your supplier at your buy rate? It's billed to you under your own name — they never see the customer.\nअपने सप्लायर को अपने रेट पर भेजें?", { okLabel: "Forward / भेजें" }))) return;
       fw.disabled = true;
-      const { error } = await sb.rpc("forward_order", { p_kind: isEu ? "enduser" : "dealer", p_order_id: id });
+      const { error } = await sb.rpc("forward_order", { p_kind: isEu ? "enduser" : "dealer", p_order_id: id, p_lines: pLines });
       if (error){ fw.disabled = false; toast(friendlyErr(error)); return; }
       toast("Forwarded ↑ — it's now in My Orders / भेज दिया");
       return;
