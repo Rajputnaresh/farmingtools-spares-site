@@ -143,6 +143,8 @@
     <div class="panel" id="panel-network">
       <h2>My stock &amp; my network</h2>
       <p class="muted">You see your own balances plus everyone below you in the tree. Balances are live from the ledger.</p>
+      <input type="search" id="stock-filter" placeholder="Filter stock — part code, name or party / स्टॉक खोजें" aria-label="Filter stock" autocomplete="off"
+             style="width:100%;padding:12px;min-height:48px;font-size:16px;border:1px solid var(--border);border-radius:10px;margin-bottom:10px;">
       <div class="card" id="stock-card"><div class="muted">Loading…</div></div>
 
       <section id="add-downstream" class="hidden">
@@ -719,22 +721,39 @@ function boot(){
     const o = skuOptions(catalog); $("t-sku").innerHTML = o; if ($("o-sku")) $("o-sku").innerHTML = o;
   }
 
+  let stockRows = []; // all visible balances, cached so the filter box is instant
   async function renderStock(){
-    const { data, error } = await sb.from("current_stock").select("party_id, sku, qty");
+    // .range raises Supabase's default 1000-row cap — the importer can hold a row per SKU
+    const { data, error } = await sb.from("current_stock").select("party_id, sku, qty").range(0, 99999);
     if (error){ $("stock-card").innerHTML = '<div class="err">'+esc(friendlyErr(error))+'</div>'; return; }
     const pName = Object.fromEntries(parties.map((p) => [p.id, p.name]));
     const cName = Object.fromEntries(catalog.map((c) => [c.sku, c.product_code || c.sku]));
+    const cPart = Object.fromEntries(catalog.map((c) => [c.sku, c.particular || ""]));
     // client derives balances from ALL visible movements, which can include a movement's
     // other side (e.g. the parent supplier's own outgoing leg) even when that party itself
     // isn't in our visible party list — only show rows for parties we actually have a name for
-    const rows = (data||[]).filter((r) => r.qty !== 0 && pName[r.party_id] !== undefined)
-      .sort((a,b) => (pName[a.party_id]||"").localeCompare(pName[b.party_id]||""));
-    if (!rows.length){ $("stock-card").innerHTML = '<div class="muted">No stock recorded yet.</div>'; return; }
+    stockRows = (data||[]).filter((r) => r.qty !== 0 && pName[r.party_id] !== undefined)
+      .map((r) => ({ party: pName[r.party_id]||r.party_id, part: cName[r.sku]||r.sku, particular: cPart[r.sku]||"", qty: r.qty }))
+      .sort((a,b) => a.party.localeCompare(b.party) || a.part.localeCompare(b.part));
+    drawStock();
+  }
+  function drawStock(){
+    const q = (($("stock-filter")||{}).value || "").trim().toLowerCase();
+    const rows = q ? stockRows.filter((r) => (r.party+" "+r.part+" "+r.particular).toLowerCase().indexOf(q) !== -1) : stockRows;
+    if (!stockRows.length){ $("stock-card").innerHTML = '<div class="muted">No stock recorded yet.</div>'; return; }
+    if (!rows.length){ $("stock-card").innerHTML = '<div class="muted">No stock matches "'+esc(q)+'".</div>'; return; }
+    const count = q ? rows.length + " of " + stockRows.length : String(stockRows.length);
     $("stock-card").innerHTML =
+      '<div class="muted" style="margin-bottom:6px;">'+count+' stock line'+(stockRows.length===1?"":"s")+'</div>' +
       '<div class="tscroll"><table><thead><tr><th>Party</th><th>Part</th><th class="num">Qty</th></tr></thead><tbody>' +
-      rows.map((r) => `<tr><td>${esc(pName[r.party_id]||r.party_id)}</td><td>${esc(cName[r.sku]||r.sku)}</td><td class="num">${r.qty}</td></tr>`).join("") +
+      rows.map((r) => `<tr><td>${esc(r.party)}</td><td>${esc(r.part)}</td><td class="num">${r.qty}</td></tr>`).join("") +
       '</tbody></table></div>';
   }
+
+  let stockFilterTimer = null;
+  if ($("stock-filter")) $("stock-filter").addEventListener("input", () => {
+    clearTimeout(stockFilterTimer); stockFilterTimer = setTimeout(drawStock, 150);
+  });
 
   $("login-btn").onclick = async () => {
     show("login-err", false);
