@@ -256,6 +256,32 @@
   nav.bottom-nav button .nl-hi{ display:block; font-size:10px; font-weight:600; opacity:.85; line-height:1.15; }
   /* cart count is informational (green), not an alert like the red Requests badge */
   #cart-badge{ background:var(--green-dark); }
+
+  /* ---- motion: functional feedback only, 100–250ms, all reduced-motion guarded ---- */
+  :root{ --ease-quint: cubic-bezier(0.22,1,0.36,1); }
+  /* toast slides up as it appears; state feedback, not decoration */
+  @keyframes toastIn{ from{ opacity:0; transform:translate(-50%,10px); } to{ opacity:1; transform:translate(-50%,0); } }
+  #toast:not(.hidden){ animation:toastIn .2s var(--ease-quint); }
+  /* branded confirm sheet: backdrop fade + sheet scale-in */
+  @keyframes cfFade{ from{ opacity:0; } to{ opacity:1; } }
+  @keyframes cfRise{ from{ opacity:0; transform:translateY(8px) scale(.97); } to{ opacity:1; transform:none; } }
+  #cf-overlay{ animation:cfFade .16s ease-out; }
+  #cf-overlay .cf-box{ animation:cfRise .22s var(--ease-quint); }
+  /* count badge pops when it changes; new-request badge pulses to pull the eye */
+  @keyframes badgeBump{ 0%{ transform:scale(1);} 35%{ transform:scale(1.35);} 100%{ transform:scale(1);} }
+  .nav-badge.bump{ animation:badgeBump .3s var(--ease-quint); }
+  @keyframes reqPulse{ 0%{ box-shadow:0 0 0 0 rgba(192,57,43,.55);} 100%{ box-shadow:0 0 0 9px rgba(192,57,43,0);} }
+  #req-badge.pulse{ animation:reqPulse .7s ease-out 2; }
+  /* tactile press on the actions people tap most */
+  .btn-primary, .req-primary, .req-sub button, .add-btn, .cf-row button, .m-btn, .generate-btn{ transition:transform .1s ease; }
+  .btn-primary:active, .req-primary:active, .req-sub button:active, .add-btn:active, .cf-row button:active, .m-btn:active, .generate-btn:active{ transform:scale(.97); }
+  /* a handled request fades out before the list re-renders — confirms the action landed */
+  @keyframes cardOut{ to{ opacity:0; transform:scale(.98); } }
+  .req-card.req-done{ animation:cardOut .18s ease forwards; pointer-events:none; }
+  @media (prefers-reduced-motion: reduce){
+    #toast:not(.hidden), #cf-overlay, #cf-overlay .cf-box, .nav-badge.bump, #req-badge.pulse, .req-card.req-done{ animation:none !important; }
+    .btn-primary, .req-primary, .req-sub button, .add-btn, .cf-row button, .m-btn, .generate-btn{ transition:none !important; }
+  }
   /* subtle view-in so tab switches read as intentional, not a jump-cut */
   @keyframes kgViewIn{ from{ opacity:0; transform:translateY(5px); } to{ opacity:1; transform:none; } }
   main#main > section:not(.hidden){ animation:kgViewIn .18s ease-out; }
@@ -1354,7 +1380,9 @@
       }
       var f = await sb.rpc("fulfill_order", { p_order_id:id });
       if (f.error){ if (m){ m.className="req-msg err"; m.textContent = friendlyErr(f.error); } return; }
-      showToast("Billed & shipped ✓ / बिल हो गया"); renderRequests(); updateRequestBadge();
+      showToast("Billed & shipped ✓ / बिल हो गया");
+      if (card) card.classList.add("req-done");
+      setTimeout(function(){ renderRequests(); updateRequestBadge(); }, 180);
       return;
     }
     var fw = t.closest && (t.closest("[data-forward]") || t.closest("[data-forward-eu]"));
@@ -1368,7 +1396,9 @@
       var fmsg = isEu ? $("rem-"+fid) : $("rm-"+fid);
       var r = await sb.rpc("forward_order", { p_kind: isEu?"enduser":"dealer", p_order_id: fid, p_lines: pLines });
       if (r.error){ fw.disabled = false; if (fmsg){ fmsg.className="req-msg err"; fmsg.textContent = friendlyErr(r.error); } else showToast(friendlyErr(r.error)); return; }
-      showToast("Forwarded ↑ — it's now in My Orders / भेज दिया"); renderRequests(); updateRequestBadge();
+      showToast("Forwarded ↑ — it's now in My Orders / भेज दिया");
+      var fcard = fw.closest(".req-card"); if (fcard) fcard.classList.add("req-done");
+      setTimeout(function(){ renderRequests(); updateRequestBadge(); }, 180);
       return;
     }
     var ba = t.closest && t.closest("[data-billattach]");
@@ -1380,7 +1410,9 @@
       var rmsg = $("rm-"+rid);
       var rr = await sb.rpc("reject_order", { p_order_id: rid });
       if (rr.error){ if (rmsg){ rmsg.className="req-msg err"; rmsg.textContent = friendlyErr(rr.error); } else showToast(friendlyErr(rr.error)); return; }
-      showToast("Rejected / अस्वीकृत"); renderRequests(); updateRequestBadge();
+      showToast("Rejected / अस्वीकृत");
+      var jcard = ro.closest(".req-card"); if (jcard) jcard.classList.add("req-done");
+      setTimeout(function(){ renderRequests(); updateRequestBadge(); }, 180);
       return;
     }
   }
@@ -1406,6 +1438,7 @@
     try { var a = new (window.AudioContext||window.webkitAudioContext)(); var o = a.createOscillator(); var g = a.createGain();
       o.connect(g); g.connect(a.destination); o.frequency.value = 880; g.gain.value = 0.05; o.start(); o.stop(a.currentTime + 0.25); } catch(e){}
   }
+  var _lastReqCount = 0;
   async function updateRequestBadge(){
     if (!isSupplier()){ $("req-badge").classList.add("hidden"); return; }
     var r = await sb.from("orders").select("id", { count:"exact", head:true }).eq("importer_party", state.account.id).eq("status","placed");
@@ -1413,6 +1446,9 @@
     var b = $("req-badge");
     b.textContent = n > 99 ? "99+" : String(n);
     b.classList.toggle("hidden", n === 0);
+    // a growing count means a new request just landed — pulse to pull the eye
+    if (n > _lastReqCount && n > 0){ b.classList.remove("pulse"); void b.offsetWidth; b.classList.add("pulse"); }
+    _lastReqCount = n;
   }
   function subscribeSellerAlerts(){
     if (window._sellerSub || !isSupplier() || !sb) return;
@@ -1639,12 +1675,17 @@
     renderCatalogBody();
   }
 
+  var _lastCartCount = 0;
   function updateCartBadge(){
     var count = Object.keys(state.cart).reduce(function(sum, k){ return sum + (state.cart[k] || 0); }, 0);
     var badge = $("cart-badge");
     if (count > 0){ badge.textContent = count > 99 ? "99+" : String(count); badge.classList.remove("hidden"); }
     else badge.classList.add("hidden");
+    if (count > _lastCartCount) bump(badge); // pop only when the count grows
+    _lastCartCount = count;
   }
+  // restart a CSS animation class (feedback bump/pulse) reliably on repeat triggers
+  function bump(el){ if (!el) return; el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); }
   function setQty(idx, qty){
     var raw = Math.floor(qty) || 0;
     qty = Math.max(0, Math.min(999, raw));
