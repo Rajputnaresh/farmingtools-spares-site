@@ -31,6 +31,8 @@
     opacity:1; transition:opacity .25s ease-out;
   }
   .toast.fade{ opacity:0; }
+  .toast-undo{ margin-left:10px; background:none; border:0; color:#bfe9cb; font-weight:700;
+    font-size:13.5px; text-decoration:underline; cursor:pointer; padding:4px 2px; min-height:auto; }
   @media (prefers-reduced-motion: reduce){ .toast{ transition:none; } }
 
   /* keyboard focus visible everywhere (mouse clicks stay clean) */
@@ -182,13 +184,16 @@
     padding:10px 12px; margin-bottom:8px;
     display:flex; gap:12px; align-items:flex-start;
   }
-  /* catalogue page scan (no per-part crops exist) — tap to open the full page */
+  /* real per-part photo — tap to enlarge. Rows with no extracted photo swap to .thumb-ph (group icon). */
   .item-thumb{
     flex:0 0 66px; width:66px; height:66px; border:1px solid var(--border);
     border-radius:8px; object-fit:cover; object-position:top center;
     background:var(--bg); cursor:zoom-in;
   }
   .item-thumb:focus-visible{ outline:3px solid var(--focus, #2b6cff); outline-offset:2px; }
+  /* fallback when no per-part photo exists — a calm group icon, never a misleading page crop */
+  .thumb-ph{ display:flex; align-items:center; justify-content:center; cursor:default; color:var(--muted); }
+  .thumb-ph .t-icon{ width:30px; height:30px; }
   .item-main{ flex:1 1 auto; min-width:0; }
   .item-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
   .item-code{ font-weight:700; font-size:14px; color:var(--green-dark); }
@@ -562,6 +567,38 @@
       setTimeout(function(){ t.classList.add("hidden"); }, 260);
     }, 1600);
   }
+  // toast with an Undo action (5s window) — used for reversible cart-line removal
+  function undoToast(msg, onUndo){
+    var t = $("toast"); if (!t) return;
+    if (_toastTimer) clearTimeout(_toastTimer);
+    t.classList.remove("hidden", "fade");
+    t.textContent = msg + " ";
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "toast-undo"; b.textContent = "Undo / वापस";
+    b.onclick = function(){ if (_toastTimer) clearTimeout(_toastTimer); t.classList.add("hidden"); t.textContent = ""; onUndo(); };
+    t.appendChild(b);
+    _toastTimer = setTimeout(function(){
+      t.classList.add("fade");
+      setTimeout(function(){ t.classList.add("hidden"); t.textContent = ""; }, 260);
+    }, 5000);
+  }
+  // remove a cart line but keep it undoable — one path for Remove button and stepper-to-zero
+  function removeLine(idx, rerender){
+    var prev = state.cart[idx] || 0;
+    if (!prev) return;
+    setQty(idx, 0); rerender();
+    undoToast("Removed / हटाया", function(){ setQty(idx, prev); rerender(); });
+  }
+  // no per-part photo for this row — swap the broken img for a calm group icon, never a page crop.
+  // exposed on window because it's called from an inline onerror= handler (this is a module, so
+  // its own scope isn't global; inline handlers resolve against window).
+  function thumbFail(img){
+    var ph = document.createElement("div");
+    ph.className = "item-thumb thumb-ph"; ph.setAttribute("aria-hidden", "true");
+    ph.innerHTML = groupIconSvg(img.getAttribute("data-g") || 1);
+    img.replaceWith(ph);
+  }
+  window.thumbFail = thumbFail;
   function inr(n){ return "₹" + Number(n).toLocaleString("en-IN"); }
 
   function saveCart(){ try { localStorage.setItem(cartKey(), JSON.stringify(state.cart)); } catch(e){} }
@@ -846,7 +883,7 @@
     if (!state.account){ box.innerHTML = ""; return; }
     box.innerHTML = '<p style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</p>';
     var res = await sb.from("orders")
-      .select("pi_number, subtotal, gst, grand, status, created_at")
+      .select("pi_number, subtotal, gst, grand, status, created_at, amended, bill_url, ship_to")
       .eq("dealer_party", state.account.id)
       .order("created_at", { ascending: false });
     if (res.error){
@@ -863,8 +900,14 @@
     box.innerHTML = rows.map(function(o){
       var badge = o.status === "billed" ? "badge-green" : "badge-amber";
       var d = o.created_at ? new Date(o.created_at).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }) : "";
+      // amended = supplier adjusted quantities before billing; ship_to shows on forwarded
+      // purchase requests (drop-ship); bill_url = the bill travels with the order.
+      var extra = "";
+      if (o.amended) extra += '<div style="font-size:12px;color:var(--muted);">Adjusted by supplier / आपूर्तिकर्ता ने मात्रा बदली</div>';
+      if (o.ship_to) extra += '<div style="font-size:12px;color:var(--muted);">' + esc(o.ship_to) + '</div>';
+      if (o.bill_url) extra += '<a href="' + esc(o.bill_url) + '" target="_blank" rel="noopener" style="font-size:12.5px;font-weight:700;color:var(--green-dark);">View bill / बिल देखें</a>';
       return '<div class="order-row">' +
-        '<div><strong>' + (o.pi_number || "") + '</strong><div style="font-size:12px;color:var(--muted);">' + d + '</div></div>' +
+        '<div><strong>' + (o.pi_number || "") + '</strong><div style="font-size:12px;color:var(--muted);">' + d + '</div>' + extra + '</div>' +
         '<div style="text-align:right;"><span class="' + badge + '">' + (ORDER_STATUS_LABEL[o.status] || o.status || "") + '</span>' +
         '<div style="font-weight:600;">' + inr(o.grand) + '</div></div>' +
         '</div>';
@@ -1039,10 +1082,10 @@
       }
 
       return '<div class="item">' +
-        '<img class="item-thumb" src="' + esc(partPhoto(idx)) + '" data-fb="' + esc(pageScan(r)) + '" ' +
+        '<img class="item-thumb" src="' + esc(partPhoto(idx)) + '" data-g="' + esc(r.group) + '" ' +
           'alt="Photo of ' + esc(r.product_code || r.particular || "part") + '" title="Tap to enlarge / बड़ा करें" ' +
           'loading="lazy" role="button" tabindex="0" data-photo="' + idx + '" ' +
-          'onerror="if(this.dataset.fb){this.src=this.dataset.fb;this.dataset.fb=\'\';}else{this.style.display=\'none\';}">' +
+          'onerror="thumbFail(this)">' +
         '<div class="item-main">' +
         '<div class="item-top"><span class="item-code">' + code + '</span>' +
           '<span class="badge">' + esc(r.section || "") + '</span></div>' +
@@ -1133,8 +1176,9 @@
   function fmtDate(d){ return d.toLocaleDateString("en-IN"); }
 
   // Per-part photo, keyed by the row's catalog index (pages/parts/i<idx>.jpg — see
-  // scripts/extract_part_photos.py). The card falls back to the catalogue page scan
-  // (data-fb) when no photo exists, so every card always shows a correct image.
+  // scripts/extract_part_photos.py). When a row has no extracted photo, thumbFail()
+  // swaps the img for a calm group-icon placeholder — never a misleading page crop.
+  // pageScan is the full catalogue page, still reachable via the "Catalog page" button.
   function pageScan(r){ return "pages/g" + r.group + "/p-" + pad2(r.pdf_page) + ".jpg"; }
   function partPhoto(idx){ return "pages/parts/i" + idx + ".jpg"; }
 
@@ -1590,6 +1634,7 @@
       if (e.target.classList.contains("qty-plus")) val += 1;
       else if (e.target.classList.contains("qty-minus")) val = Math.max(0, val - 1);
       else return;
+      if (val === 0){ removeLine(sidx, renderCatalogBody); return; } // step down to 0 = removal, keep it undoable
       setQty(sidx, val); renderCatalogBody(); // stepper drives the cart directly now
     }
   }
@@ -1602,7 +1647,7 @@
   }
   function handleCartClick(e){
     var removeBtn = e.target.closest("[data-remove]");
-    if (removeBtn){ setQty(removeBtn.getAttribute("data-remove"), 0); renderCart(); return; }
+    if (removeBtn){ removeLine(removeBtn.getAttribute("data-remove"), renderCart); return; }
     var stepper = e.target.closest(".stepper");
     if (stepper){
       var idx = stepper.getAttribute("data-idx");
@@ -1610,6 +1655,8 @@
       var val = parseInt(input.value, 10) || 0;
       if (e.target.classList.contains("qty-plus")) val += 1;
       if (e.target.classList.contains("qty-minus")) val = Math.max(0, val - 1);
+      else if (!e.target.classList.contains("qty-plus")) return;
+      if (val === 0){ removeLine(idx, renderCart); return; } // stepper down to 0 = removal, keep it undoable
       setQty(idx, val); renderCart();
     }
   }

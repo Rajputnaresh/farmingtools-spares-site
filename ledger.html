@@ -33,6 +33,9 @@
   table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px;}
   th,td{border:1px solid var(--border);padding:7px 6px;text-align:left;} th{background:var(--green-light);color:var(--green-dark);}
   td.num,th.num{text-align:right;white-space:nowrap;} .muted{color:var(--muted);font-size:12.5px;}
+  /* forwarded requests carry the end customer's delivery details — must not be missed when packing */
+  .ship-to{background:var(--green-light);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin:8px 0 2px;font-weight:600;font-size:13px;}
+  .btn-soft{background:var(--green-light);color:var(--green-dark);border:1px solid var(--border);min-height:44px;font-size:13px;}
   .hidden{display:none;} .row2{display:flex;gap:8px;} .row2 > *{flex:1;}
   .config-note{background:#fff6e0;border:1px solid #f0c96b;color:#7a5b00;padding:10px;border-radius:8px;
     font-size:13px;margin:14px;line-height:1.5;}
@@ -508,9 +511,14 @@ function boot(){
     const cName = Object.fromEntries(catalog.map((c) => [c.sku, c.product_code || c.sku]));
     $("euorders-card").innerHTML = rows.map((o) => {
       const ls = (byOrder[o.id]||[]).map((l) => `${esc(cName[l.sku]||l.sku)}×${l.qty}`).join(", ");
+      // no stock for a retail order? forward it upstream as a purchase request that
+      // carries the customer's name/phone as ship-to (drop-ship; source stays hidden)
+      const fwd = me && me.parent_id
+        ? `<button class="btn-soft" data-forward-eu="${o.id}" style="margin-top:6px;">Forward ↑ / ऊपर भेजें</button>`
+        : "";
       return `<div style="padding:6px 0;border-bottom:1px solid var(--border);">
         <b>${esc(o.customer_name||"customer")}</b>${o.customer_phone?" · "+esc(o.customer_phone):""} — <b>₹${Number(o.grand).toLocaleString("en-IN")}</b>
-        <div class="muted">${esc(o.pi_number)} · ${esc(ls)}</div></div>`;
+        <div class="muted">${esc(o.pi_number)} · ${esc(ls)}</div>${fwd}</div>`;
     }).join("");
   }
 
@@ -541,13 +549,28 @@ function boot(){
     const cName = Object.fromEntries(catalog.map((c) => [c.sku, c.product_code || c.sku]));
     $("orders-card").innerHTML = rows.map((o) => {
       const ls = byOrder[o.id] || [];
-      const lineHtml = ls.map((l) => `<tr><td>${esc(cName[l.sku]||l.sku)}</td><td class="num">${l.qty}</td></tr>`).join("");
+      // qty is editable: change it and Bill & ship sends the adjusted quantities
+      // ("50 नहीं, 40 दे पाऊंगा") — 0 drops the line. Buyer sees the order marked adjusted.
+      const lineHtml = ls.map((l) => `<tr><td>${esc(cName[l.sku]||l.sku)}</td>
+        <td class="num"><input type="number" class="rq-qty" data-sku="${esc(l.sku)}" value="${l.qty}" min="0" max="500" inputmode="numeric" aria-label="Quantity" style="width:64px;padding:6px;min-height:40px;text-align:right;"></td></tr>`).join("");
+      const shipHtml = o.ship_to ? `<div class="ship-to">${esc(o.ship_to)}</div>` : "";
+      const billHtml = o.bill_url
+        ? ` · <a href="${esc(o.bill_url)}" target="_blank" rel="noopener">Bill / बिल</a>`
+        : "";
+      const fwdBtn = me && me.parent_id
+        ? `<button class="btn-soft" data-forward="${o.id}">Forward ↑ / ऊपर भेजें</button>`
+        : "";
       return `<div class="card" style="margin:0 0 10px;">
-        <div><b>${esc(pName[o.dealer_party]||"dealer")}</b> · ${esc(o.pi_number||"")}</div>
+        <div><b>${esc(pName[o.dealer_party]||"dealer")}</b> · ${esc(o.pi_number||"")}${o.amended ? ' · <span class="muted">adjusted / बदला</span>' : ''}${billHtml}</div>
+        ${shipHtml}
         <div class="tscroll"><table><thead><tr><th>Part</th><th class="num">Qty requested</th></tr></thead><tbody>${lineHtml}</tbody></table></div>
         <div class="row2" style="margin-top:8px;">
           <button class="btn-primary" data-fulfill="${o.id}" style="margin-top:0;">Bill &amp; ship / बिल करें</button>
           <button data-reject-order="${o.id}" style="background:#fdeceb;color:var(--danger);border:1px solid #f0b4ac;">Reject / अस्वीकार</button>
+        </div>
+        <div class="row2" style="margin-top:8px;">
+          ${fwdBtn}
+          <button class="btn-soft" data-billattach="${o.id}">Attach bill / बिल लगाएँ</button>
         </div>
         <div id="om-${o.id}"></div>
       </div>`;
@@ -573,6 +596,33 @@ function boot(){
        </div>`).join("");
   }
 
+  // bill upload: one hidden file input shared by every "Attach bill" button.
+  // File goes to the public 'bills' bucket under an unguessable uuid path, then
+  // attach_bill() pins the URL on the order (only a party of that order may).
+  let billTargetOrder = null;
+  const billFileInput = document.createElement("input");
+  billFileInput.type = "file";
+  billFileInput.accept = "application/pdf,image/*";
+  billFileInput.style.display = "none";
+  document.body.appendChild(billFileInput);
+  billFileInput.addEventListener("change", async () => {
+    const f = billFileInput.files && billFileInput.files[0];
+    const id = billTargetOrder;
+    billFileInput.value = ""; billTargetOrder = null;
+    if (!f || !id) return;
+    if (f.size > 10 * 1024 * 1024){ toast("File too big (max 10 MB) / फ़ाइल बड़ी है"); return; }
+    toast("Uploading bill… / बिल अपलोड हो रहा है");
+    const ext = (f.name.split(".").pop() || "pdf").toLowerCase().replace(/[^a-z0-9]/g, "") || "pdf";
+    const path = "o" + id + "-" + crypto.randomUUID() + "." + ext;
+    const { error: uerr } = await sb.storage.from("bills").upload(path, f);
+    if (uerr){ toast(friendlyErr(uerr)); return; }
+    const { data } = sb.storage.from("bills").getPublicUrl(path);
+    const { error } = await sb.rpc("attach_bill", { p_order_id: id, p_url: data.publicUrl });
+    if (error){ toast(friendlyErr(error)); return; }
+    await renderOrders();
+    toast("Bill attached ✓ / बिल लग गया");
+  });
+
   document.addEventListener("click", async (e) => {
     const jp = e.target.closest && e.target.closest("[data-jump]");
     if (jp){ setTab(jp.getAttribute("data-jump")); return; }
@@ -593,14 +643,38 @@ function boot(){
       const id = Number(ff.getAttribute("data-fulfill"));
       const card = ff.closest(".card");
       const who = (card && card.querySelector("b") && card.querySelector("b").textContent) || "this dealer";
-      if (!(await ask("Bill & ship to " + who + "? Stock moves now and can't be undone.\n" + who + " को बिल करें? स्टॉक अभी जाएगा, वापस नहीं होगा।", { okLabel: "Bill & ship / बिल करें" }))) return;
+      // any qty edited on the card? amend server-side first, then bill the adjusted order
+      const changed = [];
+      card.querySelectorAll(".rq-qty").forEach((inp) => {
+        const q = Math.max(0, Math.min(500, parseInt(inp.value, 10) || 0));
+        if (q !== Number(inp.defaultValue)) changed.push({ sku: inp.getAttribute("data-sku"), qty: q });
+      });
+      const note = changed.length ? "\nQuantities were adjusted — the buyer will see the change." : "";
+      if (!(await ask("Bill & ship to " + who + "? Stock moves now and can't be undone." + note + "\n" + who + " को बिल करें? स्टॉक अभी जाएगा, वापस नहीं होगा।", { okLabel: "Bill & ship / बिल करें" }))) return;
       const msg = document.getElementById("om-"+id); if (msg){ msg.className=""; msg.textContent="Billing…"; }
+      if (changed.length){
+        const { error: aerr } = await sb.rpc("amend_order_qty", { p_order_id: id, p_lines: changed });
+        if (aerr){ if (msg){ msg.className="err"; msg.textContent=friendlyErr(aerr); } return; }
+      }
       const { error } = await sb.rpc("fulfill_order", { p_order_id: id });
       if (error){ if (msg){ msg.className="err"; msg.textContent=friendlyErr(error); } return; }
       await renderOrders(); await renderStock(); await renderDashboard();
       toast("Billed & shipped ✓ / बिल हो गया");
       return;
     }
+    const fw = e.target.closest && (e.target.closest("[data-forward]") || e.target.closest("[data-forward-eu]"));
+    if (fw){
+      const isEu = fw.hasAttribute("data-forward-eu");
+      const id = Number(fw.getAttribute(isEu ? "data-forward-eu" : "data-forward"));
+      if (!(await ask("Forward this order to your supplier? A purchase request at your buy rate is created, carrying the customer's ship-to. They never see your source.\nयह ऑर्डर अपने सप्लायर को भेजें?", { okLabel: "Forward / भेजें" }))) return;
+      fw.disabled = true;
+      const { error } = await sb.rpc("forward_order", { p_kind: isEu ? "enduser" : "dealer", p_order_id: id });
+      if (error){ fw.disabled = false; toast(friendlyErr(error)); return; }
+      toast("Forwarded ↑ — it's now in My Orders / भेज दिया");
+      return;
+    }
+    const ba = e.target.closest && e.target.closest("[data-billattach]");
+    if (ba){ billTargetOrder = Number(ba.getAttribute("data-billattach")); billFileInput.click(); return; }
     if (ro){
       const id = Number(ro.getAttribute("data-reject-order"));
       if (!(await ask("Reject this request? / यह अनुरोध अस्वीकार करें?", { danger: true, okLabel: "Reject / अस्वीकार" }))) return;
