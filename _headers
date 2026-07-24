@@ -1,0 +1,4 @@
+# Netlify headers. Keep the whole pilot out of search indexes —
+# this covers catalog.json / accounts.json too, which a <meta> tag cannot.
+/*
+  X-Robots-Tag: noindex, nofollow

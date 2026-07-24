@@ -1,0 +1,1658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+<meta name="robots" content="noindex, nofollow">
+<title>FarmingTools.in Spares</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1e7d34">
+<style>
+  :root{
+    --green:#1e7d34; --green-dark:#155924; --green-light:#eaf7ee;
+    --border:#d7e6da; --text:#1b2b20; --muted:#5b6b60; --danger:#c0392b; --bg:#f6faf7;
+    --focus:#2b6cff;
+    --z-nav:20; --z-modal:50;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;}
+  html,body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--text); width:100%; overflow-x:hidden;
+  }
+  button, input, select{ font:inherit; }
+  button{ cursor:pointer; }
+  .hidden{ display:none !important; }
+  .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+  .toast{
+    position:fixed; left:50%; bottom:70px; transform:translateX(-50%);
+    background:var(--green-dark); color:#fff; font-size:13.5px; font-weight:700;
+    padding:10px 16px; border-radius:10px; z-index:var(--z-modal); max-width:90vw; text-align:center;
+    opacity:1; transition:opacity .25s ease-out;
+  }
+  .toast.fade{ opacity:0; }
+  @media (prefers-reduced-motion: reduce){ .toast{ transition:none; } }
+
+  /* keyboard focus visible everywhere (mouse clicks stay clean) */
+  button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible{
+    outline:3px solid var(--focus); outline-offset:2px; border-radius:8px;
+  }
+
+  /* header */
+  header.app-header{
+    position:sticky; top:0; z-index:var(--z-nav);
+    background:var(--green); color:#fff;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 12px; gap:8px;
+  }
+  header.app-header h1{ font-size:16px; margin:0; font-weight:700; line-height:1.2; }
+  header.app-header .sub{ font-size:11px; opacity:.85; font-weight:400; }
+  header.app-header.authed .sub{ display:none; }
+  header.app-header.authed .brand-btn{ min-height:auto; }
+  .brand-btn{ background:none; border:none; padding:0; margin:0; text-align:left; color:#fff; min-height:44px; min-width:0; overflow:hidden; }
+  .brand-btn h1{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .header-actions{ display:flex; align-items:center; gap:6px; flex-shrink:0; }
+  .icon-btn{ background:rgba(255,255,255,.15); border:none; color:#fff; border-radius:10px; min-height:44px; min-width:44px; display:inline-flex; align-items:center; justify-content:center; }
+  .cart-btn{
+    position:relative; background:rgba(255,255,255,.15); border:none; color:#fff;
+    border-radius:10px; padding:8px 12px; min-height:44px; min-width:44px;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  /* one consistent line-icon set; SVGs inherit button colour via currentColor */
+  .ico{ display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .ico svg{ display:block; width:22px; height:22px; stroke:currentColor; fill:none; }
+  .bottom-nav .ico svg{ width:22px; height:22px; }
+  .diagram-btn .ico svg, .btn-ico .ico svg{ width:16px; height:16px; }
+  .acct-phone .ico svg{ width:14px; height:14px; }
+  .btn-ico{ display:inline-flex; align-items:center; justify-content:center; gap:8px; }
+  .cart-badge{
+    position:absolute; top:-6px; right:-6px; background:#fff; color:var(--green-dark);
+    border-radius:50%; font-size:11px; font-weight:700; min-width:18px; height:18px;
+    display:flex; align-items:center; justify-content:center; padding:0 3px;
+  }
+  .logout-link{ background:rgba(255,255,255,.15); border:none; color:#fff; border-radius:10px; min-height:44px; min-width:44px; display:inline-flex; align-items:center; justify-content:center; }
+
+  main{ padding:10px 10px 90px; max-width:640px; margin:0 auto; }
+
+  /* login */
+  .login-wrap{ padding:40px 20px; max-width:420px; margin:0 auto; }
+  .login-wrap h2{ color:var(--green-dark); text-align:center; margin-bottom:4px; }
+  .login-wrap p.tag{ text-align:center; color:var(--muted); margin-top:0; font-size:13px; }
+  .field-label{ display:block; font-size:13px; font-weight:600; margin:14px 0 4px; color:var(--text); }
+  input[type=text], input[type=number], input[type=password], input[type=email], input[type=search]{
+    width:100%; padding:12px; border:1px solid var(--border); border-radius:10px;
+    font-size:16px; background:#fff; min-height:48px; -webkit-appearance:none; appearance:none;
+  }
+  .btn{
+    display:inline-block; border:none; border-radius:10px; padding:12px 16px;
+    font-size:15px; font-weight:700; min-height:48px;
+  }
+  .btn-primary{ background:var(--green); color:#fff; width:100%; margin-top:14px; }
+  .btn-primary:active{ background:var(--green-dark); }
+  .dash-cta{ text-decoration:none; text-align:center; margin-top:12px; }
+  .btn-outline{ background:#fff; color:var(--green-dark); border:1px solid var(--green); width:100%; margin-top:10px; }
+  .login-note{ text-align:center; font-size:12px; color:var(--muted); margin-top:16px; }
+  .pw-wrap{ position:relative; }
+  .pw-wrap input{ padding-right:64px; }
+  .pw-toggle{ position:absolute; right:4px; top:50%; transform:translateY(-50%); background:none; border:none;
+    color:var(--green-dark); font-size:13px; font-weight:700; min-width:56px; min-height:44px; }
+  .login-info{ background:var(--green-light); border:1px solid var(--border); color:var(--green-dark);
+    padding:8px 10px; border-radius:8px; font-size:12.5px; margin-top:12px; font-weight:600; text-align:center; }
+  .login-error{ background:#fdeceb; border:1px solid #f0b4ac; color:var(--danger); padding:8px 10px; border-radius:8px; font-size:13px; margin-top:12px; font-weight:600; text-align:center; }
+  .login-divider{ text-align:center; color:var(--muted); font-size:12px; margin:18px 0 6px; }
+
+  /* admin panel */
+  #view-admin{ padding:16px; max-width:680px; margin:0 auto; }
+  #view-admin h2{ color:var(--green-dark); margin:0; font-size:18px; }
+  .admin-head{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .admin-legend{ font-size:12px; color:var(--muted); margin:2px 0 12px; }
+  .admin-toolbar{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .admin-toolbar .btn{ width:auto; margin-top:0; padding:10px 14px; font-size:13px; }
+  .acct-card{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; }
+  .acct-top{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .acct-id{ font-weight:700; font-size:15px; color:var(--green-dark); }
+  .acct-company{ font-size:13.5px; color:var(--text); margin-top:3px; }
+  .acct-phone{ font-size:12.5px; color:var(--muted); margin-top:2px; display:flex; align-items:center; gap:5px; }
+  .acct-actions{ display:flex; gap:8px; margin-top:10px; }
+  .acct-actions button{ flex:1; min-height:44px; border-radius:8px; font-size:13.5px; font-weight:700; border:1px solid var(--border); background:#fff; color:var(--green-dark); }
+  .acct-actions .del{ color:var(--danger); border-color:#f0b4ac; }
+  @media (hover:hover){ .acct-actions button:hover{ background:var(--green-light); } .acct-actions .del:hover{ background:#fdeceb; } }
+  .admin-form{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:14px; }
+  .admin-form h3{ margin:0 0 10px; font-size:15px; color:var(--green-dark); }
+  .admin-form .field-label{ margin:10px 0 4px; }
+  .admin-form select{ width:100%; padding:12px; border:1px solid var(--border); border-radius:10px; font-size:15px; min-height:48px; background:#fff; }
+  .admin-form-actions{ display:flex; gap:8px; margin-top:14px; }
+  .admin-form-actions .btn{ flex:1; margin-top:0; }
+  /* admin stock editor */
+  .stock-tools{ margin-top:24px; border-top:1px solid var(--border); padding-top:14px; }
+  .stock-tools h3{ margin:0 0 8px; font-size:15px; color:var(--green-dark); }
+  .stock-row{ display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--border); border-radius:10px; padding:8px 10px; margin-bottom:6px; }
+  .stock-row .s-code{ font-weight:700; font-size:13.5px; color:var(--green-dark); flex-shrink:0; }
+  .stock-row .s-name{ font-size:12.5px; color:var(--muted); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .stock-row input{ width:84px; min-height:44px; padding:8px; text-align:right; }
+
+  .notice{
+    background:#fff6e0; border:1px solid #f0c96b; color:#7a5b00;
+    padding:8px 10px; border-radius:8px; font-size:12.5px; margin:10px 0;
+  }
+  .dealer-strip{
+    display:flex; justify-content:space-between; align-items:center; gap:8px;
+    background:var(--green-light); border:1px solid var(--border); border-radius:10px;
+    padding:8px 10px; margin-bottom:10px; font-size:13px;
+  }
+  .dealer-strip .name{ font-weight:700; color:var(--green-dark); }
+
+  /* search & filters */
+  .search-row{ position:relative; margin-bottom:8px; }
+  .search-row input{ padding-right:46px; }
+  /* placeholder carries the search hint — keep it ≥4.5:1 (muted green-gray on white) */
+  .search-row input::placeholder{ color:var(--muted); opacity:1; }
+  /* type=search adds a native clear ✕; hide it so our own button is the only one */
+  .search-row input::-webkit-search-cancel-button{ -webkit-appearance:none; appearance:none; }
+  .search-clear{
+    position:absolute; right:6px; top:50%; transform:translateY(-50%);
+    background:none; border:none; font-size:20px; color:var(--muted);
+    width:44px; height:44px; line-height:1; border-radius:8px;
+  }
+  .filter-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+  .filter-row select{
+    flex:1 1 140px; min-width:0; padding:12px 10px; border:1px solid var(--border);
+    border-radius:10px; background:#fff; font-size:13px; min-height:48px;
+  }
+  .result-count{ font-size:12px; color:var(--muted); margin:2px 0 8px; }
+  .list-reset{ background:none; border:none; color:var(--green-dark); font-weight:600; font-size:13px; min-height:44px; padding:6px 2px; margin-bottom:2px; }
+
+  /* browse landing (progressive disclosure over 1,746 SKUs) */
+  .browse-head{ font-size:15px; font-weight:700; color:var(--green-dark); margin:6px 0 12px; }
+  .browse-back{ background:none; border:none; color:var(--green-dark); font-weight:600; font-size:13px; min-height:44px; padding:6px 2px; margin-bottom:4px; }
+  .tiles{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .tile{
+    background:#fff; border:1px solid var(--border); border-radius:12px;
+    padding:14px 12px; text-align:left; min-height:72px;
+    display:flex; flex-direction:column; justify-content:center; gap:4px;
+  }
+  .tile:active{ border-color:var(--green); }
+  .tile .t-icon{ width:26px; height:26px; color:var(--green); margin-bottom:2px; }
+  .tile .t-name{ font-weight:700; font-size:13.5px; color:var(--text); line-height:1.3; }
+  .tile .t-count{ font-size:12px; color:var(--muted); }
+
+  /* list */
+  .item{
+    background:#fff; border:1px solid var(--border); border-radius:12px;
+    padding:10px 12px; margin-bottom:8px;
+    display:flex; gap:12px; align-items:flex-start;
+  }
+  /* catalogue page scan (no per-part crops exist) — tap to open the full page */
+  .item-thumb{
+    flex:0 0 66px; width:66px; height:66px; border:1px solid var(--border);
+    border-radius:8px; object-fit:cover; object-position:top center;
+    background:var(--bg); cursor:zoom-in;
+  }
+  .item-thumb:focus-visible{ outline:3px solid var(--focus, #2b6cff); outline-offset:2px; }
+  .item-main{ flex:1 1 auto; min-width:0; }
+  .item-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .item-code{ font-weight:700; font-size:14px; color:var(--green-dark); }
+  .badge{
+    background:var(--green-light); color:var(--green-dark); font-size:10.5px; font-weight:600;
+    padding:3px 7px; border-radius:20px; white-space:nowrap;
+  }
+  .item-particular{ font-size:13.5px; margin:4px 0 8px; color:var(--text); line-height:1.35; }
+  /* availability from Supabase (importer_availability) — dealers see in/out only, never the quantity */
+  .stock-badge{ font-size:10.5px; font-weight:600; padding:3px 7px; border-radius:20px; white-space:nowrap; }
+  .stock-in{ background:var(--green-light); color:var(--green-dark); }
+  /* out-of-stock is a calm, muted state — not an alarm (most of the catalog may be unstocked) */
+  .stock-out{ background:#eef0ee; color:var(--muted); }
+  .item-bottom{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+  .rate{ font-weight:700; font-size:14.5px; color:var(--text); }
+  .rate.na{ color:var(--muted); font-weight:600; font-size:12.5px; }
+  .item-controls{ display:flex; align-items:center; gap:6px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; }
+  .diagram-btn{
+    background:var(--green-light); color:var(--green-dark); border:1px solid var(--border); border-radius:8px;
+    padding:8px 10px; font-size:12px; font-weight:600; min-height:44px;
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .stepper{ display:flex; align-items:center; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .stepper button{ background:var(--green-light); border:none; width:44px; height:44px; font-size:18px; color:var(--green-dark); font-weight:700; }
+  .stepper input{ width:46px; text-align:center; border:none; padding:0; height:44px; min-height:44px; -moz-appearance:textfield; font-size:15px; }
+  .add-btn{
+    background:var(--green); color:#fff; border:none; border-radius:8px; padding:8px 14px;
+    font-size:13px; font-weight:700; min-height:44px;
+  }
+  .add-btn[disabled], .stepper[disabled]{ opacity:.5; }
+  .demand-btn{ background:#fff; color:#a15c00; border:1px solid #e0a83a; }
+  .show-more{ background:#fff; border:1px solid var(--green); color:var(--green-dark); border-radius:10px; width:100%; min-height:48px; font-weight:700; font-size:14px; margin:4px 0 8px; }
+  .empty-state{ text-align:center; color:var(--muted); padding:40px 10px; font-size:13.5px; line-height:1.6; }
+  .empty-state .retry-btn{ display:inline-block; margin-top:12px; background:var(--green); color:#fff; border:none; border-radius:10px; min-height:44px; padding:0 18px; font-weight:700; }
+  .spinner{ width:26px; height:26px; border:3px solid var(--border); border-top-color:var(--green); border-radius:50%; margin:0 auto 12px; animation:spin .8s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce){ .spinner{ animation:none; } }
+
+  /* bottom nav (catalog view) */
+  nav.bottom-nav{
+    position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid var(--border);
+    display:flex; z-index:var(--z-nav);
+  }
+  nav.bottom-nav button{
+    flex:1; background:none; border:none; padding:8px 4px; min-height:52px; font-size:12px; font-weight:600; color:var(--muted);
+    display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+  }
+  nav.bottom-nav button.active .ico svg{ stroke:var(--green-dark); }
+  nav.bottom-nav button.active{ color:var(--green-dark); }
+
+  /* cart */
+  .cart-item{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:8px; }
+  .cart-item-top{ display:flex; justify-content:space-between; gap:8px; }
+  .cart-item-name{ font-size:13.5px; font-weight:600; }
+  .cart-item-code{ font-size:11.5px; color:var(--muted); }
+  .cart-item-bottom{ display:flex; align-items:center; justify-content:space-between; margin-top:8px; }
+  .remove-btn{ background:none; border:none; color:var(--danger); font-size:12px; font-weight:700; min-height:44px; padding:6px 8px; }
+  .line-total{ font-weight:700; font-size:13.5px; }
+  .grand-total-bar{
+    background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px; margin-top:10px;
+    display:flex; justify-content:space-between; align-items:center; font-size:15px; font-weight:700;
+  }
+  .generate-btn{ background:var(--green); color:#fff; border:none; border-radius:10px; padding:14px; width:100%; margin-top:12px; font-size:15px; font-weight:700; min-height:48px; }
+  .generate-btn[disabled]{ opacity:.5; }
+
+  /* orders */
+  .order-row{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; gap:8px; font-size:13.5px; }
+  .badge-green, .badge-amber{ display:inline-block; border-radius:8px; padding:2px 8px; font-size:11px; font-weight:700; margin-bottom:3px; }
+  .badge-green{ background:var(--green-light); color:var(--green-dark); }
+  .badge-amber{ background:var(--bg); color:var(--muted); border:1px solid var(--border); }
+
+  /* PI */
+  .pi-box{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px; }
+  .pi-seller{ text-align:center; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:10px; }
+  .pi-seller .biz{ font-size:18px; font-weight:800; color:var(--green-dark); letter-spacing:-0.01em; }
+  .pi-seller .biz-line{ font-size:11.5px; color:var(--muted); margin-top:3px; line-height:1.5; }
+  .pi-head{ text-align:center; margin-bottom:10px; }
+  .pi-head h2{ margin:0; color:var(--text); font-size:15px; letter-spacing:.02em; }
+  .pi-head .pi-no{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .pi-meta{ font-size:13px; margin:10px 0; line-height:1.6; }
+  table.pi-table{ width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; }
+  table.pi-table th, table.pi-table td{ border:1px solid var(--border); padding:6px 5px; text-align:left; word-break:break-word; overflow-wrap:anywhere; }
+  table.pi-table th{ background:var(--green-light); color:var(--green-dark); }
+  table.pi-table td.num, table.pi-table th.num{ text-align:right; white-space:nowrap; }
+  .pi-totals{ margin-top:10px; font-size:13px; }
+  .pi-totals .row{ display:flex; justify-content:space-between; padding:3px 0; font-size:13px; }
+  .pi-grand{ display:flex; justify-content:space-between; font-weight:800; font-size:15px; margin-top:6px; border-top:1px solid var(--border); padding-top:8px; }
+  .pi-footer{ font-size:11px; color:var(--muted); margin-top:14px; border-top:1px dashed var(--border); padding-top:8px; line-height:1.5; }
+  .pi-actions{ display:flex; gap:8px; margin-top:14px; }
+  .pi-actions .btn{ flex:1; margin-top:0; }
+  .wa-btn{ background:var(--green-dark); color:#fff; }
+  .back-link{ display:inline-block; margin-bottom:10px; font-size:13px; color:var(--green-dark); font-weight:600; background:none; border:none; min-height:44px; padding:6px 0; }
+  .pi-success{ background:var(--green-light); border:1px solid var(--border); color:var(--green-dark); border-radius:8px; padding:8px 10px; font-size:12.5px; margin-bottom:10px; font-weight:600; }
+
+  /* modal */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:var(--z-modal);
+    display:flex; align-items:center; justify-content:center; padding:10px;
+  }
+  .modal-box{ background:#fff; border-radius:12px; width:100%; max-width:520px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; }
+  .modal-head{ display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-bottom:1px solid var(--border); }
+  .modal-head h3{ margin:0; font-size:14px; }
+  .modal-close{ background:none; border:none; font-size:24px; line-height:1; min-height:44px; min-width:44px; color:var(--muted); }
+  .modal-note{ font-size:11.5px; color:var(--muted); padding:8px 12px; border-bottom:1px solid var(--border); line-height:1.5; background:var(--green-light); }
+  .modal-zoom-row{ display:flex; gap:8px; padding:8px 12px; border-bottom:1px solid var(--border); }
+  .modal-zoom-row button{ flex:1; background:var(--green-light); border:1px solid var(--border); border-radius:8px; min-height:44px; padding:8px; font-size:13px; font-weight:700; color:var(--green-dark); }
+  .modal-img-wrap{ overflow:auto; flex:1; background:#f0f0f0; touch-action:pan-x pan-y pinch-zoom; }
+  .modal-img-wrap img{ display:block; width:100%; height:auto; }
+
+  @media (hover:hover){
+    .btn-primary:hover{ background:var(--green-dark); }
+    .add-btn:hover{ background:var(--green-dark); }
+    .diagram-btn:hover{ background:#dcefe1; }
+    .stepper button:hover{ background:#dcefe1; }
+    .tile:hover{ border-color:var(--green); }
+    .generate-btn:hover{ background:var(--green-dark); }
+    .show-more:hover{ background:var(--green-light); }
+    nav.bottom-nav button:hover{ color:var(--green-dark); }
+  }
+
+  @media print{
+    body *{ visibility:hidden; }
+    #view-pi, #view-pi *{ visibility:visible; }
+    #view-pi{ position:absolute; top:0; left:0; width:100%; padding:0; margin:0; }
+    .pi-actions, .back-link, .pi-success{ display:none !important; }
+    header.app-header, nav.bottom-nav{ display:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="sr-live" class="sr-only" aria-live="polite"></div>
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+<header class="app-header" id="app-header">
+  <button class="brand-btn" id="home-brand" type="button" aria-label="Home / होम" title="Home / होम">
+    <h1>FarmingTools.in Spares</h1>
+    <div class="sub">Spare parts ordering / स्पेयर पार्ट्स ऑर्डर</div>
+  </button>
+  <div class="header-actions hidden" id="header-actions">
+    <button class="cart-btn" id="cart-btn" aria-label="Cart / कार्ट" title="Cart / कार्ट"><span class="ico" data-ico="cart" aria-hidden="true"></span><span class="cart-badge hidden" id="cart-badge">0</span></button>
+    <button class="logout-link" id="auth-btn" aria-label="Sign Out / साइन आउट" title="Sign Out / साइन आउट"><span class="ico" data-ico="logout" aria-hidden="true"></span></button>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- LOGIN -->
+  <section id="view-login" class="login-wrap">
+    <h2 id="login-title">Sign In / साइन इन</h2>
+
+    <div id="signin-box">
+      <p class="tag">साइन इन — enter your email and password</p>
+      <label class="field-label" for="login-id">Email / ईमेल</label>
+      <input type="email" id="login-id" placeholder="you@example.com" autocomplete="username" autocapitalize="none">
+      <label class="field-label" for="login-password">Password / पासवर्ड</label>
+      <div class="pw-wrap">
+        <input type="password" id="login-password" placeholder="password" autocomplete="current-password">
+        <button type="button" class="pw-toggle" data-pw-toggle="login-password" aria-label="Show password / पासवर्ड दिखाएँ">Show</button>
+      </div>
+      <button class="btn btn-primary" id="login-submit">Login / साइन इन</button>
+      <div id="login-error" class="login-error hidden" role="alert"></div>
+      <div id="login-info" class="login-info hidden"></div>
+      <p class="login-divider">— new dealer? / नया डीलर? —</p>
+      <button class="btn btn-outline" id="show-register">Create an account / खाता बनाएँ</button>
+      <p class="login-note">Sign in with your dealer/distributor login for your own net price.<br>अपने लॉगिन से साइन इन करें; आपको आपकी दर दिखेगी।</p>
+    </div>
+
+    <div id="register-box" class="hidden">
+      <p class="tag">नया खाता बनाएँ — the importer will approve it before you can order</p>
+      <label class="field-label" for="reg-business">Business name / दुकान का नाम</label>
+      <input type="text" id="reg-business" placeholder="e.g. Sharma Agro" autocomplete="organization">
+      <label class="field-label" for="reg-phone">Phone / फ़ोन</label>
+      <input type="text" id="reg-phone" placeholder="10-digit mobile" inputmode="tel" autocomplete="tel">
+      <label class="field-label" for="reg-email">Email / ईमेल</label>
+      <input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email" autocapitalize="none">
+      <label class="field-label" for="reg-password">Create a password / पासवर्ड बनाएँ</label>
+      <div class="pw-wrap">
+        <input type="password" id="reg-password" placeholder="at least 6 characters" autocomplete="new-password">
+        <button type="button" class="pw-toggle" data-pw-toggle="reg-password" aria-label="Show password / पासवर्ड दिखाएँ">Show</button>
+      </div>
+      <button class="btn btn-primary" id="register-submit">Send registration / भेजें</button>
+      <div id="register-error" class="login-error hidden" role="alert"></div>
+      <div id="register-done" class="pi-success hidden" style="margin-top:12px;"></div>
+      <button class="btn btn-outline" id="register-cancel">&larr; Back to sign in / वापस</button>
+    </div>
+  </section>
+
+  <!-- CATALOG -->
+  <section id="view-catalog" class="hidden">
+    <div class="dealer-strip" id="dealer-strip"></div>
+    <div id="notice-area"></div>
+    <div class="search-row">
+      <input type="search" id="search-box" enterkeyhint="search" autocomplete="off" aria-label="Search parts / पुर्जे खोजें" aria-controls="catalog-body" placeholder="Search / खोजें — code, name, sr no.">
+      <button class="search-clear hidden" id="search-clear" type="button" aria-label="Clear search / खोज साफ़ करें">&times;</button>
+    </div>
+    <div class="filter-row hidden" id="filter-row">
+      <select id="filter-group" aria-label="Filter by machine group / समूह"><option value="">All Groups</option></select>
+      <select id="filter-section" aria-label="Filter by section / अनुभाग"><option value="">All Sections</option></select>
+    </div>
+    <div id="catalog-body"></div>
+  </section>
+
+  <!-- CART -->
+  <section id="view-cart" class="hidden">
+    <h2 style="color:var(--green-dark);font-size:17px;margin:4px 0 10px;">Cart / कार्ट</h2>
+    <div id="cart-list"></div>
+    <div class="grand-total-bar">
+      <span>Subtotal / उप-योग</span>
+      <span id="cart-grand-total">₹0</span>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin:6px 2px 0;">+ 5% GST added at checkout / चेकआउट पर 5% GST जुड़ेगा</p>
+    <div id="eu-contact" class="hidden">
+      <label class="field-label" for="eu-name">Your name / आपका नाम</label>
+      <input type="text" id="eu-name" autocomplete="name" placeholder="Full name">
+      <label class="field-label" for="eu-phone">Phone / फ़ोन</label>
+      <input type="text" id="eu-phone" inputmode="tel" autocomplete="tel" placeholder="10-digit mobile">
+    </div>
+    <div id="cart-oos-note" class="login-error hidden" style="margin-top:10px;">Remove out-of-stock items to continue / जारी रखने के लिए स्टॉक-रहित पुर्जे हटाएँ</div>
+    <button class="generate-btn" id="generate-pi-btn">Generate PI</button>
+  </section>
+
+  <!-- PI -->
+  <section id="view-pi" class="hidden">
+    <button class="back-link" id="pi-back-btn">&larr; Back to Cart</button>
+    <div class="pi-box" id="pi-box"></div>
+  </section>
+
+  <!-- Orders -->
+  <section id="view-orders" class="hidden">
+    <h2 style="color:var(--green-dark);font-size:17px;margin:4px 0 10px;">My Orders / मेरे ऑर्डर</h2>
+    <div id="orders-list"></div>
+  </section>
+
+</main>
+
+<nav class="bottom-nav hidden" id="bottom-nav">
+  <button id="nav-catalog" class="active"><span class="ico" data-ico="home" aria-hidden="true"></span>Home / होम</button>
+  <button id="nav-cart"><span class="ico" data-ico="cart" aria-hidden="true"></span>Cart / कार्ट</button>
+  <button id="nav-orders" class="hidden"><span class="ico" data-ico="orders" aria-hidden="true"></span>My Orders / मेरे ऑर्डर</button>
+  <button id="nav-manage" class="hidden"><span class="ico" data-ico="manage" aria-hidden="true"></span>Manage / प्रबंधन</button>
+</nav>
+
+<div id="modal-root"></div>
+
+<script src="supabase/config.js"></script>
+<script type="module">
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+  var c = window.LEDGER_CONFIG;
+  window.__sb = (c && c.SUPABASE_URL && c.SUPABASE_URL.indexOf("YOUR-PROJECT") === -1)
+    ? createClient(c.SUPABASE_URL, c.SUPABASE_ANON_KEY) : null;
+  window.__sbReady = true;
+  window.dispatchEvent(new Event("sb-ready"));
+</script>
+<script>
+(function(){
+  "use strict";
+
+  var SELLER = {
+    name: "FarmingTools.in Spares",
+    gstin: "08EQLPD7160R1Z2",
+    place: "Jaipur, Rajasthan",
+    phone: "6006078815"
+  };
+  var PI_VALID_DAYS = 15;
+  var GST_PCT = 5;          // GST added on top of the subtotal at checkout (PI).
+  var FALLBACK_MARGIN_PCT = 20; // used only if roles/account data is somehow missing
+  var RENDER_CHUNK = 150;   // cap DOM nodes; "Show more" appends another chunk
+
+  var GROUP_LABELS = {
+    1: "Brush Cutter / Chainsaw / Tiller / Auger",
+    2: "Weeders / Gearbox / Pump",
+    3: "Sprayers / Washers",
+    4: "Fogging / Seeder / Others"
+  };
+  // flat single-color line icons, one per machine group, so browse tiles read
+  // by shape/color for low-literacy users instead of by model-code text alone
+  var GROUP_ICONS = {
+    // cutting tools (brush cutter / chainsaw / tiller / auger) — circular saw blade
+    1: '<circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.1"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M5.6 5.6l1.7 1.7M16.7 16.7l1.7 1.7M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7"/>',
+    // powered ground machines (weeders / gearbox / pump) — wheeled machine
+    2: '<circle cx="7" cy="17" r="3"/><circle cx="17" cy="17" r="3"/><path d="M7 17V8h8l3 5"/>',
+    // sprayers / washers — water drop
+    3: '<path d="M12 3l5 8a5 5 0 11-10 0z"/>',
+    // fogging / seeder / others — seedling
+    4: '<path d="M12 22V12"/><path d="M12 12C12 8 9 6 5 6c0 4 3 6 7 6z"/><path d="M12 11C12 7.5 14.5 5.5 18 5.5c0 3.5-2.5 5.5-6 5.5z"/>'
+  };
+  function groupIconSvg(g){
+    return '<svg class="t-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      (GROUP_ICONS[g] || GROUP_ICONS[1]) + '</svg>';
+  }
+
+  // one line-icon set for the whole UI (replaces emojis). currentColor = inherits button colour.
+  var ICON_PATHS = {
+    home:    '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/>',
+    cart:    '<circle cx="9.5" cy="20" r="1.4"/><circle cx="17.5" cy="20" r="1.4"/><path d="M3 4h2l2.2 11a1 1 0 0 0 1 .8h8.2a1 1 0 0 0 1-.8L20 8H6"/>',
+    logout:  '<path d="M14 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4"/><path d="m9 16 4-4-4-4"/><path d="M13 12H3"/>',
+    page:    '<path d="M14 3H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7z"/><path d="M14 3v4h4"/>',
+    print:   '<path d="M7 9V3h10v6"/><path d="M7 18H5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-2"/><path d="M7 14h10v7H7z"/>',
+    whatsapp:'<path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.6L3 21l1.9-5.6A8.5 8.5 0 1 1 21 11.5z"/>',
+    phone:   '<path d="M15.5 21A13.5 13.5 0 0 1 3 8.5 2 2 0 0 1 5 6.5h2.2a1 1 0 0 1 1 .8l.7 3a1 1 0 0 1-.28 1L7.2 12.8a11 11 0 0 0 4 4l1.5-1.4a1 1 0 0 1 1-.28l3 .7a1 1 0 0 1 .8 1V19a2 2 0 0 1-2 2z"/>',
+    orders:  '<path d="M8 3h8a1 1 0 0 1 1 1v16l-4.5-2.5L8 20V4a1 1 0 0 1 1-1z"/><path d="M9 8h6M9 12h6"/>',
+    manage:  '<circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a1.7 1.7 0 0 1 0-3l1-.6-1-1.7-1.1.4a1.7 1.7 0 0 1-2.6-1l-.1-1.1h-2l-.1 1.1a1.7 1.7 0 0 1-2.6 1l-1.1-.4-1 1.7 1 .6a1.7 1.7 0 0 1 0 3l-1 .6 1 1.7 1.1-.4a1.7 1.7 0 0 1 2.6 1l.1 1.1h2l.1-1.1a1.7 1.7 0 0 1 2.6-1l1.1.4 1-1.7z"/>'
+  };
+  function svgRaw(name){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      (ICON_PATHS[name] || '') + '</svg>';
+  }
+  function svgIco(name){ return '<span class="ico" aria-hidden="true">' + svgRaw(name) + '</span>'; }
+  // fill the static [data-ico] placeholders (header + bottom nav) once
+  function paintIcons(){
+    document.querySelectorAll('[data-ico]').forEach(function(el){ el.innerHTML = svgRaw(el.getAttribute('data-ico')); });
+  }
+  var ROLE_LABELS = {
+    distributor: "Distributor price",
+    dealer: "Dealer price",
+    shopkeeper: "Shopkeeper price",
+    enduser: "Retail price"
+  };
+  var SESSION_KEY = "kg_session";
+  var LAST_ORDER_PREFIX = "kg_last_order_"; // per-account, so a dealer can reorder their usual parts
+  // cart storage is scoped per identity so one browser can't leak/mix carts between
+  // a retail link, a signed-in dealer, and a guest — see loadCart()/saveCart()
+  function cartKey(){
+    if (state.enduser) return "kg_cart_eu_" + state.enduser;
+    if (state.session && state.session.id) return "kg_cart_" + state.session.id;
+    return "kg_cart_guest";
+  }
+
+  var sb = null; // Supabase client; assigned from window.__sb in init() (module bootstrap runs deferred)
+  // catalog line position is the stable SKU (matches supabase/build-seed.mjs: L0001, L0002, …)
+  function skuOf(i){ return "L" + String(i + 1).padStart(4, "0"); }
+  function skuToIndex(sku){ return parseInt(String(sku).slice(1), 10) - 1; }
+
+  var state = {
+    catalog: [],
+    priceByIndex: [],      // net rate per catalog index (from my_prices RPC); undefined = no price
+    availByIndex: [],      // qty (number) or in/out (boolean) per catalog index; undefined = no badge
+    enduser: null,         // supplier party id when opened via a retail link (?s=…)
+    supplierName: null,
+    loading: true,
+    loadError: false,
+    session: null,         // { id: auth user uid, email, role }
+    account: null,         // { company, role, id } resolved from the parties table
+    cart: {},
+    piInfo: null,
+    mode: "browse",       // "browse" | "list"
+    browseGroup: null,     // group being drilled into on the browse landing
+    renderLimit: RENDER_CHUNK
+  };
+
+  function esc(s){
+    if (s === null || s === undefined) return "";
+    return String(s).replace(/[&<>"']/g, function(c){
+      return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c];
+    });
+  }
+  function $(id){ return document.getElementById(id); }
+  // part names arrive ALL-CAPS; title-case them for readability (search still uses the raw data)
+  function nice(s){ return String(s == null ? "" : s).toLowerCase().replace(/\b([a-z])/g, function(m, c){ return c.toUpperCase(); }); }
+
+  function cartCount(){ return Object.keys(state.cart).reduce(function(s,k){ return s + (state.cart[k]||0); }, 0); }
+  function announce(msg){ var el = $("sr-live"); if (el){ el.textContent = ""; el.textContent = msg; } }
+  var _toastTimer = null;
+  function showToast(msg){
+    var t = $("toast"); if (!t) return;
+    t.textContent = msg; t.classList.remove("hidden", "fade");
+    if (_toastTimer) clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(function(){
+      t.classList.add("fade");
+      setTimeout(function(){ t.classList.add("hidden"); }, 260);
+    }, 1600);
+  }
+  function inr(n){ return "₹" + Number(n).toLocaleString("en-IN"); }
+
+  function saveCart(){ try { localStorage.setItem(cartKey(), JSON.stringify(state.cart)); } catch(e){} }
+  function loadCart(){
+    try { var raw = localStorage.getItem(cartKey()); state.cart = raw ? JSON.parse(raw) : {}; }
+    catch(e){ state.cart = {}; }
+  }
+
+  // ---------- pricing & availability (from Supabase, per signed-in dealer) ----------
+  // Prices come from the my_prices RPC — the importer's landing cost never reaches the
+  // client, only the dealer's own net rate. Availability is in/out only (quantity stays private).
+  function netRate(idx){ var v = state.priceByIndex[idx]; return (v === undefined || v === null) ? null : v; }
+  function availOf(idx){ return state.availByIndex[idx]; } // true / false / undefined
+
+  // every generated PI is saved privately to Supabase (orders/order_lines) for the importer:
+  // who ordered what, how much, when — demand data, invisible to other dealers (RLS).
+  // returns a Promise<boolean> so the caller can hold the "PI ready" screen until this settles
+  // and show a clear failure banner (instead of a silent console.warn) when it doesn't.
+  function placeOrder(pi){
+    if (!sb) return Promise.resolve(false);
+    if (state.enduser){
+      return sb.rpc("place_enduser_order", {
+        p_supplier: state.enduser, p_name: pi.dealerName,
+        p_phone: (($("eu-phone") || {}).value || "").trim() || null,
+        p_lines: pi.lines.map(function(l){ return { sku: l.sku, qty: l.qty }; })
+      }).then(function(res){
+        if (res && res.error){ console.warn("order save failed:", res.error.message); return false; }
+        return true;
+      }).catch(function(){ return false; });
+    }
+    return sb.rpc("place_order", {
+      p_pi: pi.number, p_subtotal: pi.subtotal, p_gst: pi.gst, p_grand: pi.grand,
+      p_lines: pi.lines.map(function(l){ return { sku: l.sku, qty: l.qty, rate: l.rate, amount: l.amount }; })
+    }).then(function(res){
+      if (res && res.error){ console.warn("order save failed:", res.error.message); return false; }
+      return true;
+    }).catch(function(){ return false; });
+  }
+
+  // remembers the cart behind a dealer's most recent generated PI, so a repeat
+  // order (this tool's whole premise) doesn't have to start from zero every time
+  function saveLastOrder(){
+    if (!state.session || !state.session.id) return; // guests have no account to key it by
+    try { localStorage.setItem(LAST_ORDER_PREFIX + state.session.id, JSON.stringify(state.cart)); } catch(e){}
+  }
+  function getLastOrder(){
+    if (!state.session || !state.session.id) return null;
+    try {
+      var raw = localStorage.getItem(LAST_ORDER_PREFIX + state.session.id);
+      var cart = raw ? JSON.parse(raw) : null;
+      var count = cart ? Object.keys(cart).filter(function(k){ return cart[k] > 0; }).length : 0;
+      return count ? cart : null;
+    } catch(e){ return null; }
+  }
+  function reorderLast(){
+    var last = getLastOrder();
+    if (!last) return;
+    state.cart = Object.assign({}, last);
+    saveCart(); updateCartBadge(); renderCart();
+    showToast("Last order added to cart / पिछला ऑर्डर कार्ट में जोड़ा");
+    announce("Last order added to cart.");
+  }
+
+  // ---------- data load ----------
+  // Catalog structure/names come from the static catalog.json (public, no prices).
+  // Prices and availability come from Supabase, scoped to the signed-in dealer.
+  function loadData(){
+    state.loading = true; state.loadError = false;
+    var catP = fetch("catalog.json").then(function(r){ if(!r.ok) throw new Error("http"); return r.json(); }).catch(function(){ return null; });
+    // retail link: MRP (3×) from enduser_prices + the supplier's in/out; else the dealer's own price + supplier stock
+    var priceP = state.enduser ? sb.rpc("enduser_prices") : (sb ? sb.rpc("my_prices") : Promise.resolve({ data: [] }));
+    var availP = state.enduser ? sb.rpc("supplier_availability", { p_supplier: state.enduser })
+                               : (sb ? sb.rpc("importer_availability") : Promise.resolve({ data: [] }));
+    return Promise.all([catP, priceP, availP]).then(function(res){
+      state.loading = false;
+      if (res[0] === null){ state.loadError = true; state.catalog = []; }
+      else { state.catalog = Array.isArray(res[0]) ? res[0] : []; }
+      state.priceByIndex = []; state.availByIndex = [];
+      ((res[1] && res[1].data) || []).forEach(function(p){ var i = skuToIndex(p.sku); if (i >= 0) state.priceByIndex[i] = (p.net_rate != null ? p.net_rate : p.mrp); });
+      ((res[2] && res[2].data) || []).forEach(function(a){ var i = skuToIndex(a.sku); if (i >= 0) state.availByIndex[i] = (a.qty != null ? a.qty : a.in_stock); });
+    });
+  }
+
+  // ---------- auth (Supabase) ----------
+  function saveSession(){
+    try {
+      if (state.session) localStorage.setItem(SESSION_KEY, JSON.stringify(state.session));
+      else localStorage.removeItem(SESSION_KEY);
+    } catch(e){}
+  }
+  // resolve the signed-in user's party (company, role) from the tree; RLS returns only their branch
+  function loadParty(){
+    return sb.from("parties").select("id,name,role,parent_id,auth_uid").then(function(res){
+      var rows = (res && res.data) || [], uid = state.session && state.session.id, mine = null;
+      rows.forEach(function(p){ if (p.auth_uid === uid) mine = p; });
+      state.account = mine ? { company: mine.name, role: mine.role, id: mine.id } : null;
+      if (state.session && mine) state.session.role = mine.role;
+    }).catch(function(){ state.account = null; });
+  }
+  function attemptLogin(email, pw){
+    var e = (email || "").trim();
+    if (!e || !pw){ showLoginError("Enter email and password. / ईमेल और पासवर्ड डालें।"); return; }
+    if (!sb){ showLoginError("App not configured. / ऐप कॉन्फ़िगर नहीं है।"); return; }
+    $("login-submit").disabled = true;
+    sb.auth.signInWithPassword({ email: e, password: pw }).then(function(res){
+      $("login-submit").disabled = false;
+      if (res.error || !res.data || !res.data.user){ showLoginError("Incorrect email or password / गलत ईमेल या पासवर्ड"); return; }
+      var u = res.data.user;
+      state.session = { id: u.id, email: u.email, role: null };
+      saveSession();
+      loadCart(); // identity now known — switch from the guest cart to this account's own cart
+      loadData().then(loadParty).then(function(){
+        if (state.account){ try { localStorage.removeItem("kg_pending_email"); } catch(e){} showCatalog(); return; }
+        // signed in but no party yet — explain where they stand, then sign out
+        sb.rpc("my_status").then(function(r){
+          var st = (r && r.data) || "none";
+          logout(true);
+          if (st === "pending") showLoginError("Your account is awaiting the importer's approval. / आपका खाता स्वीकृति की प्रतीक्षा में है।");
+          else if (st === "rejected") showLoginError("Your registration was not approved — contact the importer. / पंजीकरण स्वीकृत नहीं हुआ।");
+          else showLoginError("No account yet — tap 'Create an account'. / खाता नहीं — 'खाता बनाएँ' दबाएँ।");
+        });
+      });
+    }).catch(function(){ $("login-submit").disabled = false; showLoginError("Network error. Try again. / नेटवर्क समस्या।"); });
+  }
+  // ---------- self-service registration (dealer types their own password) ----------
+  function showRegister(on){
+    $("signin-box").classList.toggle("hidden", on);
+    $("register-box").classList.toggle("hidden", !on);
+    $("login-title").textContent = on ? "Create Account / खाता बनाएँ" : "Sign In";
+    $("register-error").classList.add("hidden");
+    if (!on) $("register-done").classList.add("hidden");
+  }
+  function doRegister(){
+    var biz = $("reg-business").value.trim(), phone = $("reg-phone").value.trim(),
+        email = $("reg-email").value.trim(), pw = $("reg-password").value;
+    var err = $("register-error"); err.classList.add("hidden");
+    if (!biz || !email || !pw){ err.textContent = "Business name, email and password are required. / नाम, ईमेल, पासवर्ड ज़रूरी।"; err.classList.remove("hidden"); return; }
+    if (pw.length < 6){ err.textContent = "Password must be at least 6 characters. / पासवर्ड कम से कम 6 अक्षर।"; err.classList.remove("hidden"); return; }
+    if (!sb){ err.textContent = "App not configured."; err.classList.remove("hidden"); return; }
+    $("register-submit").disabled = true;
+    sb.auth.signUp({ email: email, password: pw }).then(function(res){
+      if (res.error){ $("register-submit").disabled = false; err.textContent = res.error.message; err.classList.remove("hidden"); return; }
+      // request_access needs the session signUp just created (email confirmation is off)
+      return sb.rpc("request_access", { p_business: biz, p_phone: phone, p_role: "dealer" }).then(function(r){
+        $("register-submit").disabled = false;
+        if (r && r.data === "already_active"){
+          // their supplier pre-created them (invite) — already linked, sign straight in
+          var u = res.data.user;
+          state.session = { id: u.id, email: u.email, role: null };
+          saveSession();
+          loadCart(); // identity now known — switch from the guest cart to this account's own cart
+          ["reg-business","reg-phone","reg-email","reg-password"].forEach(function(id){ $(id).value = ""; });
+          loadData().then(loadParty).then(function(){ if (state.account) showCatalog(); else showRegister(false); });
+          return;
+        }
+        if (sb) sb.auth.signOut().catch(function(){});
+        try { localStorage.setItem("kg_pending_email", email); } catch(e){} // so the login screen can show their status
+        ["reg-business","reg-phone","reg-email","reg-password"].forEach(function(id){ $(id).value = ""; });
+        var done = $("register-done");
+        done.textContent = "✓ Registration sent. The importer will approve your account, then you can sign in. / पंजीकरण भेजा गया; स्वीकृति के बाद साइन इन करें। " +
+          "If you were invited by your supplier, you can sign in right away. / अगर आपको इनवाइट किया गया है तो अभी साइन इन करें।";
+        done.classList.remove("hidden");
+      });
+    }).catch(function(){ $("register-submit").disabled = false; err.textContent = "Could not register. Try again. / पंजीकरण नहीं हुआ।"; err.classList.remove("hidden"); });
+  }
+  function showLoginError(msg){
+    var el = $("login-error");
+    el.textContent = msg || "Incorrect email or password / गलत ईमेल या पासवर्ड";
+    el.classList.remove("hidden");
+  }
+  // clears everything that identifies this browser as signed in: our own session record
+  // plus every Supabase "sb-…-auth-token" key (its exact name varies by project ref)
+  function clearAuthStorage(){
+    try {
+      localStorage.removeItem(SESSION_KEY);
+      Object.keys(localStorage).forEach(function(k){
+        if (/^sb-.*-auth-token/.test(k)) localStorage.removeItem(k);
+      });
+    } catch(e){}
+  }
+  // used internally (e.g. after a failed post-registration check, before showing an error
+  // on the still-open login screen) — no page reload
+  function logout(){
+    clearAuthStorage();
+    state.session = null; state.account = null;
+    state.cart = {}; loadCart(); // identity changed back to guest — load the guest cart, not delete it
+    if (sb) sb.auth.signOut().catch(function(){});
+    showLogin();
+  }
+  // the header Sign Out button: a hard reset via reload is the most robust way to guarantee
+  // the button actually does something, even if a stray in-page state left a click silently no-op
+  function doSignOut(){
+    clearAuthStorage();
+    if (sb) sb.auth.signOut().catch(function(){});
+    location.reload();
+  }
+
+  function updateAuthButton(){
+    $("auth-btn").classList.toggle("hidden", !!state.enduser); // no sign-out for retail customers
+    $("app-header").classList.add("authed");
+  }
+
+  // ---------- views ----------
+  function hideAll(){
+    ["view-login","view-catalog","view-cart","view-pi","view-orders"].forEach(function(id){ var el = $(id); if (el) el.classList.add("hidden"); });
+    $("bottom-nav").classList.add("hidden");
+    $("header-actions").classList.add("hidden");
+    $("app-header").classList.remove("authed");
+  }
+  // role-adaptive bottom nav: retail sees Home+Cart only; a logged-in buyer also gets My Orders;
+  // Manage (-> ledger.html) only for suppliers who also run a network (importer/distributor/dealer)
+  var MANAGE_ROLES = { importer:1, distributor:1, dealer:1 };
+  function updateNavVisibility(){
+    var isRetail = !!state.enduser;
+    var isBuyer = !isRetail && !!state.account;
+    $("nav-orders").classList.toggle("hidden", !isBuyer);
+    $("nav-manage").classList.toggle("hidden", !(isBuyer && state.account.role && MANAGE_ROLES[state.account.role]));
+  }
+  function showLogin(){
+    hideAll();
+    $("view-login").classList.remove("hidden");
+    $("login-id").value = ""; $("login-password").value = "";
+    $("login-error").classList.add("hidden");
+    if ($("register-box")) showRegister(false);
+    // if they registered and are waiting, tell them here instead of only after a failed login
+    var li = $("login-info");
+    if (li){
+      var pend = null; try { pend = localStorage.getItem("kg_pending_email"); } catch(e){}
+      if (pend){
+        li.textContent = "Your account (" + pend + ") is awaiting the importer's approval — you can sign in once approved. / स्वीकृति की प्रतीक्षा में।";
+        li.classList.remove("hidden"); $("login-id").value = pend;
+      } else li.classList.add("hidden");
+    }
+  }
+  function showCatalog(){
+    hideAll();
+    $("view-catalog").classList.remove("hidden");
+    $("bottom-nav").classList.remove("hidden");
+    $("header-actions").classList.remove("hidden");
+    updateAuthButton();
+    updateNavVisibility();
+    setActiveNav("nav-catalog");
+    renderDealerStrip();
+    populateFilters();
+    // reset to the browse landing on (re)entry
+    $("search-box").value = ""; $("filter-group").value = ""; $("filter-section").value = "";
+    state.mode = "browse"; state.browseGroup = null; state.renderLimit = RENDER_CHUNK;
+    $("search-clear").classList.add("hidden");
+    renderCatalogBody();
+    updateCartBadge();
+  }
+  function showCart(){
+    hideAll();
+    $("view-cart").classList.remove("hidden");
+    $("bottom-nav").classList.remove("hidden");
+    $("header-actions").classList.remove("hidden");
+    updateAuthButton();
+    updateNavVisibility();
+    setActiveNav("nav-cart");
+    $("eu-contact").classList.toggle("hidden", !state.enduser);
+    renderCart(); updateCartBadge();
+  }
+  function showPI(){ hideAll(); $("view-pi").classList.remove("hidden"); $("header-actions").classList.remove("hidden"); updateAuthButton(); renderPI(); }
+  function showOrders(){
+    hideAll();
+    $("view-orders").classList.remove("hidden");
+    $("bottom-nav").classList.remove("hidden");
+    $("header-actions").classList.remove("hidden");
+    updateAuthButton();
+    updateNavVisibility();
+    setActiveNav("nav-orders");
+    renderMyOrders();
+  }
+  function setActiveNav(id){
+    ["nav-catalog","nav-cart","nav-orders","nav-manage"].forEach(function(nid){
+      var el = $(nid); if (el) el.classList.toggle("active", nid === id);
+    });
+  }
+  var ORDER_STATUS_LABEL = { placed: "Placed / दर्ज", billed: "Billed / बिल्ड" };
+  async function renderMyOrders(){
+    var box = $("orders-list");
+    if (!state.account){ box.innerHTML = ""; return; }
+    box.innerHTML = '<p style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</p>';
+    var res = await sb.from("orders")
+      .select("pi_number, subtotal, gst, grand, status, created_at")
+      .eq("dealer_party", state.account.id)
+      .order("created_at", { ascending: false });
+    if (res.error){
+      box.innerHTML = '<div class="login-error">Could not load orders — please try again. / ऑर्डर लोड नहीं हो सके, कृपया पुनः प्रयास करें।</div>';
+      return;
+    }
+    var rows = res.data || [];
+    if (!rows.length){
+      box.innerHTML = '<p style="color:var(--muted);font-size:14px;margin:16px 2px;">No orders yet / अभी कोई ऑर्डर नहीं</p>' +
+        '<button class="generate-btn" id="orders-shop-btn">Shop / खरीदारी करें</button>';
+      $("orders-shop-btn").onclick = showCatalog;
+      return;
+    }
+    box.innerHTML = rows.map(function(o){
+      var badge = o.status === "billed" ? "badge-green" : "badge-amber";
+      var d = o.created_at ? new Date(o.created_at).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }) : "";
+      return '<div class="order-row">' +
+        '<div><strong>' + (o.pi_number || "") + '</strong><div style="font-size:12px;color:var(--muted);">' + d + '</div></div>' +
+        '<div style="text-align:right;"><span class="' + badge + '">' + (ORDER_STATUS_LABEL[o.status] || o.status || "") + '</span>' +
+        '<div style="font-weight:600;">' + inr(o.grand) + '</div></div>' +
+        '</div>';
+    }).join("");
+  }
+
+  function renderDealerStrip(){
+    var el = $("dealer-strip"), notice = $("notice-area");
+    notice.innerHTML = "";
+    if (state.enduser){
+      el.innerHTML = '<span class="name">' + esc(state.supplierName || "Shop") + '</span><span>Retail price (MRP) / खुदरा मूल्य</span>';
+      return;
+    }
+    var role = state.session ? state.session.role : "enduser";
+    var roleLabel = ROLE_LABELS[role] || "Retail price";
+    if (state.account){
+      el.innerHTML = '<span class="name">' + esc(state.account.company || state.session.id) + '</span>' +
+        '<span>' + esc(roleLabel) + '</span>';
+      // suppliers reach the console via the persistent "Manage" tab in the bottom nav (no redundant banner here)
+    } else {
+      el.innerHTML = '<span class="name">Retail customer</span><span>' + esc(roleLabel) + '</span>';
+    }
+  }
+
+  // ---------- filters ----------
+  function populateFilters(){
+    var groupSel = $("filter-group"), prevGroup = groupSel.value;
+    var groupsPresent = Array.from(new Set(state.catalog.map(function(r){ return r.group; }))).sort();
+    groupSel.innerHTML = '<option value="">All Groups</option>' + groupsPresent.map(function(g){
+      return '<option value="' + esc(g) + '">' + esc((g + " · ") + (GROUP_LABELS[g] || ("Group " + g))) + '</option>';
+    }).join("");
+    groupSel.value = prevGroup;
+    refreshSectionOptions();
+  }
+  function refreshSectionOptions(){
+    var sectionSel = $("filter-section"), prevSection = sectionSel.value;
+    var groupVal = $("filter-group").value;
+    var rows = state.catalog.filter(function(r){ return !groupVal || String(r.group) === groupVal; });
+    var sections = Array.from(new Set(rows.map(function(r){ return r.section; }))).sort();
+    sectionSel.innerHTML = '<option value="">All Sections</option>' + sections.map(function(s){
+      return '<option value="' + esc(s) + '">' + esc(s) + '</option>';
+    }).join("");
+    if (sections.indexOf(prevSection) !== -1) sectionSel.value = prevSection;
+  }
+
+  function filteredRows(){
+    var q = ($("search-box").value || "").trim().toLowerCase();
+    // a search term searches the WHOLE catalogue, ignoring any group/section picked earlier —
+    // group/section filters only apply once the search box is cleared again
+    if (q){
+      return state.catalog
+        .map(function(row, idx){ return {row: row, idx: idx}; })
+        .filter(function(o){
+          var r = o.row;
+          var hay = (String(r.product_code || "") + " " + String(r.particular || "") + " " + String(r.sr_no || "")).toLowerCase();
+          return hay.indexOf(q) !== -1;
+        });
+    }
+    var groupVal = $("filter-group").value, sectionVal = $("filter-section").value;
+    return state.catalog
+      .map(function(row, idx){ return {row: row, idx: idx}; })
+      .filter(function(o){
+        var r = o.row;
+        if (groupVal && String(r.group) !== groupVal) return false;
+        if (sectionVal && r.section !== sectionVal) return false;
+        return true;
+      });
+  }
+
+  // ---------- catalog body: browse landing OR list ----------
+  function renderCatalogBody(){
+    var body = $("catalog-body");
+    if (state.loading){ body.innerHTML = '<div class="empty-state"><div class="spinner"></div>Loading catalogue…<br>सूची लोड हो रही है…</div>'; return; }
+    if (state.loadError){
+      body.innerHTML = '<div class="empty-state">Could not load the catalogue.<br>सूची लोड नहीं हो सकी।<br><button class="retry-btn" id="retry-load" type="button">Retry / फिर से</button></div>';
+      $("retry-load").onclick = function(){ loadData().then(function(){ populateFilters(); renderCatalogBody(); }); };
+      return;
+    }
+    // filter dropdowns belong to list mode only; in browse mode the tiles own the drill-down
+    $("filter-row").classList.toggle("hidden", state.mode !== "list");
+    if (state.mode === "list") renderList(body);
+    else renderBrowse(body);
+  }
+
+  function countBy(fn, filterFn){
+    var m = {};
+    state.catalog.forEach(function(r){ if (filterFn && !filterFn(r)) return; var k = fn(r); m[k] = (m[k]||0)+1; });
+    return m;
+  }
+
+  function renderBrowse(body){
+    if (state.browseGroup === null){
+      var groups = Array.from(new Set(state.catalog.map(function(r){ return r.group; }))).sort();
+      var gc = countBy(function(r){ return r.group; });
+      body.innerHTML = '<div class="browse-head">Choose a machine group / मशीन समूह चुनें</div>' +
+        '<div class="tiles">' + groups.map(function(g){
+          var label = g + " · " + (GROUP_LABELS[g] || ("Group " + g));
+          return '<button class="tile" type="button" data-browse-group="' + esc(g) + '" aria-label="' + esc(label) + '">' +
+            groupIconSvg(g) +
+            '<span class="t-name">' + esc(label) + '</span>' +
+            '<span class="t-count">' + (gc[g]||0) + ' parts</span></button>';
+        }).join("") + '</div>';
+    } else {
+      var g2 = String(state.browseGroup);
+      var sc = countBy(function(r){ return r.section; }, function(r){ return String(r.group) === g2; });
+      var sections = Object.keys(sc).sort();
+      body.innerHTML = '<button class="browse-back" id="browse-back" type="button">&larr; All groups / सभी समूह</button>' +
+        '<div class="browse-head">' + esc((state.browseGroup + " · ") + (GROUP_LABELS[state.browseGroup] || "")) + '</div>' +
+        '<div class="tiles">' + sections.map(function(s){
+          return '<button class="tile" type="button" data-browse-section="' + esc(s) + '" aria-label="' + esc(s) + '">' +
+            '<span class="t-name">' + esc(s) + '</span>' +
+            '<span class="t-count">' + sc[s] + ' parts</span></button>';
+        }).join("") + '</div>';
+      $("browse-back").onclick = function(){ state.browseGroup = null; $("filter-group").value = ""; refreshSectionOptions(); renderCatalogBody(); };
+    }
+  }
+
+  function renderList(body){
+    var rows = filteredRows();
+    var total = rows.length;
+    var shown = rows.slice(0, state.renderLimit);
+
+    var q = ($("search-box").value || "").trim();
+    // a live query searches the whole catalogue, ignoring the group/section pickers — say so
+    var scopeNote = q ? ' · <span class="search-scope">searching all groups / सभी समूह</span>' : '';
+    var head = '<button class="list-reset" id="list-reset" type="button">&larr; Browse all machines / सभी देखें</button>' +
+      '<div class="result-count" role="status" aria-live="polite">' + total + ' item' + (total === 1 ? "" : "s") +
+      (total > shown.length ? ' — showing ' + shown.length : '') + scopeNote + '</div>';
+    if (q) announce(total + (total === 1 ? " part" : " parts") + " found");
+
+    if (!total){
+      body.innerHTML = head + '<div class="empty-state">No parts match.<br>कोई पुर्जा नहीं मिला।</div>';
+      $("list-reset").onclick = resetToBrowse;
+      return;
+    }
+
+    var itemsHtml = shown.map(function(o){
+      var r = o.row, idx = o.idx;
+      var code = r.product_code ? esc(r.product_code) : "—";
+      var net = netRate(idx);
+      var qty = state.cart[idx] || 0;
+      var canAdd = (net !== null);
+      var av = availOf(idx); // number = quantity available; boolean = in/out (retail view)
+      var inStock = (av === undefined) ? null : ((typeof av === "boolean") ? av : av > 0);
+
+      var rateHtml = canAdd ? '<span class="rate">' + inr(net) + '</span>' : '<span class="rate na">Rate on request</span>';
+      if (inStock !== null){
+        var label = inStock
+          ? (typeof av === "number" ? av + ' available / उपलब्ध ' + av : 'In stock / स्टॉक में')
+          : 'Out of stock / स्टॉक नहीं';
+        rateHtml += ' <span class="stock-badge ' + (inStock ? 'stock-in' : 'stock-out') + '">' + label + '</span>';
+      }
+
+      // out-of-stock parts are never billable — any role can only record demand for them
+      var outOfStock = inStock === false;
+      var canOrder = canAdd && !outOfStock;
+      var controlsHtml;
+      if (outOfStock){
+        controlsHtml = '<button class="add-btn demand-btn" type="button" data-demand="' + idx + '">Request part / माँग दर्ज करें</button>';
+      } else if (!canOrder){
+        var why = "Price on request — contact us to order / मूल्य हेतु संपर्क करें";
+        controlsHtml = '<button class="add-btn" type="button" disabled aria-label="' + esc(why) + '" title="' + esc(why) + '">Add</button>';
+      } else if (qty > 0){
+        // once in the cart, the stepper IS the cart quantity (no separate Add)
+        controlsHtml = '<div class="stepper" data-idx="' + idx + '">' +
+            '<button class="qty-minus" type="button" aria-label="Decrease quantity">−</button>' +
+            '<input type="number" class="qty-input" min="0" value="' + qty + '" inputmode="numeric" aria-label="Quantity">' +
+            '<button class="qty-plus" type="button" aria-label="Increase quantity">+</button>' +
+          '</div>';
+      } else {
+        controlsHtml = '<button class="add-btn" type="button" data-add="' + idx + '">Add / जोड़ें</button>';
+      }
+
+      return '<div class="item">' +
+        '<img class="item-thumb" src="' + esc(partPhoto(idx)) + '" data-fb="' + esc(pageScan(r)) + '" ' +
+          'alt="Photo of ' + esc(r.product_code || r.particular || "part") + '" title="Tap to enlarge / बड़ा करें" ' +
+          'loading="lazy" role="button" tabindex="0" data-photo="' + idx + '" ' +
+          'onerror="if(this.dataset.fb){this.src=this.dataset.fb;this.dataset.fb=\'\';}else{this.style.display=\'none\';}">' +
+        '<div class="item-main">' +
+        '<div class="item-top"><span class="item-code">' + code + '</span>' +
+          '<span class="badge">' + esc(r.section || "") + '</span></div>' +
+        '<div class="item-particular">' + esc(nice(r.particular)) + '</div>' +
+        '<div class="item-bottom">' + rateHtml +
+          '<div class="item-controls">' +
+            '<button class="diagram-btn" type="button" data-diagram="' + idx + '">' + svgIco("page") + 'Catalog page</button>' +
+            controlsHtml +
+          '</div></div></div></div>';
+    }).join("");
+
+    var more = total > shown.length
+      ? '<button class="show-more" id="show-more" type="button">Show ' + Math.min(RENDER_CHUNK, total - shown.length) + ' more / और दिखाएँ</button>'
+      : '';
+
+    body.innerHTML = head + itemsHtml + more;
+    $("list-reset").onclick = resetToBrowse;
+    if (more) $("show-more").onclick = function(){ state.renderLimit += RENDER_CHUNK; renderCatalogBody(); };
+  }
+
+  function resetToBrowse(){
+    $("search-box").value = ""; $("filter-group").value = ""; $("filter-section").value = "";
+    $("search-clear").classList.add("hidden");
+    refreshSectionOptions();
+    state.mode = "browse"; state.browseGroup = null; state.renderLimit = RENDER_CHUNK;
+    renderCatalogBody();
+  }
+
+  function updateCartBadge(){
+    var count = Object.keys(state.cart).reduce(function(sum, k){ return sum + (state.cart[k] || 0); }, 0);
+    var badge = $("cart-badge");
+    if (count > 0){ badge.textContent = count > 99 ? "99+" : String(count); badge.classList.remove("hidden"); }
+    else badge.classList.add("hidden");
+  }
+  function setQty(idx, qty){
+    var raw = Math.floor(qty) || 0;
+    qty = Math.max(0, Math.min(999, raw));
+    if (raw > 999) showToast("Max 999 per line / अधिकतम 999");
+    if (qty === 0) delete state.cart[idx]; else state.cart[idx] = qty;
+    saveCart(); updateCartBadge();
+  }
+
+  // ---------- cart view ----------
+  function renderCart(){
+    var wrap = $("cart-list");
+    var keys = Object.keys(state.cart).filter(function(k){ return state.cart[k] > 0; });
+    var grand = 0;
+    if (!keys.length){
+      var last = getLastOrder();
+      wrap.innerHTML = '<div class="empty-state">Cart is empty.<br>कार्ट खाली है।' +
+        (last ? '<br><button class="retry-btn" id="reorder-btn" type="button">Reorder last order / पिछला ऑर्डर दोहराएँ</button>' :
+          '<br><button class="retry-btn" id="empty-browse-btn" type="button">Browse parts / पार्ट्स देखें</button>') +
+        '</div>';
+      if (last) $("reorder-btn").onclick = reorderLast;
+      else $("empty-browse-btn").onclick = showCatalog;
+      $("cart-grand-total").textContent = "₹0"; $("generate-pi-btn").disabled = true; $("cart-oos-note").classList.add("hidden"); return;
+    }
+    var hasOOS = false;
+    wrap.innerHTML = keys.map(function(k){
+      var r = state.catalog[k]; if (!r) return "";
+      var qty = state.cart[k], rate = netRate(k) || 0, lineTotal = rate * qty;
+      grand += lineTotal;
+      // no role can check out an out-of-stock line — stale carts (added before it went OOS) still get blocked
+      var outHtml = "";
+      var av = availOf(k);
+      var inStock = (av === undefined) ? true : ((typeof av === "boolean") ? av : av > 0);
+      if (!inStock){ hasOOS = true; outHtml = '<div style="color:var(--danger);font-size:12px;font-weight:700;margin-top:4px;">Out of stock / स्टॉक नहीं</div>'; }
+      return '<div class="cart-item">' +
+        '<div class="cart-item-top"><div>' +
+            '<div class="cart-item-name">' + esc(nice(r.particular)) + '</div>' +
+            '<div class="cart-item-code">' + (r.product_code ? esc(r.product_code) : "—") + ' &middot; ' + inr(rate) + ' each</div>' +
+          '</div>' +
+          '<button class="remove-btn" type="button" data-remove="' + k + '">Remove</button></div>' +
+        '<div class="cart-item-bottom">' +
+          '<div class="stepper" data-idx="' + k + '">' +
+            '<button class="qty-minus" type="button" aria-label="Decrease quantity">−</button>' +
+            '<input type="number" class="qty-input" min="0" value="' + qty + '" inputmode="numeric" aria-label="Quantity">' +
+            '<button class="qty-plus" type="button" aria-label="Increase quantity">+</button>' +
+          '</div><span class="line-total">' + inr(lineTotal) + '</span></div>' + outHtml + '</div>';
+    }).join("");
+    $("cart-grand-total").textContent = inr(grand);
+    $("generate-pi-btn").disabled = hasOOS;
+    $("cart-oos-note").classList.toggle("hidden", !hasOOS);
+  }
+
+  // ---------- PI ----------
+  function pad2(n){ return n < 10 ? "0" + n : String(n); }
+  function fmtDate(d){ return d.toLocaleDateString("en-IN"); }
+
+  // Per-part photo, keyed by the row's catalog index (pages/parts/i<idx>.jpg — see
+  // scripts/extract_part_photos.py). The card falls back to the catalogue page scan
+  // (data-fb) when no photo exists, so every card always shows a correct image.
+  function pageScan(r){ return "pages/g" + r.group + "/p-" + pad2(r.pdf_page) + ".jpg"; }
+  function partPhoto(idx){ return "pages/parts/i" + idx + ".jpg"; }
+
+  function buildPI(){
+    var now = new Date();
+    var num = "PI-" + now.getFullYear() + pad2(now.getMonth()+1) + pad2(now.getDate()) +
+      "-" + pad2(now.getHours()) + pad2(now.getMinutes()) + pad2(now.getSeconds());
+    var valid = new Date(now.getTime() + PI_VALID_DAYS * 86400000);
+    var keys = Object.keys(state.cart).filter(function(k){ return state.cart[k] > 0; });
+    var lines = keys.map(function(k){
+      var r = state.catalog[k]; if (!r) return null; // catalog not loaded / stale idx — skip rather than throw
+      var qty = state.cart[k];
+      var rate = netRate(k) || 0;
+      return { code: r.product_code || "—", sku: skuOf(Number(k)), particular: nice(r.particular), qty: qty, rate: rate, amount: rate * qty };
+    }).filter(function(l){ return l !== null; });
+    var subtotal = lines.reduce(function(s,l){ return s + l.amount; }, 0);
+    var gst = Math.round(subtotal * GST_PCT / 100);
+    var grand = subtotal + gst;
+    var dealerName = state.enduser ? ((($("eu-name") || {}).value || "").trim() || "Retail customer")
+                   : (state.account ? (state.account.company || state.session.id) : "Retail customer");
+    // dealerCode is just a display tag ("RETAIL") — never the account's raw UUID
+    var dealerCodeDisplay = state.enduser ? "RETAIL" : "";
+    var dealerGstin = (!state.enduser && state.account && state.account.gstin) ? state.account.gstin : "";
+    var pi = { number: num, date: fmtDate(now), validTill: fmtDate(valid), dealerName: dealerName,
+             dealerCode: dealerCodeDisplay, dealerGstin: dealerGstin, lines: lines, subtotal: subtotal, gst: gst, gstPct: GST_PCT, grand: grand };
+    return pi;
+  }
+
+  function renderPI(){
+    var pi = state.piInfo;
+    var rowsHtml = pi.lines.map(function(l){
+      return '<tr><td>' + esc(l.code) + '</td><td>' + esc(l.particular) + '</td>' +
+        '<td class="num">' + l.qty + '</td><td class="num">' + inr(l.rate) + '</td>' +
+        '<td class="num">' + inr(l.amount) + '</td></tr>';
+    }).join("");
+
+    var bannerHtml = state.piOrderOk === false
+      ? '<div class="login-error">⚠ Order could not be saved — check internet and tap Generate PI again. / ऑर्डर सेव नहीं हुआ — इंटरनेट देखें और फिर से कोशिश करें।</div>'
+      : '<div class="pi-success">✓ PI ready. Share it on WhatsApp below. / पीआई तैयार है, नीचे व्हाट्सऐप पर भेजें।</div>';
+    $("pi-box").innerHTML =
+      bannerHtml +
+      '<div class="pi-seller"><div class="biz">' + esc(SELLER.name) + '</div>' +
+        '<div class="biz-line">GSTIN: ' + esc(SELLER.gstin) + ' &middot; ' + esc(SELLER.place) + '<br>Phone: ' + esc(SELLER.phone) + '</div></div>' +
+      '<div class="pi-head"><h2>PROFORMA INVOICE</h2><div class="pi-no">' + esc(pi.number) + '</div></div>' +
+      '<div class="pi-meta">' +
+        '<strong>Dealer / डीलर:</strong> ' + esc(pi.dealerName) + (pi.dealerCode ? ' (' + esc(pi.dealerCode) + ')' : '') +
+        (pi.dealerGstin ? '<br><strong>GSTIN:</strong> ' + esc(pi.dealerGstin) : '') + '<br>' +
+        '<strong>Date / दिनांक:</strong> ' + esc(pi.date) + ' &middot; <strong>Valid till / मान्य:</strong> ' + esc(pi.validTill) +
+      '</div>' +
+      '<div style="overflow-x:auto;"><table class="pi-table"><thead><tr>' +
+        '<th>Code</th><th>Particular</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount</th>' +
+      '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' +
+      '<div class="pi-totals">' +
+        '<div class="row"><span>Subtotal / उप-योग</span><span>' + inr(pi.subtotal) + '</span></div>' +
+        '<div class="row"><span>GST @ ' + esc(pi.gstPct) + '%</span><span>+ ' + inr(pi.gst) + '</span></div>' +
+        '<div class="pi-grand"><span>Grand Total / कुल</span><span>' + inr(pi.grand) + '</span></div></div>' +
+      '<div class="pi-footer">This is a Proforma Invoice. Total includes ' + esc(pi.gstPct) + '% GST. Payment via UPI / bank transfer as agreed. Prices valid till ' + esc(pi.validTill) + '. | यह प्रोफार्मा इनवॉइस है, कुल में ' + esc(pi.gstPct) + '% GST शामिल है।</div>' +
+      '<div class="pi-actions">' +
+        '<button class="btn btn-outline btn-ico" id="pi-print-btn" style="margin-top:0;">' + svgIco("print") + 'Print</button>' +
+        '<button class="btn wa-btn btn-ico" id="pi-wa-btn" style="margin-top:0;">' + svgIco("whatsapp") + 'Share PDF on WhatsApp</button>' +
+      '</div>';
+
+    $("pi-print-btn").onclick = function(){ window.print(); };
+    $("pi-wa-btn").onclick = function(){ shareWhatsApp(pi); };
+  }
+
+  // ---------- PI as PDF (no libraries; base-font PDF, ASCII with "Rs.") ----------
+  function pdfSafe(s){
+    return String(s).replace(/₹/g, "Rs.").replace(/[^\x20-\x7E]/g, "")
+      .replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+  }
+  function wrapText(s, maxChars){
+    var words = String(s).split(/\s+/), out = [], cur = "";
+    words.forEach(function(w){
+      if ((cur + " " + w).trim().length > maxChars){ if (cur) out.push(cur); cur = w; }
+      else cur = (cur + " " + w).trim();
+    });
+    if (cur) out.push(cur);
+    return out.length ? out : [""];
+  }
+  function buildPIPdf(pi){
+    var W = 595, H = 842, M = 40;
+    var cols = { code: M, part: M + 85, qty: M + 345, rate: M + 395, amt: M + 460 };
+    var pages = [], s = "", y;
+    function esc(t){ return pdfSafe(t); }
+    function txt(x, yy, size, bold, t){
+      s += "BT /" + (bold ? "F2" : "F1") + " " + size + " Tf " + x + " " + yy + " Td (" + esc(t) + ") Tj ET\n";
+    }
+    function line(x1, y1, x2, y2){ s += "0.6 w " + x1 + " " + y1 + " m " + x2 + " " + y2 + " l S\n"; }
+    function newPage(){ if (s) pages.push(s); s = ""; y = H - M; }
+    function sellerBlock(){
+      txt(M, y, 17, true, SELLER.name); y -= 15;
+      txt(M, y, 9, false, "GSTIN: " + SELLER.gstin + "  |  " + SELLER.place + "  |  Phone: " + SELLER.phone); y -= 16;
+      line(M, y, W - M, y); y -= 16;
+    }
+    function docHead(){
+      txt(M, y, 13, true, "PROFORMA INVOICE");
+      txt(W - M - 170, y, 11, true, pi.number); y -= 18;
+      txt(M, y, 10, false, "Dealer: " + pi.dealerName + (pi.dealerCode ? " (" + pi.dealerCode + ")" : "") + (pi.dealerGstin ? "  GSTIN: " + pi.dealerGstin : "")); y -= 13;
+      txt(M, y, 10, false, "Date: " + pi.date + "   Valid till: " + pi.validTill); y -= 18;
+      txt(cols.code, y, 9, true, "Code"); txt(cols.part, y, 9, true, "Particular");
+      txt(cols.qty, y, 9, true, "Qty"); txt(cols.rate, y, 9, true, "Rate"); txt(cols.amt, y, 9, true, "Amount");
+      y -= 5; line(M, y, W - M, y); y -= 13;
+    }
+    newPage(); sellerBlock(); docHead();
+    pi.lines.forEach(function(l){
+      var wrapped = wrapText(l.particular, 58), rowH = wrapped.length * 11 + 5;
+      if (y - rowH < M + 90){ newPage(); sellerBlock(); docHead(); }
+      txt(cols.code, y, 9, false, l.code);
+      wrapped.forEach(function(w, i){ txt(cols.part, y - i * 11, 9, false, w); });
+      txt(cols.qty, y, 9, false, String(l.qty));
+      txt(cols.rate, y, 9, false, "Rs." + l.rate);
+      txt(cols.amt, y, 9, false, "Rs." + l.amount);
+      y -= rowH;
+    });
+    y -= 3; line(M, y, W - M, y); y -= 15;
+    txt(cols.rate - 60, y, 9, false, "Subtotal:"); txt(cols.amt, y, 9, false, "Rs." + pi.subtotal); y -= 13;
+    txt(cols.rate - 60, y, 9, false, "GST @ " + pi.gstPct + "%:"); txt(cols.amt, y, 9, false, "+ Rs." + pi.gst); y -= 15;
+    txt(cols.rate - 60, y, 12, true, "Grand Total:"); txt(cols.amt, y, 12, true, "Rs." + pi.grand); y -= 24;
+    wrapText("This is a Proforma Invoice. Total includes " + pi.gstPct + "% GST. Payment via UPI / bank transfer as agreed. Prices valid till " + pi.validTill + ".", 95)
+      .forEach(function(w){ txt(M, y, 8, false, w); y -= 10; });
+    pages.push(s);
+
+    var objs = [], kidsIds = [], fontId1 = 3 + pages.length * 2, fontId2 = fontId1 + 1;
+    objs.push("<< /Type /Catalog /Pages 2 0 R >>");
+    pages.forEach(function(_, i){ kidsIds.push(3 + i * 2); });
+    objs.push("<< /Type /Pages /Count " + pages.length + " /Kids [" + kidsIds.map(function(id){ return id + " 0 R"; }).join(" ") + "] >>");
+    pages.forEach(function(content, i){
+      objs.push("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + W + " " + H + "] " +
+        "/Resources << /Font << /F1 " + fontId1 + " 0 R /F2 " + fontId2 + " 0 R >> >> /Contents " + (4 + i * 2) + " 0 R >>");
+      objs.push("<< /Length " + content.length + " >>\nstream\n" + content + "endstream");
+    });
+    objs.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+    objs.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
+
+    var pdf = "%PDF-1.4\n", offsets = [];
+    objs.forEach(function(body, i){ offsets.push(pdf.length); pdf += (i + 1) + " 0 obj\n" + body + "\nendobj\n"; });
+    var xref = pdf.length;
+    pdf += "xref\n0 " + (objs.length + 1) + "\n0000000000 65535 f \n";
+    offsets.forEach(function(o){ pdf += String(o).padStart(10, "0") + " 00000 n \n"; });
+    pdf += "trailer\n<< /Size " + (objs.length + 1) + " /Root 1 0 R >>\nstartxref\n" + xref + "\n%%EOF";
+
+    var bytes = new Uint8Array(pdf.length);
+    for (var i = 0; i < pdf.length; i++) bytes[i] = pdf.charCodeAt(i) & 0xFF;
+    return new Blob([bytes], { type: "application/pdf" });
+  }
+
+  function shareWhatsApp(pi){
+    var blob = buildPIPdf(pi);
+    var file = new File([blob], pi.number + ".pdf", { type: "application/pdf" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })){
+      navigator.share({ files: [file], title: pi.number,
+        text: SELLER.name + " — Proforma Invoice " + pi.number + " — Grand Total Rs." + pi.grand })
+        .catch(function(){});
+    } else {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = pi.number + ".pdf";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+      showToast("PDF downloaded — attach it in WhatsApp / पीडीएफ डाउनलोड हुई");
+      announce("PI PDF downloaded as " + pi.number + ".pdf. Attach it in WhatsApp.");
+    }
+  }
+
+  // ---------- catalog-page modal ----------
+  var lastFocus = null;
+  // Shared zoomable image modal (used for both the part photo and the catalogue page).
+  // opts: { src, fb (fallback src on error), title, altText, note (optional), label }
+  function showImageModal(opts){
+    lastFocus = document.activeElement;
+    var missing = "<div class='empty-state'>Image not available.<br>छवि उपलब्ध नहीं है।</div>";
+    var onerr = opts.fb
+      ? "if(this.dataset.fb){this.src=this.dataset.fb;this.dataset.fb='';this.style.width='100%';}else{this.parentElement.innerHTML=\"" + missing + "\";}"
+      : "this.parentElement.innerHTML=\"" + missing + "\";";
+    var root = $("modal-root");
+    root.innerHTML =
+      '<div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-label="' + esc(opts.label || "Image") + '">' +
+        '<div class="modal-box">' +
+          '<div class="modal-head"><h3>' + esc(opts.title) + '</h3>' +
+            '<button class="modal-close" id="modal-close" type="button" aria-label="Close">&times;</button></div>' +
+          (opts.note ? '<div class="modal-note">' + opts.note + '</div>' : '') +
+          '<div class="modal-zoom-row">' +
+            '<button id="zoom-out" type="button">− Zoom</button>' +
+            '<button id="zoom-reset" type="button">Reset</button>' +
+            '<button id="zoom-in" type="button">+ Zoom</button>' +
+          '</div>' +
+          '<div class="modal-img-wrap" id="modal-img-wrap">' +
+            '<img src="' + esc(opts.src) + '" alt="' + esc(opts.altText || opts.title) + '" id="modal-img"' +
+              (opts.fb ? ' data-fb="' + esc(opts.fb) + '"' : '') + ' onerror="' + onerr + '">' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    var zoom = 100;
+    function applyZoom(){ var im = $("modal-img"); if (im) im.style.width = zoom + "%"; }
+    $("zoom-in").onclick = function(){ zoom = Math.min(400, zoom + 50); applyZoom(); };
+    $("zoom-out").onclick = function(){ zoom = Math.max(50, zoom - 50); applyZoom(); };
+    $("zoom-reset").onclick = function(){ zoom = 100; applyZoom(); };
+    $("modal-close").onclick = closeDiagram;
+    $("modal-overlay").addEventListener("click", function(e){ if (e.target.id === "modal-overlay") closeDiagram(); });
+    document.addEventListener("keydown", modalKeydown);
+    $("modal-close").focus();
+  }
+  // Tap the part photo → see it big and zoom in (pinch or the ± buttons).
+  function openPhoto(idx){
+    var r = state.catalog[idx];
+    if (!r) return;
+    showImageModal({
+      src: partPhoto(idx), fb: pageScan(r),
+      title: (r.product_code ? r.product_code + " — " : "") + nice(r.particular || "Part photo"),
+      altText: "Photo of " + (r.product_code || r.particular || "part"),
+      label: "Part photo"
+    });
+  }
+  function openDiagram(idx){
+    var r = state.catalog[idx];
+    if (!r) return;
+    showImageModal({
+      src: pageScan(r),
+      title: (r.product_code || r.particular || "Catalog page") + " — catalogue page",
+      altText: "Catalogue reference page " + r.pdf_page + " for group " + r.group + (r.product_code ? " (" + r.product_code + ")" : ""),
+      label: "Catalogue page",
+      note: "Reference catalogue page. Your dealer price is the one shown in the app; rates printed on this page are list/base rates. / आपकी दर ऐप में दिखती है; पेज पर छपी दरें सूची दर हैं।"
+    });
+  }
+  function modalKeydown(e){
+    if (e.key === "Escape"){ closeDiagram(); return; }
+    if (e.key === "Tab"){
+      var f = $("modal-root").querySelectorAll("button");
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    }
+  }
+  function closeDiagram(){
+    document.removeEventListener("keydown", modalKeydown);
+    $("modal-root").innerHTML = "";
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+
+  // ---------- demand (out-of-stock request) modal ----------
+  function openDemand(idx){
+    var r = state.catalog[idx];
+    if (!r) return;
+    lastFocus = document.activeElement;
+    var prefillName = (($("eu-name") || {}).value || "").trim();
+    var root = $("modal-root");
+    root.innerHTML =
+      '<div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-label="Request this part">' +
+        '<div class="modal-box">' +
+          '<div class="modal-head"><h3>Request this part / यह पुर्जा चाहिए</h3>' +
+            '<button class="modal-close" id="modal-close" type="button" aria-label="Close">&times;</button></div>' +
+          '<div style="padding:12px;">' +
+            '<div style="font-size:13.5px;font-weight:600;margin-bottom:10px;">' + esc(r.product_code || "—") + ' — ' + esc(nice(r.particular)) + '</div>' +
+            '<label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:4px;">Quantity / मात्रा</label>' +
+            '<div class="stepper" id="demand-qty-stepper" style="margin-bottom:12px;">' +
+              '<button class="qty-minus" type="button" aria-label="Decrease quantity">−</button>' +
+              '<input type="number" class="qty-input" id="demand-qty" min="1" max="500" value="1" inputmode="numeric" aria-label="Quantity">' +
+              '<button class="qty-plus" type="button" aria-label="Increase quantity">+</button>' +
+            '</div>' +
+            (state.enduser ?
+              '<label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:4px;">Your name / आपका नाम</label>' +
+              '<input type="text" id="demand-name" value="' + esc(prefillName) + '" style="width:100%;min-height:44px;border:1px solid var(--border);border-radius:8px;padding:0 10px;font-size:14px;margin-bottom:10px;">' +
+              '<label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:4px;">Phone / फ़ोन</label>' +
+              '<input type="tel" id="demand-phone" style="width:100%;min-height:44px;border:1px solid var(--border);border-radius:8px;padding:0 10px;font-size:14px;margin-bottom:10px;">'
+              : '') +
+            '<div id="demand-error" class="hidden" style="color:var(--danger);font-size:12.5px;font-weight:600;margin-bottom:10px;"></div>' +
+            '<div style="display:flex;gap:8px;">' +
+              '<button class="btn btn-outline" id="demand-cancel" type="button" style="flex:1;margin-top:0;">Cancel / रद्द करें</button>' +
+              '<button class="btn" id="demand-send" type="button" style="flex:1;margin-top:0;">Send request / भेजें</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    $("demand-qty-stepper").addEventListener("click", function(e){
+      var val = parseInt($("demand-qty").value, 10) || 1;
+      if (e.target.classList.contains("qty-plus")) val = Math.min(500, val + 1);
+      else if (e.target.classList.contains("qty-minus")) val = Math.max(1, val - 1);
+      else return;
+      $("demand-qty").value = val;
+    });
+    $("modal-close").onclick = closeDiagram;
+    $("demand-cancel").onclick = closeDiagram;
+    $("modal-overlay").addEventListener("click", function(e){ if (e.target.id === "modal-overlay") closeDiagram(); });
+    document.addEventListener("keydown", modalKeydown);
+    $("demand-send").onclick = function(){ sendDemand(idx); };
+    $("modal-close").focus();
+  }
+
+  async function sendDemand(idx){
+    var sku = skuOf(Number(idx));
+    var qty = Math.max(1, Math.min(500, parseInt(($("demand-qty") || {}).value, 10) || 1));
+    var errEl = $("demand-error");
+    errEl.classList.add("hidden");
+    var name = "", phone = "";
+    if (state.enduser){
+      name = (($("demand-name") || {}).value || "").trim();
+      phone = (($("demand-phone") || {}).value || "").trim();
+      if (!name){
+        errEl.textContent = "Please enter your name / कृपया नाम डालें"; errEl.classList.remove("hidden"); return;
+      }
+    }
+    $("demand-send").disabled = true;
+    try {
+      var res = state.enduser
+        ? await sb.rpc("record_enduser_demand", { p_supplier: state.enduser, p_name: name, p_phone: phone, p_sku: sku, p_qty: qty })
+        : await sb.rpc("record_demand", { p_sku: sku, p_qty: qty, p_note: null });
+      if (res.error) throw res.error;
+      closeDiagram();
+      showToast("✓ Demand recorded — your supplier has been notified / माँग दर्ज हो गई");
+    } catch (e){
+      errEl.textContent = "Could not send — check internet / नहीं भेजा गया — इंटरनेट देखें";
+      errEl.classList.remove("hidden");
+      $("demand-send").disabled = false;
+    }
+  }
+
+
+  // ---------- events ----------
+  function wireStatic(){
+    $("login-submit").onclick = function(){
+      attemptLogin($("login-id").value, $("login-password").value);
+    };
+    ["login-id","login-password"].forEach(function(id){
+      $(id).addEventListener("keydown", function(e){ if (e.key === "Enter") $("login-submit").click(); });
+    });
+    $("show-register").onclick = function(){ showRegister(true); };
+    $("register-cancel").onclick = function(){ showRegister(false); };
+    $("register-submit").onclick = doRegister;
+    document.querySelectorAll("[data-pw-toggle]").forEach(function(btn){
+      btn.onclick = function(){
+        var inp = $(btn.getAttribute("data-pw-toggle")); if (!inp) return;
+        var reveal = inp.type === "password";
+        inp.type = reveal ? "text" : "password";
+        btn.textContent = reveal ? "Hide" : "Show";
+        btn.setAttribute("aria-label", (reveal ? "Hide" : "Show") + " password / पासवर्ड");
+      };
+    });
+    $("auth-btn").onclick = doSignOut; // attached once here; updateAuthButton() only toggles visibility
+    $("home-brand").onclick = function(){ if (state.session && state.session.role !== "admin") showCatalog(); };
+    $("cart-btn").onclick = showCart;
+    $("nav-catalog").onclick = showCatalog;
+    $("nav-cart").onclick = showCart;
+    $("nav-orders").onclick = showOrders;
+    $("nav-manage").onclick = function(){ location.href = "ledger.html"; };
+    $("generate-pi-btn").onclick = function(){
+      if (!Object.keys(state.cart).some(function(k){ return state.cart[k] > 0; })) return;
+      if (state.enduser && !(($("eu-name") || {}).value || "").trim()){
+        showToast("Please enter your name / कृपया नाम डालें"); $("eu-name").focus(); return;
+      }
+      var btn = this;
+      btn.disabled = true;
+      var pi = buildPI();
+      saveLastOrder();
+      // hold the "PI ready" screen until the order actually saves, so a failed save
+      // is never shown as a success — and the cart only clears once it's safely stored.
+      placeOrder(pi).then(function(ok){
+        btn.disabled = false;
+        state.piInfo = pi;
+        state.piOrderOk = ok;
+        if (ok){ state.cart = {}; saveCart(); updateCartBadge(); }
+        showPI();
+      });
+    };
+    $("pi-back-btn").onclick = showCart;
+
+    var searchTimer = null;
+    function runSearch(){
+      var v = $("search-box").value.trim();
+      state.renderLimit = RENDER_CHUNK;
+      state.mode = (v || $("filter-group").value || $("filter-section").value) ? "list" : "browse";
+      if (state.mode === "browse") state.browseGroup = null;
+      renderCatalogBody();
+    }
+    $("search-box").addEventListener("input", function(){
+      // toggle the clear button immediately; debounce the full-catalog re-filter (~1,746 SKUs)
+      $("search-clear").classList.toggle("hidden", !$("search-box").value.trim());
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(runSearch, 180);
+    });
+    $("search-box").addEventListener("keydown", function(e){
+      if (e.key === "Escape" && $("search-box").value){ e.preventDefault(); $("search-clear").click(); }
+    });
+    $("search-clear").onclick = function(){
+      $("search-box").value = ""; $("search-clear").classList.add("hidden");
+      state.renderLimit = RENDER_CHUNK;
+      state.mode = ($("filter-group").value || $("filter-section").value) ? "list" : "browse";
+      if (state.mode === "browse") state.browseGroup = null;
+      renderCatalogBody(); $("search-box").focus();
+    };
+    $("filter-group").addEventListener("change", function(){
+      refreshSectionOptions();
+      $("filter-section").value = ""; // changing the group always resets to All Sections
+      state.renderLimit = RENDER_CHUNK;
+      var g = $("filter-group").value;
+      if (g){ state.mode = "list"; }
+      else { state.mode = ($("search-box").value.trim() || $("filter-section").value) ? "list" : "browse"; state.browseGroup = null; }
+      renderCatalogBody();
+    });
+    $("filter-section").addEventListener("change", function(){
+      state.renderLimit = RENDER_CHUNK;
+      var hasFilter = $("search-box").value.trim() || $("filter-group").value || $("filter-section").value;
+      state.mode = hasFilter ? "list" : "browse";
+      if (state.mode === "browse") state.browseGroup = null;
+      renderCatalogBody();
+    });
+
+    $("catalog-body").addEventListener("click", handleCatalogClick);
+    $("catalog-body").addEventListener("keydown", function(e){
+      if (e.key !== "Enter" && e.key !== " ") return;
+      var ph = e.target.closest("[data-photo]");
+      if (ph){ e.preventDefault(); openPhoto(ph.getAttribute("data-photo")); }
+    });
+    $("catalog-body").addEventListener("change", handleListChange);
+    $("cart-list").addEventListener("click", handleCartClick);
+    $("cart-list").addEventListener("change", handleCartChange);
+  }
+
+  function handleCatalogClick(e){
+    var groupTile = e.target.closest("[data-browse-group]");
+    if (groupTile){
+      state.browseGroup = groupTile.getAttribute("data-browse-group");
+      $("filter-group").value = state.browseGroup; refreshSectionOptions();
+      renderCatalogBody(); return;
+    }
+    var sectionTile = e.target.closest("[data-browse-section]");
+    if (sectionTile){
+      $("filter-section").value = sectionTile.getAttribute("data-browse-section");
+      state.mode = "list"; state.renderLimit = RENDER_CHUNK; renderCatalogBody(); return;
+    }
+    var addBtn = e.target.closest("[data-add]");
+    if (addBtn){
+      var idx = addBtn.getAttribute("data-add");
+      setQty(idx, (state.cart[idx] || 0) + 1); // first tap adds 1; the row then shows the stepper
+      var r = state.catalog[idx], n = cartCount();
+      var msg = "✓ Added" + (r && r.product_code ? " " + r.product_code : "") + " — cart " + n + " item" + (n === 1 ? "" : "s");
+      showToast(msg); announce(msg.replace("✓ ", ""));
+      renderCatalogBody(); return;
+    }
+    var photoEl = e.target.closest("[data-photo]");
+    if (photoEl){ openPhoto(photoEl.getAttribute("data-photo")); return; }
+    var diagBtn = e.target.closest("[data-diagram]");
+    if (diagBtn){ openDiagram(diagBtn.getAttribute("data-diagram")); return; }
+    var demandBtn = e.target.closest("[data-demand]");
+    if (demandBtn){ openDemand(demandBtn.getAttribute("data-demand")); return; }
+    var stepper = e.target.closest(".stepper");
+    if (stepper){
+      var sidx = stepper.getAttribute("data-idx");
+      var val = state.cart[sidx] || 0;
+      if (e.target.classList.contains("qty-plus")) val += 1;
+      else if (e.target.classList.contains("qty-minus")) val = Math.max(0, val - 1);
+      else return;
+      setQty(sidx, val); renderCatalogBody(); // stepper drives the cart directly now
+    }
+  }
+  function handleListChange(e){
+    if (e.target.classList.contains("qty-input")){
+      var stepper = e.target.closest(".stepper");
+      setQty(stepper.getAttribute("data-idx"), parseInt(e.target.value, 10) || 0);
+      renderCatalogBody();
+    }
+  }
+  function handleCartClick(e){
+    var removeBtn = e.target.closest("[data-remove]");
+    if (removeBtn){ setQty(removeBtn.getAttribute("data-remove"), 0); renderCart(); return; }
+    var stepper = e.target.closest(".stepper");
+    if (stepper){
+      var idx = stepper.getAttribute("data-idx");
+      var input = stepper.querySelector(".qty-input");
+      var val = parseInt(input.value, 10) || 0;
+      if (e.target.classList.contains("qty-plus")) val += 1;
+      if (e.target.classList.contains("qty-minus")) val = Math.max(0, val - 1);
+      setQty(idx, val); renderCart();
+    }
+  }
+  function handleCartChange(e){
+    if (e.target.classList.contains("qty-input")){
+      var stepper = e.target.closest(".stepper");
+      setQty(stepper.getAttribute("data-idx"), parseInt(e.target.value, 10) || 0);
+      renderCart();
+    }
+  }
+
+  // ---------- init ----------
+  function init(){
+    paintIcons();
+    wireStatic();
+    sb = window.__sb; // set by the deferred module bootstrap; ready by DOMContentLoaded
+    if (!sb){ loadCart(); showLogin(); showLoginError("App not configured — add supabase/config.js. / ऐप कॉन्फ़िगर नहीं है।"); return; }
+    // retail link (?s=<supplier>): no login, browse at MRP, order to that supplier
+    var supplierId = new URLSearchParams(location.search).get("s");
+    if (supplierId){
+      state.enduser = supplierId;
+      loadCart(); // identity resolved (retail link) — load that supplier's own retail cart key
+      sb.rpc("supplier_name", { p_supplier: supplierId }).then(function(r){ state.supplierName = (r && r.data) || "Shop"; renderDealerStrip(); });
+      loadData().then(function(){ showCatalog(); });
+      if ("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(function(){}); }
+      return;
+    }
+    // restore an existing Supabase session (survives reloads)
+    sb.auth.getSession().then(function(res){
+      var session = res && res.data && res.data.session;
+      if (!session || !session.user){ loadCart(); showLogin(); return; }
+      var u = session.user;
+      state.session = { id: u.id, email: u.email, role: null };
+      loadCart(); // identity resolved (restored session) — load this account's own cart
+      loadData().then(loadParty).then(function(){
+        if (!state.account){ showLogin(); return; }
+        showCatalog();
+      });
+    }).catch(function(){ loadCart(); showLogin(); });
+    if ("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(function(){}); }
+  }
+  document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>
