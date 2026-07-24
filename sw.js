@@ -1,5 +1,5 @@
 // ponytail: minimal shell cache, no offline image caching (catalog images live under pages/g* and are network-only)
-const CACHE = 'kg-spares-v41';
+const CACHE = 'kg-spares-v42';
 const SHELL = ['./', './index.html', './manifest.json'];
 // exact-path match for the shell network-first branch below — NOT p.replace('./','')+endsWith,
 // which degenerately matched every request (endsWith('') is always true)

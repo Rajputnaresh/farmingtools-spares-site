@@ -397,6 +397,11 @@
     <div class="filter-row hidden" id="filter-row">
       <select id="filter-group" aria-label="Filter by machine group / समूह"><option value="">All Groups</option></select>
       <select id="filter-section" aria-label="Filter by section / अनुभाग"><option value="">All Sections</option></select>
+      <select id="filter-stock" aria-label="Filter by stock / स्टॉक">
+        <option value="">All stock / सभी</option>
+        <option value="in">In stock / स्टॉक में</option>
+        <option value="out">Out of stock / स्टॉक नहीं</option>
+      </select>
     </div>
     <div id="catalog-body"></div>
   </section>
@@ -848,7 +853,7 @@
     renderDealerStrip();
     populateFilters();
     // reset to the browse landing on (re)entry
-    $("search-box").value = ""; $("filter-group").value = ""; $("filter-section").value = "";
+    $("search-box").value = ""; $("filter-group").value = ""; $("filter-section").value = ""; $("filter-stock").value = "";
     state.mode = "browse"; state.browseGroup = null; state.renderLimit = RENDER_CHUNK;
     $("search-clear").classList.add("hidden");
     renderCatalogBody();
@@ -957,17 +962,29 @@
     if (sections.indexOf(prevSection) !== -1) sectionSel.value = prevSection;
   }
 
+  // true / false / null(unknown) — mirrors the badge logic so the filter and the badge agree
+  function stockState(idx){
+    var av = availOf(idx);
+    return (av === undefined) ? null : ((typeof av === "boolean") ? av : av > 0);
+  }
+  // stock filter drops rows that don't match; "unknown" stock never matches an explicit in/out pick
+  function passesStock(idx){
+    var sv = $("filter-stock").value;
+    if (!sv) return true;
+    var s = stockState(idx);
+    return sv === "in" ? s === true : s === false;
+  }
   function filteredRows(){
     var q = ($("search-box").value || "").trim().toLowerCase();
     // a search term searches the WHOLE catalogue, ignoring any group/section picked earlier —
-    // group/section filters only apply once the search box is cleared again
+    // group/section filters only apply once the search box is cleared again. Stock filter always applies.
     if (q){
       return state.catalog
         .map(function(row, idx){ return {row: row, idx: idx}; })
         .filter(function(o){
           var r = o.row;
           var hay = (String(r.product_code || "") + " " + String(r.particular || "") + " " + String(r.sr_no || "")).toLowerCase();
-          return hay.indexOf(q) !== -1;
+          return hay.indexOf(q) !== -1 && passesStock(o.idx);
         });
     }
     var groupVal = $("filter-group").value, sectionVal = $("filter-section").value;
@@ -977,7 +994,7 @@
         var r = o.row;
         if (groupVal && String(r.group) !== groupVal) return false;
         if (sectionVal && r.section !== sectionVal) return false;
-        return true;
+        return passesStock(o.idx);
       });
   }
 
@@ -1111,7 +1128,7 @@
   }
 
   function resetToBrowse(){
-    $("search-box").value = ""; $("filter-group").value = ""; $("filter-section").value = "";
+    $("search-box").value = ""; $("filter-group").value = ""; $("filter-section").value = ""; $("filter-stock").value = "";
     $("search-clear").classList.add("hidden");
     refreshSectionOptions();
     state.mode = "browse"; state.browseGroup = null; state.renderLimit = RENDER_CHUNK;
@@ -1556,7 +1573,7 @@
     function runSearch(){
       var v = $("search-box").value.trim();
       state.renderLimit = RENDER_CHUNK;
-      state.mode = (v || $("filter-group").value || $("filter-section").value) ? "list" : "browse";
+      state.mode = (v || $("filter-group").value || $("filter-section").value || $("filter-stock").value) ? "list" : "browse";
       if (state.mode === "browse") state.browseGroup = null;
       renderCatalogBody();
     }
@@ -1572,7 +1589,7 @@
     $("search-clear").onclick = function(){
       $("search-box").value = ""; $("search-clear").classList.add("hidden");
       state.renderLimit = RENDER_CHUNK;
-      state.mode = ($("filter-group").value || $("filter-section").value) ? "list" : "browse";
+      state.mode = ($("filter-group").value || $("filter-section").value || $("filter-stock").value) ? "list" : "browse";
       if (state.mode === "browse") state.browseGroup = null;
       renderCatalogBody(); $("search-box").focus();
     };
@@ -1582,14 +1599,19 @@
       state.renderLimit = RENDER_CHUNK;
       var g = $("filter-group").value;
       if (g){ state.mode = "list"; }
-      else { state.mode = ($("search-box").value.trim() || $("filter-section").value) ? "list" : "browse"; state.browseGroup = null; }
+      else { state.mode = ($("search-box").value.trim() || $("filter-section").value || $("filter-stock").value) ? "list" : "browse"; state.browseGroup = null; }
       renderCatalogBody();
     });
     $("filter-section").addEventListener("change", function(){
       state.renderLimit = RENDER_CHUNK;
-      var hasFilter = $("search-box").value.trim() || $("filter-group").value || $("filter-section").value;
+      var hasFilter = $("search-box").value.trim() || $("filter-group").value || $("filter-section").value || $("filter-stock").value;
       state.mode = hasFilter ? "list" : "browse";
       if (state.mode === "browse") state.browseGroup = null;
+      renderCatalogBody();
+    });
+    $("filter-stock").addEventListener("change", function(){
+      state.renderLimit = RENDER_CHUNK;
+      // stock select only shows in list mode; a change just re-filters the current list
       renderCatalogBody();
     });
 
