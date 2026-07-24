@@ -254,6 +254,10 @@
   /* nav labels: English over Hindi, uniformly two lines so nothing wraps raggedly */
   nav.bottom-nav button .nl{ display:block; line-height:1.15; }
   nav.bottom-nav button .nl-hi{ display:block; font-size:10px; font-weight:600; opacity:.85; line-height:1.15; }
+  /* subtle view-in so tab switches read as intentional, not a jump-cut */
+  @keyframes kgViewIn{ from{ opacity:0; transform:translateY(5px); } to{ opacity:1; transform:none; } }
+  main#main > section:not(.hidden){ animation:kgViewIn .18s ease-out; }
+  @media (prefers-reduced-motion: reduce){ main#main > section:not(.hidden){ animation:none; } }
 
   /* cart */
   .cart-item{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:8px; }
@@ -921,6 +925,29 @@
   }
 
   // ---------- views ----------
+  // ---- browser-history nav: the phone Back button moves between tabs instead of
+  // exiting the app. Each show* records its view; popstate replays the previous one. ----
+  var VIEW_SHOW = null; // { catalog:showCatalog, ... } wired in init once show* exist
+  var _navPop = false;
+  var _scrollByView = {};
+  function pushView(name){
+    if (_navPop) return;
+    // remember where we were scrolled so returning to a tab keeps your place
+    if (state.curView) _scrollByView[state.curView] = window.scrollY || 0;
+    state.curView = name;
+    try {
+      if (history.state && history.state.kgv) { if (history.state.kgv !== name) history.pushState({ kgv:name }, ""); }
+      else history.replaceState({ kgv:name }, "");
+    } catch(e){}
+  }
+  window.addEventListener("popstate", function(e){
+    var v = e.state && e.state.kgv;
+    if (!v || !VIEW_SHOW || !VIEW_SHOW[v]) return;
+    _navPop = true;
+    try { VIEW_SHOW[v](); } finally { _navPop = false; }
+    var y = _scrollByView[v] || 0; requestAnimationFrame(function(){ window.scrollTo(0, y); });
+  });
+
   function hideAll(){
     ["view-login","view-catalog","view-cart","view-pi","view-orders","view-requests","view-more"].forEach(function(id){ var el = $(id); if (el) el.classList.add("hidden"); });
     $("bottom-nav").classList.add("hidden");
@@ -934,12 +961,17 @@
     var isRetail = !!state.enduser;
     var isBuyer = !isRetail && !!state.account;
     var supplier = isBuyer && state.account.role && MANAGE_ROLES[state.account.role];
-    $("nav-orders").classList.toggle("hidden", !isBuyer);
+    // the root importer has no supplier to buy from, so "Orders" (own purchases) is always
+    // empty for them — hide it so their nav is Shop · Cart · Requests · More, not 5 tabs.
+    var isRoot = isBuyer && state.account.parentId == null;
+    $("nav-orders").classList.toggle("hidden", !isBuyer || isRoot);
     $("nav-requests").classList.toggle("hidden", !supplier);
     $("nav-more").classList.toggle("hidden", !supplier);
     // retail customers don't see stock, so the in/out-of-stock filter is meaningless to them
     $("filter-stock").classList.toggle("hidden", isRetail);
-    if (supplier){ subscribeSellerAlerts(); updateRequestBadge(); }
+    if (supplier){ subscribeSellerAlerts(); updateRequestBadge();
+      if (window._deepReq){ window._deepReq = false; setTimeout(showRequests, 0); } // notification landed us here
+    }
   }
   function showLogin(){
     hideAll();
@@ -964,7 +996,7 @@
     $("header-actions").classList.remove("hidden");
     updateAuthButton();
     updateNavVisibility();
-    setActiveNav("nav-catalog");
+    setActiveNav("nav-catalog"); pushView("catalog");
     renderDealerStrip();
     populateFilters();
     // reset to the browse landing on (re)entry
@@ -981,11 +1013,11 @@
     $("header-actions").classList.remove("hidden");
     updateAuthButton();
     updateNavVisibility();
-    setActiveNav("nav-cart");
+    setActiveNav("nav-cart"); pushView("cart");
     $("eu-contact").classList.toggle("hidden", !state.enduser);
     renderCart(); updateCartBadge();
   }
-  function showPI(){ hideAll(); $("view-pi").classList.remove("hidden"); $("header-actions").classList.remove("hidden"); updateAuthButton(); renderPI(); }
+  function showPI(){ hideAll(); $("view-pi").classList.remove("hidden"); $("header-actions").classList.remove("hidden"); updateAuthButton(); pushView("pi"); renderPI(); }
   function showOrders(){
     hideAll();
     $("view-orders").classList.remove("hidden");
@@ -993,7 +1025,7 @@
     $("header-actions").classList.remove("hidden");
     updateAuthButton();
     updateNavVisibility();
-    setActiveNav("nav-orders");
+    setActiveNav("nav-orders"); pushView("orders");
     renderMyOrders();
   }
   function setActiveNav(id){
@@ -1048,7 +1080,7 @@
     $("bottom-nav").classList.remove("hidden");
     $("header-actions").classList.remove("hidden");
     updateAuthButton(); updateNavVisibility();
-    setActiveNav("nav-requests");
+    setActiveNav("nav-requests"); pushView("requests");
     renderRequests();
   }
   function showMore(){
@@ -1057,7 +1089,7 @@
     $("bottom-nav").classList.remove("hidden");
     $("header-actions").classList.remove("hidden");
     updateAuthButton(); updateNavVisibility();
-    setActiveNav("nav-more");
+    setActiveNav("nav-more"); pushView("more");
     renderMore();
   }
 
@@ -2022,6 +2054,10 @@
     $("nav-more").onclick = showMore;
     $("view-requests").addEventListener("click", onRequestsClick);
     $("bill-file").addEventListener("change", onBillFileChosen);
+    // history routing table + notification deep-link into Requests
+    VIEW_SHOW = { catalog:showCatalog, cart:showCart, orders:showOrders, requests:showRequests, more:showMore, pi:showPI };
+    if (navigator.serviceWorker) navigator.serviceWorker.addEventListener("message", function(e){ if (e.data && e.data.go === "requests" && isSupplier()) showRequests(); });
+    if (location.hash === "#requests"){ window._deepReq = true; try { history.replaceState(null, "", location.pathname + location.search); } catch(e){} }
     $("generate-pi-btn").onclick = function(){
       if (!Object.keys(state.cart).some(function(k){ return state.cart[k] > 0; })) return;
       if (state.enduser && !(($("eu-name") || {}).value || "").trim()){

@@ -1,9 +1,9 @@
 // ponytail: minimal shell cache, no offline image caching (catalog images live under pages/g* and are network-only)
-const CACHE = 'kg-spares-v48';
+const CACHE = 'kg-spares-v49';
 const SHELL = ['./', './index.html', './manifest.json'];
 // exact-path match for the shell network-first branch below — NOT p.replace('./','')+endsWith,
 // which degenerately matched every request (endsWith('') is always true)
-const SHELL_PATHS = new Set(['/', '/index.html', '/ledger.html', '/manifest.json']);
+const SHELL_PATHS = new Set(['/', '/index.html', '/manifest.json']);
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)));
@@ -28,8 +28,9 @@ self.addEventListener('push', (e) => {
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then((cls) => {
-    for (const c of cls) { if (c.url.indexOf('ledger.html') !== -1) return c.focus(); }
-    return clients.openWindow('./ledger.html');
+    // one unified app: focus any open app window (and route it to Requests), else open it there
+    for (const c of cls) { if (c.url.indexOf('index.html') !== -1 || c.url.endsWith('/')) { c.postMessage({ go: 'requests' }); return c.focus(); } }
+    return clients.openWindow('./index.html#requests');
   }));
 });
 
