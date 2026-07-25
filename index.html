@@ -136,6 +136,29 @@
   .stock-row .s-name{ font-size:12.5px; color:var(--muted); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .stock-row input{ width:84px; min-height:44px; padding:8px; text-align:right; }
 
+  /* Stock dashboard — thumbable card rows (no table: dodges the .req-card-scoped
+     table styles + reads better one-handed for low-literacy users). Real <button>s
+     so touch/keyboard/screen-reader all work. */
+  .stk-list{ display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+  .stk-row{ display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+    background:#fff; border:1px solid var(--border); border-radius:10px; padding:10px 12px;
+    min-height:52px; font:inherit; color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .stk-row:active{ background:var(--green-light); }
+  .stk-main{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .stk-name{ font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+  .stk-sub{ font-size:12.5px; color:var(--muted); }
+  .stk-qty{ font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; text-align:right; }
+  .stk-qty small{ display:block; font-weight:600; font-size:11px; color:var(--muted); }
+  .stk-chev{ color:var(--muted); flex-shrink:0; font-size:18px; line-height:1; }
+  .stk-crumbs{ display:flex; flex-wrap:wrap; align-items:center; gap:4px; font-size:12.5px; color:var(--muted); margin-bottom:2px; }
+  .stk-crumb{ background:none; border:none; padding:0; font:inherit; color:var(--green-dark); font-weight:600; cursor:pointer; }
+  .stk-back{ background:none; border:1px solid var(--border); border-radius:8px; color:var(--green-dark);
+    font-weight:600; font-size:13px; min-height:44px; padding:6px 14px; margin-bottom:8px; cursor:pointer; }
+  .stk-back:active{ background:var(--green-light); }
+  .stk-title{ font-weight:700; margin-bottom:2px; }
+  .stk-count{ color:var(--muted); font-size:12.5px; margin-bottom:2px; }
+  .stk-cap{ color:var(--muted); font-size:12.5px; margin-top:8px; }
+
   .notice{
     background:#fff6e0; border:1px solid #f0c96b; color:#7a5b00;
     padding:8px 10px; border-radius:8px; font-size:12.5px; margin:10px 0;
@@ -1321,9 +1344,10 @@
     // clickable dashboard: drill party → parts → who-holds-it, and a back step
     var sc = $("m-stock-card");
     if (sc) sc.addEventListener("click", function(e){
-      var b = e.target.closest("[data-stock-back]"); if (b){ _stockDrill = null; drawMoreStock(); return; }
-      var pr = e.target.closest("[data-drill-party]"); if (pr){ _stockDrill = { type:'party', val:pr.getAttribute("data-drill-party") }; drawMoreStock(); return; }
-      var pt = e.target.closest("[data-drill-part]"); if (pt){ _stockDrill = { type:'part', val:pt.getAttribute("data-drill-part") }; drawMoreStock(); return; }
+      var b = e.target.closest("[data-stock-back]"); if (b){ _stockStack.pop(); drawMoreStock(); return; }
+      var cr = e.target.closest("[data-crumb]"); if (cr){ _stockStack = _stockStack.slice(0, Number(cr.getAttribute("data-crumb"))); drawMoreStock(); return; }
+      var pr = e.target.closest("[data-nav-party]"); if (pr){ _stockStack.push({ t:'party', val:pr.getAttribute("data-nav-party") }); drawMoreStock(); return; }
+      var pt = e.target.closest("[data-nav-part]"); if (pt){ _stockStack.push({ t:'part', val:pt.getAttribute("data-nav-part"), label:pt.getAttribute("data-nav-label") }); drawMoreStock(); return; }
     });
     // sku search filters
     [["m-t-search","m-t-sku"],["m-o-search","m-o-sku"]].forEach(function(pair){
@@ -1378,62 +1402,89 @@
   var _moreStock = [];
   async function renderMoreStock(){
     var card = $("m-stock-card"); if (!card) return;
-    _stockDrill = null; // fresh data → start at the party overview
+    _stockStack = []; // fresh data → start at the party overview
     var r = await sb.from("current_stock").select("party_id, sku, qty").range(0, 99999);
     if (r.error){ card.innerHTML = '<div class="req-msg err">'+esc(friendlyErr(r.error))+'</div>'; return; }
     var pName = {}; (state.parties||[]).forEach(function(p){ pName[p.id]=p.name; });
+    // keep sku (the stable key) alongside the display name — two SKUs can share a name
     _moreStock = (r.data||[]).filter(function(x){ return x.qty !== 0 && pName[x.party_id] !== undefined; })
-      .map(function(x){ return { party:pName[x.party_id]||x.party_id, part:skuName(x.sku), qty:x.qty }; })
+      .map(function(x){ return { party:pName[x.party_id]||x.party_id, sku:x.sku, part:skuName(x.sku), qty:x.qty }; })
       .sort(function(a,b){ return a.party.localeCompare(b.party) || String(a.part).localeCompare(String(b.part)); });
     drawMoreStock();
   }
-  // Drill state: null = party overview; {type:'party'|'part', val} = a detail level.
-  // The stock table is a clickable dashboard — tap a party to see its parts, tap a part
-  // to see who holds it. Back returns to the overview.
-  var _stockDrill = null;
+  // Drill state is a STACK so Back pops one level (not straight to the top) and a
+  // breadcrumb shows where you are. Every row is a real <button>: tap a party → its
+  // parts → who holds that part → that holder's parts … the network as a graph.
+  //   []                              = party overview
+  //   [{t:'party',val}]               = that party's parts
+  //   [...,{t:'part',val:sku,label}]  = who holds that part (network-wide)
+  var _stockStack = [];
+  function stkCap(list, CAP){ return list.length > CAP
+    ? '<div class="stk-cap">Showing first '+CAP+' of '+list.length+' — filter above to narrow / खोजें</div>' : ''; }
+  function stkCrumbs(){
+    if (!_stockStack.length) return '';
+    var out = '<button type="button" class="stk-crumb" data-crumb="0">All stock</button>';
+    _stockStack.forEach(function(s, i){
+      var label = s.t === 'part' ? (s.label || s.val) : s.val;
+      out += ' <span>‹</span> ' + (i === _stockStack.length - 1
+        ? '<span>'+esc(label)+'</span>'                                   // current level: plain text
+        : '<button type="button" class="stk-crumb" data-crumb="'+(i+1)+'">'+esc(label)+'</button>');
+    });
+    return '<div class="stk-crumbs">'+out+'</div>'+
+      '<button type="button" class="stk-back" data-stock-back>‹ Back / वापस</button>';
+  }
   function drawMoreStock(){
     var card = $("m-stock-card"); if (!card) return;
-    if (!_moreStock.length){ card.innerHTML = '<div style="color:var(--muted);font-size:13px;">No stock recorded yet.</div>'; _stockDrill = null; return; }
+    if (!_moreStock.length){ card.innerHTML = '<div style="color:var(--muted);font-size:13px;">No stock recorded yet.</div>'; _stockStack = []; return; }
     var q = (($("m-stock-filter")||{}).value||"").trim().toLowerCase();
-    var CAP = 200;
-    var back = '<button type="button" data-stock-back class="btn-soft" style="padding:6px 12px;min-height:36px;margin-bottom:8px;">‹ All stock / सारा स्टॉक</button>';
+    var CAP = 200, top = _stockStack[_stockStack.length - 1];
+    var fEl = $("m-stock-filter"); // placeholder must match what the filter searches at this level
+    if (fEl) fEl.placeholder = top && top.t === 'party' ? "Filter parts / पुर्ज़े खोजें"
+      : top && top.t === 'part' ? "Filter holders / धारक खोजें"
+      : "Filter — part or party / खोजें";
 
-    if (_stockDrill && _stockDrill.type === 'party'){
-      var rows = _moreStock.filter(function(r){ return r.party === _stockDrill.val && (!q || String(r.part).toLowerCase().indexOf(q) !== -1); })
+    if (top && top.t === 'party'){
+      var rows = _moreStock.filter(function(r){ return r.party === top.val && (!q || String(r.part).toLowerCase().indexOf(q) !== -1); })
         .sort(function(a,b){ return String(a.part).localeCompare(String(b.part)); });
       var total = rows.reduce(function(s,r){ return s + r.qty; }, 0);
-      card.innerHTML = back +
-        '<div style="font-weight:700;margin-bottom:2px;">'+esc(_stockDrill.val)+'</div>'+
-        '<div style="color:var(--muted);font-size:12.5px;margin-bottom:6px;">'+rows.length+' part'+(rows.length===1?"":"s")+' · '+total+' units total</div>'+
-        '<div class="tscroll"><table><thead><tr><th>Part</th><th class="num">Qty</th></tr></thead><tbody>'+
-        rows.slice(0,CAP).map(function(r){ return '<tr class="stock-row" data-drill-part="'+esc(r.part)+'" style="cursor:pointer;"><td>'+esc(r.part)+' ›</td><td class="num">'+r.qty+'</td></tr>'; }).join("")+
-        '</tbody></table></div>';
+      card.innerHTML = stkCrumbs() +
+        '<div class="stk-title">'+esc(top.val)+'</div>'+
+        '<div class="stk-count">'+rows.length+' part'+(rows.length===1?"":"s")+' · '+total+' units</div>'+
+        '<div class="stk-list">'+ rows.slice(0,CAP).map(function(r){
+          return '<button type="button" class="stk-row" data-nav-part="'+esc(r.sku)+'" data-nav-label="'+esc(r.part)+'" aria-label="'+esc(r.part)+', '+r.qty+' units, see who else holds it">'+
+            '<span class="stk-main"><span class="stk-name">'+esc(r.part)+'</span></span>'+
+            '<span class="stk-qty">'+r.qty+'</span><span class="stk-chev" aria-hidden="true">›</span></button>'; }).join("") +'</div>'+
+        stkCap(rows, CAP);
       return;
     }
-    if (_stockDrill && _stockDrill.type === 'part'){
-      var prows = _moreStock.filter(function(r){ return String(r.part) === _stockDrill.val && (!q || r.party.toLowerCase().indexOf(q) !== -1); })
-        .sort(function(a,b){ return a.party.localeCompare(b.party); });
+    if (top && top.t === 'part'){
+      var prows = _moreStock.filter(function(r){ return r.sku === top.val && (!q || r.party.toLowerCase().indexOf(q) !== -1); })
+        .sort(function(a,b){ return b.qty - a.qty || a.party.localeCompare(b.party); }); // most-held first
       var ptotal = prows.reduce(function(s,r){ return s + r.qty; }, 0);
-      card.innerHTML = back +
-        '<div style="font-weight:700;margin-bottom:2px;">'+esc(_stockDrill.val)+'</div>'+
-        '<div style="color:var(--muted);font-size:12.5px;margin-bottom:6px;">held by '+prows.length+' part'+(prows.length===1?"y":"ies")+' · '+ptotal+' units total</div>'+
-        '<div class="tscroll"><table><thead><tr><th>Party</th><th class="num">Qty</th></tr></thead><tbody>'+
-        prows.slice(0,CAP).map(function(r){ return '<tr><td>'+esc(r.party)+'</td><td class="num">'+r.qty+'</td></tr>'; }).join("")+
-        '</tbody></table></div>';
+      card.innerHTML = stkCrumbs() +
+        '<div class="stk-title">'+esc(top.label || top.val)+'</div>'+
+        '<div class="stk-count">held by '+prows.length+' part'+(prows.length===1?"y":"ies")+' · '+ptotal+' units total</div>'+
+        '<div class="stk-list">'+ prows.slice(0,CAP).map(function(r){
+          return '<button type="button" class="stk-row" data-nav-party="'+esc(r.party)+'" aria-label="'+esc(r.party)+' holds '+r.qty+', open">'+
+            '<span class="stk-main"><span class="stk-name">'+esc(r.party)+'</span></span>'+
+            '<span class="stk-qty">'+r.qty+'</span><span class="stk-chev" aria-hidden="true">›</span></button>'; }).join("") +'</div>'+
+        stkCap(prows, CAP);
       return;
     }
 
-    // overview: one row per party (units + distinct parts), tap to drill in
+    // overview: one row per party (distinct parts + total units), tap to drill in
     var byParty = {};
     _moreStock.forEach(function(r){ var p = byParty[r.party] || (byParty[r.party] = { party:r.party, lines:0, qty:0 }); p.lines++; p.qty += r.qty; });
     var parties = Object.keys(byParty).map(function(k){ return byParty[k]; })
       .filter(function(p){ return !q || p.party.toLowerCase().indexOf(q) !== -1; })
       .sort(function(a,b){ return a.party.localeCompare(b.party); });
     if (!parties.length){ card.innerHTML = '<div style="color:var(--muted);font-size:13px;">No match for "'+esc(q)+'".</div>'; return; }
-    card.innerHTML = '<div style="color:var(--muted);font-size:12.5px;margin-bottom:6px;">'+parties.length+' part'+(parties.length===1?"y":"ies")+' holding stock — tap to see parts / देखें</div>'+
-      '<div class="tscroll"><table><thead><tr><th>Party</th><th class="num">Parts</th><th class="num">Units</th></tr></thead><tbody>'+
-      parties.slice(0,CAP).map(function(p){ return '<tr class="stock-row" data-drill-party="'+esc(p.party)+'" style="cursor:pointer;"><td>'+esc(p.party)+' ›</td><td class="num">'+p.lines+'</td><td class="num">'+p.qty+'</td></tr>'; }).join("")+
-      '</tbody></table></div>';
+    card.innerHTML = '<div class="stk-count">'+parties.length+' part'+(parties.length===1?"y":"ies")+' holding stock — tap to see parts / देखें</div>'+
+      '<div class="stk-list">'+ parties.slice(0,CAP).map(function(p){
+        return '<button type="button" class="stk-row" data-nav-party="'+esc(p.party)+'" aria-label="'+esc(p.party)+', '+p.lines+' parts, '+p.qty+' units, open">'+
+          '<span class="stk-main"><span class="stk-name">'+esc(p.party)+'</span><span class="stk-sub">'+p.lines+' part'+(p.lines===1?"":"s")+'</span></span>'+
+          '<span class="stk-qty">'+p.qty+'<small>units</small></span><span class="stk-chev" aria-hidden="true">›</span></button>'; }).join("") +'</div>'+
+      stkCap(parties, CAP);
   }
   async function renderMoreApprovals(){
     var card = $("m-approvals-card"); if (!card) return;
