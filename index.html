@@ -1716,10 +1716,13 @@
     var inp = $("bill-file"), file = inp.files && inp.files[0], id = billTargetOrder;
     inp.value = ""; billTargetOrder = null;
     if (!file || !id) return;
-    if (file.size > 10*1024*1024){ showToast("File too large (max 10MB) / फ़ाइल बहुत बड़ी"); return; }
+    if (file.size > 5*1024*1024){ showToast("File too large (max 5MB) / फ़ाइल बहुत बड़ी"); return; }
     showToast("Uploading bill… / अपलोड हो रहा है");
     var ext = (file.name.split(".").pop() || "pdf").toLowerCase();
-    var path = "o"+id+"-"+(crypto.randomUUID ? crypto.randomUUID() : Date.now())+"."+ext;
+    // path is prefixed by the uploader's own auth uid — the storage policy only allows writing
+    // into your own folder, so a signed-in user can't scatter files across the public bucket.
+    var uid = (state.session && state.session.id) || "anon";
+    var path = uid + "/o"+id+"-"+(crypto.randomUUID ? crypto.randomUUID() : Date.now())+"."+ext;
     var up = await sb.storage.from("bills").upload(path, file, { upsert:false });
     if (up.error){ showToast(friendlyErr(up.error)); return; }
     var pub = sb.storage.from("bills").getPublicUrl(path);
