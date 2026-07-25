@@ -194,6 +194,13 @@
   [data-g="2"] .t-icon,[data-g="2"].thumb-ph{ color:var(--cat-2); }
   [data-g="3"] .t-icon,[data-g="3"].thumb-ph{ color:var(--cat-3); }
   [data-g="4"] .t-icon,[data-g="4"].thumb-ph{ color:var(--cat-4); }
+  /* every thumbnail slot carries its group's tint, so a photoless or still-loading row
+     is a soft category square (not a stark empty box); the photo covers it once loaded,
+     and thumbFail() swaps in the group icon on that same tint if the image is missing. */
+  .item-thumb[data-g="1"],.thumb-ph[data-g="1"]{ background:var(--cat-1-tint); }
+  .item-thumb[data-g="2"],.thumb-ph[data-g="2"]{ background:var(--cat-2-tint); }
+  .item-thumb[data-g="3"],.thumb-ph[data-g="3"]{ background:var(--cat-3-tint); }
+  .item-thumb[data-g="4"],.thumb-ph[data-g="4"]{ background:var(--cat-4-tint); }
   .tile[data-g="1"] .t-chip{ background:var(--cat-1-tint); }
   .tile[data-g="2"] .t-chip{ background:var(--cat-2-tint); }
   .tile[data-g="3"] .t-chip{ background:var(--cat-3-tint); }
@@ -231,7 +238,7 @@
   .item-bottom{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
   .rate{ font-weight:700; font-size:14.5px; color:var(--text); }
   .rate.na{ color:var(--muted); font-weight:600; font-size:12.5px; }
-  .item-controls{ display:flex; align-items:center; gap:6px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; }
+  .item-controls{ display:flex; align-items:center; gap:6px; margin-left:auto; flex-wrap:nowrap; flex-shrink:0; justify-content:flex-end; }
   .diagram-btn{
     background:var(--green-light); color:var(--green-dark); border:1px solid var(--border); border-radius:8px;
     padding:8px 10px; font-size:12px; font-weight:600; min-height:44px;
@@ -1405,8 +1412,17 @@
         var q = Math.max(0, Math.min(500, parseInt(inp.value,10)||0));
         if (q !== Number(inp.defaultValue)) changed.push({ sku: inp.getAttribute("data-sku"), qty: q });
       });
-      var note = changed.length ? "\nQuantities were adjusted — the buyer will see the change." : "";
-      if (!(await askConfirm("Bill & ship this order?\nStock leaves you and moves to the buyer now — this can't be undone."+note+"\n\nबिल करें? स्टॉक अभी जाएगा, वापस नहीं होगा।", { okLabel:"Bill & ship / बिल करें" }))) return;
+      // show the actual ledger movement (part ×qty, from you → to the buyer) so the supplier
+      // approves the real delta, not a description of it — "the ledger is the truth".
+      var buyer = (((card.querySelector("b")||{}).textContent)||"the buyer").split("·")[0].trim();
+      var moves = [];
+      card.querySelectorAll(".rq-qty").forEach(function(inp){
+        var q = Math.max(0, Math.min(500, parseInt(inp.value,10)||0));
+        if (q > 0) moves.push(skuName(inp.getAttribute("data-sku")) + " ×" + q);
+      });
+      var delta = moves.length ? "\n\nMoves now:\n" + moves.join("\n") + "\n\n− from your stock   →   + to " + buyer : "";
+      var note = changed.length ? "\nQuantities were adjusted — the buyer sees the change." : "";
+      if (!(await askConfirm("Bill & ship this order? This can't be undone." + delta + note + "\n\nबिल करें? स्टॉक अभी जाएगा, वापस नहीं होगा।", { okLabel:"Bill & ship / बिल करें" }))) return;
       var m = $("rm-"+id); if (m){ m.className="req-msg"; m.textContent = "Billing…"; }
       if (changed.length){
         var a = await sb.rpc("amend_order_qty", { p_order_id:id, p_lines:changed });
@@ -1627,7 +1643,7 @@
 
     var q = ($("search-box").value || "").trim();
     // a live query searches the whole catalogue, ignoring the group/section pickers — say so
-    var scopeNote = q ? ' · <span class="search-scope">searching all groups / सभी समूह</span>' : '';
+    var scopeNote = q ? ' · <span class="search-scope">searching all groups — clear search to go back / खोज हटाएँ</span>' : '';
     var head = '<button class="list-reset" id="list-reset" type="button">&larr; Browse all machines / सभी देखें</button>' +
       '<div class="result-count" role="status" aria-live="polite">' + total + ' item' + (total === 1 ? "" : "s") +
       (total > shown.length ? ' — showing ' + shown.length : '') + scopeNote + '</div>';
