@@ -1,7 +1,7 @@
 // Shell precache now includes the vendored Supabase lib + catalog so the app boots
 // fully offline. Catalog images (pages/**) are cached on first view (cache-first runtime),
 // not precached — 1800 files / 37MB is far too much to push on install.
-const CACHE = 'kg-spares-v57';
+const CACHE = 'kg-spares-v58';
 const IMG_CACHE = 'kg-img-v1';
 const SHELL = ['./', './index.html', './manifest.json', './vendor/supabase.js', './supabase/config.js', './catalog.json'];
 // exact-path match for the shell network-first branch below — NOT p.replace('./','')+endsWith,
@@ -27,6 +27,14 @@ self.addEventListener('push', (e) => {
   e.waitUntil(self.registration.showNotification(d.title || 'FarmingTools.in Spares', {
     body: d.body || 'You have a new order.', tag: 'ft-order', renotify: true
   }));
+});
+// ---- Background Sync: when the phone regains connectivity, wake any open app window to
+// flush its IndexedDB order outbox. The auth session lives in the page, so the SW delegates
+// the actual send to a client rather than replicating Supabase auth here. ----
+self.addEventListener('sync', (e) => {
+  if (e.tag !== 'flush-orders') return;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+    .then((cls) => { cls.forEach((c) => c.postMessage({ go: 'flush' })); }));
 });
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();

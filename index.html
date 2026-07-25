@@ -823,29 +823,78 @@
   function netRate(idx){ var v = state.priceByIndex[idx]; return (v === undefined || v === null) ? null : v; }
   function availOf(idx){ return state.availByIndex[idx]; } // true / false / undefined
 
-  // every generated PI is saved privately to Supabase (orders/order_lines) for the importer:
-  // who ordered what, how much, when — demand data, invisible to other dealers (RLS).
-  // returns a Promise<boolean> so the caller can hold the "PI ready" screen until this settles
-  // and show a clear failure banner (instead of a silent console.warn) when it doesn't.
-  function placeOrder(pi){
-    if (!sb) return Promise.resolve(false);
-    if (state.enduser){
-      return sb.rpc("place_enduser_order", {
-        p_supplier: state.enduser, p_name: pi.dealerName,
+  // ---------- offline order outbox (IndexedDB) ----------
+  // Placing an order is the one write a dealer makes on patchy rural data. If the network is
+  // down (or drops mid-submit) the order is stashed in IndexedDB and flushed when connectivity
+  // returns — on the `online` event, on next app open, and via Background Sync. Every order
+  // carries a stable client_key so a replayed submit is idempotent server-side (no double order).
+  var OUTBOX_DB = "kg_outbox", OUTBOX_STORE = "orders";
+  function uuid(){ try { return crypto.randomUUID(); } catch(e){ return Date.now()+"-"+Math.random().toString(16).slice(2)+Math.random().toString(16).slice(2); } }
+  function outboxDB(){
+    return new Promise(function(resolve, reject){
+      var rq = indexedDB.open(OUTBOX_DB, 1);
+      rq.onupgradeneeded = function(){ var db = rq.result; if (!db.objectStoreNames.contains(OUTBOX_STORE)) db.createObjectStore(OUTBOX_STORE, { keyPath:"key" }); };
+      rq.onsuccess = function(){ resolve(rq.result); };
+      rq.onerror = function(){ reject(rq.error); };
+    });
+  }
+  function outboxTx(mode, fn){
+    return outboxDB().then(function(db){ return new Promise(function(res, rej){
+      var tx = db.transaction(OUTBOX_STORE, mode), req = fn(tx.objectStore(OUTBOX_STORE));
+      tx.oncomplete = function(){ res(req && "result" in req ? req.result : undefined); };
+      tx.onerror = function(){ rej(tx.error); };
+    }); });
+  }
+  function outboxPut(rec){ return outboxTx("readwrite", function(s){ return s.put(rec); }); }
+  function outboxDel(key){ return outboxTx("readwrite", function(s){ return s.delete(key); }); }
+  function outboxAll(){ return outboxTx("readonly", function(s){ return s.getAll(); }); }
+
+  // capture everything the RPC needs NOW (DOM values won't be readable at flush time)
+  function buildOrderRec(pi){
+    if (state.enduser) return { key: pi.clientKey, kind:"enduser", ts: Date.now(),
+      args: { p_supplier: state.enduser, p_name: pi.dealerName,
         p_phone: (($("eu-phone") || {}).value || "").trim() || null,
-        p_lines: pi.lines.map(function(l){ return { sku: l.sku, qty: l.qty }; })
-      }).then(function(res){
-        if (res && res.error){ console.warn("order save failed:", res.error.message); return false; }
-        return true;
-      }).catch(function(){ return false; });
-    }
-    return sb.rpc("place_order", {
-      p_pi: pi.number, p_subtotal: pi.subtotal, p_gst: pi.gst, p_grand: pi.grand,
-      p_lines: pi.lines.map(function(l){ return { sku: l.sku, qty: l.qty, rate: l.rate, amount: l.amount }; })
-    }).then(function(res){
-      if (res && res.error){ console.warn("order save failed:", res.error.message); return false; }
+        p_lines: pi.lines.map(function(l){ return { sku: l.sku, qty: l.qty }; }), p_client_key: pi.clientKey } };
+    return { key: pi.clientKey, kind:"dealer", ts: Date.now(),
+      args: { p_pi: pi.number, p_subtotal: pi.subtotal, p_gst: pi.gst, p_grand: pi.grand,
+        p_lines: pi.lines.map(function(l){ return { sku: l.sku, qty: l.qty, rate: l.rate, amount: l.amount }; }), p_client_key: pi.clientKey } };
+  }
+  function sendOrderRpc(rec){ return sb.rpc(rec.kind === "enduser" ? "place_enduser_order" : "place_order", rec.args); }
+  function requestOrderSync(){
+    try { if ("serviceWorker" in navigator && "SyncManager" in window)
+      navigator.serviceWorker.ready.then(function(reg){ return reg.sync.register("flush-orders"); }).catch(function(){}); } catch(e){}
+  }
+  function queueOrder(rec){ return outboxPut(rec).then(function(){ requestOrderSync(); }); }
+
+  // every generated PI is saved privately to Supabase for the importer (who ordered what, when).
+  // Returns Promise<true | "queued" | false>: true = saved now, "queued" = stored offline and
+  // will send automatically, false = the server rejected it (permanent — a retry won't help).
+  function placeOrder(pi){
+    if (!sb || !pi.clientKey) return Promise.resolve(false);
+    var rec = buildOrderRec(pi);
+    if (navigator.onLine === false) return queueOrder(rec).then(function(){ return "queued"; });
+    return sendOrderRpc(rec).then(function(res){
+      if (res && res.error){ console.warn("order rejected:", res.error.message); return false; } // server said no
       return true;
-    }).catch(function(){ return false; });
+    }).catch(function(){ return queueOrder(rec).then(function(){ return "queued"; }); }); // network down — retry later
+  }
+
+  // drain queued orders; idempotent server-side so a double-flush can't double-order
+  var _flushing = false;
+  function flushOutbox(){
+    if (_flushing || !sb || navigator.onLine === false) return Promise.resolve();
+    _flushing = true;
+    return outboxAll().then(function(recs){
+      return (recs || []).reduce(function(chain, rec){
+        return chain.then(function(){
+          return sendOrderRpc(rec).then(function(res){
+            // success OR a permanent server rejection → remove it (a rejection will never succeed)
+            if (res && res.error) showToast("A saved order couldn't be placed / एक ऑर्डर सेव नहीं हुआ");
+            return outboxDel(rec.key);
+          }).catch(function(){ /* still offline / network error — keep it for the next flush */ });
+        });
+      }, Promise.resolve());
+    }).then(function(){ _flushing = false; }).catch(function(){ _flushing = false; });
   }
 
   // remembers the cart behind a dealer's most recent generated PI, so a repeat
@@ -1952,7 +2001,9 @@
         '<td class="num">' + inr(l.amount) + '</td></tr>';
     }).join("");
 
-    var bannerHtml = state.piOrderOk === false
+    var bannerHtml = state.piOrderOk === "queued"
+      ? '<div class="notice">✓ Saved on your phone — it will be sent automatically when you’re online. / फ़ोन पर सेव — ऑनलाइन होते ही अपने आप भेजा जाएगा।</div>'
+      : state.piOrderOk === false
       ? '<div class="login-error">⚠ Order could not be saved — check internet and tap Generate PI again. / ऑर्डर सेव नहीं हुआ — इंटरनेट देखें और फिर से कोशिश करें।</div>'
       : '<div class="pi-success">✓ PI ready. Share it on WhatsApp below. / पीआई तैयार है, नीचे व्हाट्सऐप पर भेजें।</div>';
     $("pi-box").innerHTML =
@@ -2268,7 +2319,12 @@
     $("bill-file").addEventListener("change", onBillFileChosen);
     // history routing table + notification deep-link into Requests
     VIEW_SHOW = { catalog:showCatalog, cart:showCart, orders:showOrders, requests:showRequests, more:showMore, pi:showPI };
-    if (navigator.serviceWorker) navigator.serviceWorker.addEventListener("message", function(e){ if (e.data && e.data.go === "requests" && isSupplier()) showRequests(); });
+    if (navigator.serviceWorker) navigator.serviceWorker.addEventListener("message", function(e){
+      if (!e.data) return;
+      if (e.data.go === "requests" && isSupplier()) showRequests();
+      else if (e.data.go === "flush") flushOutbox(); // Background Sync woke us to send queued orders
+    });
+    window.addEventListener("online", flushOutbox); // reconnected → send anything stored offline
     if (location.hash === "#requests"){ window._deepReq = true; try { history.replaceState(null, "", location.pathname + location.search); } catch(e){} }
     $("generate-pi-btn").onclick = function(){
       if (!Object.keys(state.cart).some(function(k){ return state.cart[k] > 0; })) return;
@@ -2278,14 +2334,15 @@
       var btn = this;
       btn.disabled = true;
       var pi = buildPI();
+      pi.clientKey = uuid(); // stable idempotency key — the same order never books twice on retry
       saveLastOrder();
-      // hold the "PI ready" screen until the order actually saves, so a failed save
-      // is never shown as a success — and the cart only clears once it's safely stored.
+      // hold the "PI ready" screen until the order settles. A stored-offline order ("queued")
+      // is a success too: it's safely in the outbox and the cart can clear.
       placeOrder(pi).then(function(ok){
         btn.disabled = false;
         state.piInfo = pi;
         state.piOrderOk = ok;
-        if (ok){ state.cart = {}; saveCart(); updateCartBadge(); }
+        if (ok === true || ok === "queued"){ state.cart = {}; saveCart(); updateCartBadge(); }
         showPI();
       });
     };
@@ -2431,6 +2488,7 @@
       var painted = hydrateData(); if (painted) showCatalog();       // instant paint from last-good snapshot
       loadData().then(function(){ painted ? renderCatalogBody() : showCatalog(); }); // then revalidate
       if ("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(function(){}); }
+    flushOutbox(); // send any order stored offline on a previous visit
       return;
     }
     // restore an existing Supabase session (survives reloads)
@@ -2447,6 +2505,7 @@
       });
     }).catch(function(){ loadCart(); showLogin(); });
     if ("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(function(){}); }
+    flushOutbox(); // send any order stored offline on a previous visit
   }
   document.addEventListener("DOMContentLoaded", init);
 })();
