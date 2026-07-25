@@ -1,7 +1,7 @@
 // Shell precache now includes the vendored Supabase lib + catalog so the app boots
 // fully offline. Catalog images (pages/**) are cached on first view (cache-first runtime),
 // not precached — 1800 files / 37MB is far too much to push on install.
-const CACHE = 'kg-spares-v58';
+const CACHE = 'kg-spares-v59';
 const IMG_CACHE = 'kg-img-v1';
 const SHELL = ['./', './index.html', './manifest.json', './vendor/supabase.js', './supabase/config.js', './catalog.json'];
 // exact-path match for the shell network-first branch below — NOT p.replace('./','')+endsWith,

@@ -888,10 +888,14 @@
       return (recs || []).reduce(function(chain, rec){
         return chain.then(function(){
           return sendOrderRpc(rec).then(function(res){
-            // success OR a permanent server rejection → remove it (a rejection will never succeed)
-            if (res && res.error) showToast("A saved order couldn't be placed / एक ऑर्डर सेव नहीं हुआ");
-            return outboxDel(rec.key);
-          }).catch(function(){ /* still offline / network error — keep it for the next flush */ });
+            if (!res || !res.error) return outboxDel(rec.key); // sent (or idempotent replay) → done
+            // The server refused this attempt. It may be transient — e.g. the session lapsed and
+            // place_order can't resolve my_party() yet — so retry a few times before giving up,
+            // rather than dropping a real order the moment one flush hits an auth gap.
+            rec.tries = (rec.tries || 0) + 1;
+            if (rec.tries >= 5){ showToast("A saved order couldn't be placed / एक ऑर्डर सेव नहीं हुआ"); return outboxDel(rec.key); }
+            return outboxPut(rec); // persist the higher try-count; retry on a later flush
+          }).catch(function(){ /* still offline / network error — keep it as-is for the next flush */ });
         });
       }, Promise.resolve());
     }).then(function(){ _flushing = false; }).catch(function(){ _flushing = false; });
