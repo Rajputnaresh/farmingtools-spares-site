@@ -498,6 +498,7 @@
         <button type="button" class="pw-toggle" data-pw-toggle="login-password" aria-label="Show password / पासवर्ड दिखाएँ">Show</button>
       </div>
       <button class="btn btn-primary" id="login-submit">Login / साइन इन</button>
+      <button type="button" class="list-reset" id="forgot-pw" style="width:100%;text-align:center;">Forgot password? / पासवर्ड भूल गए?</button>
       <div id="login-error" class="login-error hidden" role="alert"></div>
       <div id="login-info" class="login-info hidden"></div>
       <p class="login-divider">— new dealer? / नया डीलर? —</p>
@@ -627,6 +628,15 @@
     place: "Jaipur, Rajasthan",
     phone: "6006078815"
   };
+  // The seller printed on a PI is the party actually selling: on a retail (shop) link that's the
+  // SHOP, not the importer — so a farmer's invoice names their shop with the shop's own GSTIN.
+  // Dealer→importer PIs keep the importer identity (SELLER).
+  function seller(){
+    var s = state.enduser && state.supplierInfo;
+    if (!s) return { name: SELLER.name, gstin: SELLER.gstin, place: SELLER.place, phone: SELLER.phone };
+    return { name: s.name || "Shop", gstin: s.gstin || "",
+      place: [s.city, s.pin].filter(Boolean).join(" "), phone: s.phone || "" };
+  }
   var PI_VALID_DAYS = 15;
   var GST_PCT = 5;          // GST added on top of the subtotal at checkout (PI).
   var FALLBACK_MARGIN_PCT = 20; // used only if roles/account data is somehow missing
@@ -866,6 +876,23 @@
   }
   function queueOrder(rec){ return outboxPut(rec).then(function(){ requestOrderSync(); }); }
 
+  // ---------- minimal field observability ----------
+  // Fire-and-forget insert into client_events so you can see field failures during the pilot
+  // (JS errors, stuck order flushes, zero-result searches). No read path on the client.
+  function logEvent(kind, detail){
+    try { if (sb) sb.from("client_events").insert({
+      party_id: (state.account && state.account.id) || null, kind: kind,
+      detail: (detail == null ? "" : String(detail)).slice(0, 500), ua: (navigator.userAgent || "").slice(0, 200)
+    }).then(function(){}, function(){}); } catch(e){}
+  }
+  // persistent, honest signal when an order is stuck in the outbox — never let one vanish silently
+  function notifyStuckOrders(){
+    outboxAll().then(function(recs){
+      var stuck = (recs || []).filter(function(r){ return r.stuck; }).length;
+      if (stuck) showToast(stuck + " order" + (stuck>1?"s":"") + " not sent yet — will retry / भेजना बाकी, फिर कोशिश होगी");
+    }).catch(function(){});
+  }
+
   // every generated PI is saved privately to Supabase for the importer (who ordered what, when).
   // Returns Promise<true | "queued" | false>: true = saved now, "queued" = stored offline and
   // will send automatically, false = the server rejected it (permanent — a retry won't help).
@@ -889,16 +916,20 @@
         return chain.then(function(){
           return sendOrderRpc(rec).then(function(res){
             if (!res || !res.error) return outboxDel(rec.key); // sent (or idempotent replay) → done
-            // The server refused this attempt. It may be transient — e.g. the session lapsed and
-            // place_order can't resolve my_party() yet — so retry a few times before giving up,
-            // rather than dropping a real order the moment one flush hits an auth gap.
+            var msg = (res.error.message || "").toLowerCase();
+            // auth/session gaps are transient (place_order can't resolve my_party yet) — never
+            // count them toward the cap and never drop; the order sends once the dealer is signed in.
+            if (msg.indexOf("jwt") !== -1 || msg.indexOf("auth") !== -1 || msg.indexOf("no party") !== -1 || msg.indexOf("permission") !== -1 || msg.indexOf("row-level") !== -1) return;
             rec.tries = (rec.tries || 0) + 1;
-            if (rec.tries >= 5){ showToast("A saved order couldn't be placed / एक ऑर्डर सेव नहीं हुआ"); return outboxDel(rec.key); }
-            return outboxPut(rec); // persist the higher try-count; retry on a later flush
+            logEvent("flush_fail", (rec.kind || "") + " try" + rec.tries + ": " + res.error.message);
+            // NEVER delete a real order: after repeated genuine rejections, flag it stuck and KEEP
+            // it (a persistent banner lets the dealer retry / call in) — "no dead orders".
+            if (rec.tries >= 5) rec.stuck = true;
+            return outboxPut(rec);
           }).catch(function(){ /* still offline / network error — keep it as-is for the next flush */ });
         });
       }, Promise.resolve());
-    }).then(function(){ _flushing = false; }).catch(function(){ _flushing = false; });
+    }).then(function(){ _flushing = false; notifyStuckOrders(); }).catch(function(){ _flushing = false; });
   }
 
   // remembers the cart behind a dealer's most recent generated PI, so a repeat
@@ -1203,13 +1234,13 @@
       var el = $(nid); if (el) el.classList.toggle("active", nid === id);
     });
   }
-  var ORDER_STATUS_LABEL = { placed: "Placed / दर्ज", billed: "Billed / बिल्ड" };
+  var ORDER_STATUS_LABEL = { placed: "Placed / दर्ज", billed: "Billed / बिल्ड", rejected: "Declined / अस्वीकृत" };
   async function renderMyOrders(){
     var box = $("orders-list");
     if (!state.account){ box.innerHTML = ""; return; }
     box.innerHTML = '<p style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</p>';
     var res = await sb.from("orders")
-      .select("pi_number, subtotal, gst, grand, status, created_at, amended, bill_url, ship_to")
+      .select("pi_number, subtotal, gst, grand, status, created_at, amended, bill_url, ship_to, reject_reason")
       .eq("dealer_party", state.account.id)
       .order("created_at", { ascending: false });
     if (res.error){
@@ -1230,6 +1261,7 @@
       // purchase requests (drop-ship); bill_url = the bill travels with the order.
       var extra = "";
       if (o.amended) extra += '<div style="font-size:12px;color:var(--muted);">Adjusted by supplier / आपूर्तिकर्ता ने मात्रा बदली</div>';
+      if (o.status === "rejected" && o.reject_reason) extra += '<div style="font-size:12px;color:var(--danger);">Reason / कारण: ' + esc(o.reject_reason) + '</div>';
       if (o.ship_to) extra += '<div style="font-size:12px;color:var(--muted);">' + esc(o.ship_to) + '</div>';
       if (o.bill_url) extra += '<a href="' + esc(o.bill_url) + '" target="_blank" rel="noopener" style="font-size:12.5px;font-weight:700;color:var(--green-dark);">View bill / बिल देखें</a>';
       return '<div class="order-row">' +
@@ -1272,8 +1304,11 @@
     var r1 = await sb.from("orders").select("id,pi_number,dealer_party,grand,status,ship_to,bill_url,amended,created_at")
       .eq("importer_party", mine).eq("status", "placed").order("created_at", { ascending:false });
     var ords = (r1.data) || [];
-    var r2 = await sb.from("enduser_orders").select("*").eq("supplier_party", mine).order("created_at", { ascending:false });
+    var r2 = await sb.from("enduser_orders").select("*").eq("supplier_party", mine).eq("status", "placed").order("created_at", { ascending:false });
     var eu = (r2.data) || [];
+    // my current stock, to prefill forwards with the DEFICIT and show have/asked per line
+    var stkR = await sb.from("current_stock").select("sku, qty").eq("party_id", mine);
+    var haveMap = {}; ((stkR && stkR.data) || []).forEach(function(x){ haveMap[x.sku] = x.qty; });
     var lineIds = ords.map(function(o){ return o.id; });
     var euIds = eu.map(function(o){ return o.id; });
     var oLines = lineIds.length ? ((await sb.from("order_lines").select("order_id,sku,qty").in("order_id", lineIds)).data || []) : [];
@@ -1308,14 +1343,22 @@
     else rbox.innerHTML = eu.map(function(o){
       var ls = byE[o.id] || [];
       var summ = ls.map(function(l){ return esc(skuName(l.sku))+'×'+l.qty; }).join(", ");
-      var fwd = state.account.parentId ? '<div class="fwd-eu" data-order="'+o.id+'">'+
-        '<div class="tscroll"><table><thead><tr><th>Part</th><th class="num">Ask supplier</th></tr></thead><tbody>'+
-          ls.map(function(l){ return '<tr><td>'+esc(skuName(l.sku))+'</td>'+
-            '<td class="num"><input type="number" class="fw-qty" data-sku="'+esc(l.sku)+'" value="'+l.qty+'" min="0" max="500" inputmode="numeric" aria-label="Quantity" style="width:64px;padding:6px;min-height:40px;text-align:right;"></td></tr>'; }).join("")+
+      // does the dealer already hold enough for the whole order? then no need to forward.
+      var shortAny = ls.some(function(l){ return (haveMap[l.sku] || 0) < l.qty; });
+      var fwd = (state.account.parentId && shortAny) ? '<div class="fwd-eu" data-order="'+o.id+'">'+
+        '<div class="more-hint">Ask your supplier only for what you’re short. / जितना कम है उतना ही मँगाएँ।</div>'+
+        '<div class="tscroll"><table><thead><tr><th>Part</th><th class="num">Have</th><th class="num">Asked</th><th class="num">Order ↑</th></tr></thead><tbody>'+
+          ls.map(function(l){ var have = haveMap[l.sku] || 0, deficit = Math.max(0, l.qty - have);
+            return '<tr><td>'+esc(skuName(l.sku))+'</td><td class="num">'+have+'</td><td class="num">'+l.qty+'</td>'+
+            '<td class="num"><input type="number" class="fw-qty" data-sku="'+esc(l.sku)+'" value="'+deficit+'" min="0" max="500" inputmode="numeric" aria-label="Quantity to order" style="width:64px;padding:6px;min-height:40px;text-align:right;"></td></tr>'; }).join("")+
         '</tbody></table></div>'+
         '<button class="btn-soft" data-forward-eu="'+o.id+'" style="margin-top:6px;">Forward ↑ / ऊपर भेजें</button></div>' : "";
+      // stock is here → let the dealer close the sale (moves stock out to the customer)
+      var canFulfill = !shortAny;
       return '<div class="req-card"><div><b>'+esc(o.customer_name||"customer")+'</b>'+(o.customer_phone?' · '+esc(o.customer_phone):'')+' — <b>'+inr(o.grand)+'</b></div>'+
-        '<div style="font-size:12.5px;color:var(--muted);">'+esc(o.pi_number||"")+' · '+summ+'</div>'+fwd+'<div class="req-msg" id="rem-'+o.id+'"></div></div>';
+        '<div style="font-size:12.5px;color:var(--muted);">'+esc(o.pi_number||"")+' · '+esc(summ)+'</div>'+fwd+
+        '<button class="btn-primary req-primary" data-fulfill-eu="'+o.id+'"'+(canFulfill?'':' disabled title="Not enough stock yet — forward the shortfall first"')+' style="margin-top:8px;">Bill &amp; ship / बिल करें</button>'+
+        '<div class="req-msg" id="rem-'+o.id+'"></div></div>';
     }).join("");
   }
 
@@ -1374,6 +1417,14 @@
       '<label class="m-lbl">Qty</label><input type="number" id="m-o-qty" class="m-input" min="1" value="1" inputmode="numeric">'+
       '<button class="btn-primary m-btn" id="m-o-btn">Add stock / जोड़ें</button><div class="req-msg" id="m-o-msg"></div></details>';
 
+    if (isImporter) html += '<details class="more-sec"><summary>Correct stock (physical count) — स्टॉक सुधारें</summary>'+
+      '<p class="more-hint">After a physical count: enter the change, + to add or − to remove (breakage, miscount). Keeps the ledger honest.</p>'+
+      '<label class="m-lbl">Part</label><input type="text" id="m-adj-search" class="m-input" placeholder="Type code or name to filter…" autocomplete="off">'+
+      '<select id="m-adj-sku" class="m-input">'+skuOpts+'</select>'+
+      '<div class="row2"><div><label class="m-lbl">Change (+ / −)</label><input type="number" id="m-adj-delta" class="m-input" value="-1" inputmode="numeric"></div>'+
+        '<div><label class="m-lbl">Reason</label><input type="text" id="m-adj-note" class="m-input" placeholder="e.g. breakage"></div></div>'+
+      '<button class="btn-primary m-btn" id="m-adj-btn">Apply correction / लागू करें</button><div class="req-msg" id="m-adj-msg"></div></details>';
+
     html += '<details class="more-sec"><summary>Your retail shop link — दुकान लिंक</summary>'+
       '<p class="more-hint">Share on WhatsApp. Customers see MRP and their orders come to you.</p>'+
       '<input type="text" id="m-store-link" class="m-input" readonly value="'+esc(storeLink())+'">'+
@@ -1403,7 +1454,7 @@
       var pt = e.target.closest("[data-nav-part]"); if (pt){ _stockStack.push({ t:'part', val:pt.getAttribute("data-nav-part"), label:pt.getAttribute("data-nav-label") }); drawMoreStock(); return; }
     });
     // sku search filters
-    [["m-t-search","m-t-sku"],["m-o-search","m-o-sku"]].forEach(function(pair){
+    [["m-t-search","m-t-sku"],["m-o-search","m-o-sku"],["m-adj-search","m-adj-sku"]].forEach(function(pair){
       var s = $(pair[0]); if (!s) return;
       s.oninput = function(){ var q = this.value.trim().toLowerCase();
         var list = q ? (state.catalog||[]).filter(function(c){ return ((c.product_code||"")+" "+(c.particular||"")).toLowerCase().indexOf(q) !== -1; }).slice(0,200) : (state.catalog||[]);
@@ -1439,6 +1490,16 @@
       var r = await sb.rpc("open_stock", { p_sku:sku, p_qty:qty });
       if (r.error){ m.className="req-msg err"; m.textContent = friendlyErr(r.error); return; }
       m.textContent = "Added "+qty+" ✓"; showToast("Stock added ✓ / स्टॉक जोड़ा"); renderMoreStock();
+    };
+    // correct stock (physical count) — signed delta, importer only
+    if ($("m-adj-btn")) $("m-adj-btn").onclick = async function(){
+      var sku = $("m-adj-sku").value, delta = parseInt($("m-adj-delta").value,10), note = $("m-adj-note").value.trim() || "adjustment";
+      var m = $("m-adj-msg"); m.className="req-msg";
+      if (!delta){ m.className="req-msg err"; m.textContent = "Enter a non-zero change (+ or −)."; return; }
+      if (!(await askConfirm((delta>0?"Add ":"Remove ")+Math.abs(delta)+" unit(s) of this part?\nReason: "+note+"\n\nपक्का करें?", { danger: delta<0, okLabel:"Apply / लागू करें" }))) return;
+      var r = await sb.rpc("adjust_stock", { p_sku:sku, p_delta:delta, p_note:note });
+      if (r.error){ m.className="req-msg err"; m.textContent = friendlyErr(r.error); return; }
+      m.textContent = "Corrected ✓"; $("m-adj-note").value=""; showToast("Stock corrected ✓ / स्टॉक सुधरा"); renderMoreStock();
     };
     // shop link
     if ($("m-store-copy")) $("m-store-copy").onclick = function(){
@@ -1577,6 +1638,17 @@
   var billTargetOrder = null;
   async function onRequestsClick(e){
     var t = e.target;
+    // retail close-out: move stock out to the customer, mark the order billed
+    var fe = t.closest && t.closest("[data-fulfill-eu]");
+    if (fe){
+      var eid = Number(fe.getAttribute("data-fulfill-eu"));
+      if (!(await askConfirm("Bill & ship this retail order? Stock leaves your shelf now — can’t be undone.\n\nबिल करें? स्टॉक अभी निकलेगा, वापस नहीं।", { okLabel:"Bill & ship / बिल करें" }))) return;
+      var me = $("rem-"+eid); if (me){ me.className="req-msg"; me.textContent = "Billing…"; }
+      var fr = await sb.rpc("fulfill_enduser_order", { p_order_id: eid });
+      if (fr && fr.error){ if (me){ me.className="req-msg err"; me.textContent = friendlyErr(fr.error); } return; }
+      showToast("Retail order billed ✓ / बिल हुआ"); renderRequests();
+      return;
+    }
     var ff = t.closest && t.closest("[data-fulfill]");
     if (ff){
       var id = Number(ff.getAttribute("data-fulfill"));
@@ -2010,10 +2082,11 @@
       : state.piOrderOk === false
       ? '<div class="login-error">⚠ Order could not be saved — check internet and tap Generate PI again. / ऑर्डर सेव नहीं हुआ — इंटरनेट देखें और फिर से कोशिश करें।</div>'
       : '<div class="pi-success">✓ PI ready. Share it on WhatsApp below. / पीआई तैयार है, नीचे व्हाट्सऐप पर भेजें।</div>';
+    var sel = seller();
     $("pi-box").innerHTML =
       bannerHtml +
-      '<div class="pi-seller"><div class="biz">' + esc(SELLER.name) + '</div>' +
-        '<div class="biz-line">GSTIN: ' + esc(SELLER.gstin) + ' &middot; ' + esc(SELLER.place) + '<br>Phone: ' + esc(SELLER.phone) + '</div></div>' +
+      '<div class="pi-seller"><div class="biz">' + esc(sel.name) + '</div>' +
+        '<div class="biz-line">' + (sel.gstin ? 'GSTIN: ' + esc(sel.gstin) + ' &middot; ' : '') + esc(sel.place) + (sel.phone ? '<br>Phone: ' + esc(sel.phone) : '') + '</div></div>' +
       '<div class="pi-head"><h2>PROFORMA INVOICE</h2><div class="pi-no">' + esc(pi.number) + '</div></div>' +
       '<div class="pi-meta">' +
         '<strong>Dealer / डीलर:</strong> ' + esc(pi.dealerName) + (pi.dealerCode ? ' (' + esc(pi.dealerCode) + ')' : '') +
@@ -2062,8 +2135,9 @@
     function line(x1, y1, x2, y2){ s += "0.6 w " + x1 + " " + y1 + " m " + x2 + " " + y2 + " l S\n"; }
     function newPage(){ if (s) pages.push(s); s = ""; y = H - M; }
     function sellerBlock(){
-      txt(M, y, 17, true, SELLER.name); y -= 15;
-      txt(M, y, 9, false, "GSTIN: " + SELLER.gstin + "  |  " + SELLER.place + "  |  Phone: " + SELLER.phone); y -= 16;
+      var ps = seller();
+      txt(M, y, 17, true, ps.name); y -= 15;
+      txt(M, y, 9, false, (ps.gstin ? "GSTIN: " + ps.gstin + "  |  " : "") + ps.place + (ps.phone ? "  |  Phone: " + ps.phone : "")); y -= 16;
       line(M, y, W - M, y); y -= 16;
     }
     function docHead(){
@@ -2295,7 +2369,30 @@
   // ---------- events ----------
   function wireStatic(){
     $("login-submit").onclick = function(){
+      if (state.recovery){ // returning from a reset link — the password field now sets a NEW password
+        var pw = $("login-password").value;
+        if (!pw || pw.length < 6){ showLoginError("Password must be at least 6 characters. / पासवर्ड कम से कम 6 अक्षर।"); return; }
+        sb.auth.updateUser({ password: pw }).then(function(res){
+          if (res.error){ showLoginError(res.error.message); return; }
+          state.recovery = false;
+          var u = res.data && res.data.user; if (!u){ showLogin(); return; }
+          state.session = { id:u.id, email:u.email, role:null }; saveSession(); loadCart();
+          showToast("Password updated ✓ / पासवर्ड बदला");
+          loadData().then(loadParty).then(function(){ state.account ? showCatalog() : showLogin(); });
+        }).catch(function(){ showLoginError("Could not update password. Try again. / पासवर्ड नहीं बदला।"); });
+        return;
+      }
       attemptLogin($("login-id").value, $("login-password").value);
+    };
+    // password reset: email the dealer a link back to the app; on return we show a set-password form
+    $("forgot-pw").onclick = function(){
+      var email = ($("login-id").value || "").trim();
+      if (!email){ showLoginError("Enter your email above first, then tap Forgot password. / पहले ऊपर ईमेल डालें।"); $("login-id").focus(); return; }
+      if (!sb) return;
+      sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname }).then(function(){
+        var el = $("login-info"); el.textContent = "If that email has an account, a reset link is on its way. / रीसेट लिंक भेजा गया है।"; el.classList.remove("hidden");
+        $("login-error").classList.add("hidden");
+      }).catch(function(){ showLoginError("Couldn't send reset link — try again. / लिंक नहीं भेजा जा सका।"); });
     };
     ["login-id","login-password"].forEach(function(id){
       $(id).addEventListener("keydown", function(e){ if (e.key === "Enter") $("login-submit").click(); });
@@ -2329,6 +2426,9 @@
       else if (e.data.go === "flush") flushOutbox(); // Background Sync woke us to send queued orders
     });
     window.addEventListener("online", flushOutbox); // reconnected → send anything stored offline
+    // field observability: capture uncaught errors so pilot failures aren't invisible on the phone
+    window.addEventListener("error", function(ev){ logEvent("error", (ev.message||"") + " @ " + (ev.filename||"") + ":" + (ev.lineno||"")); });
+    window.addEventListener("unhandledrejection", function(ev){ logEvent("error", "unhandled: " + ((ev.reason && (ev.reason.message||ev.reason)) || "")); });
     if (location.hash === "#requests"){ window._deepReq = true; try { history.replaceState(null, "", location.pathname + location.search); } catch(e){} }
     $("generate-pi-btn").onclick = function(){
       if (!Object.keys(state.cart).some(function(k){ return state.cart[k] > 0; })) return;
@@ -2483,12 +2583,22 @@
     wireStatic();
     sb = window.__sb; // set by the deferred module bootstrap; ready by DOMContentLoaded
     if (!sb){ loadCart(); showLogin(); showLoginError("App not configured — add supabase/config.js. / ऐप कॉन्फ़िगर नहीं है।"); return; }
+    // returning from a password-reset email: switch the login screen into set-new-password mode
+    sb.auth.onAuthStateChange(function(event){
+      if (event === "PASSWORD_RECOVERY"){
+        state.recovery = true; showLogin();
+        var el = $("login-info"); el.textContent = "Enter a new password below, then tap Login. / नीचे नया पासवर्ड डालें, फिर लॉगिन दबाएँ।"; el.classList.remove("hidden");
+      }
+    });
     // retail link (?s=<supplier>): no login, browse at MRP, order to that supplier
     var supplierId = new URLSearchParams(location.search).get("s");
     if (supplierId){
       state.enduser = supplierId;
       loadCart(); // identity resolved (retail link) — load that supplier's own retail cart key
-      sb.rpc("supplier_name", { p_supplier: supplierId }).then(function(r){ state.supplierName = (r && r.data) || "Shop"; renderDealerStrip(); });
+      sb.rpc("supplier_info", { p_supplier: supplierId }).then(function(r){
+        var s = (r && r.data && r.data[0]) || null;
+        state.supplierInfo = s; state.supplierName = (s && s.name) || "Shop"; renderDealerStrip();
+      }).catch(function(){});
       var painted = hydrateData(); if (painted) showCatalog();       // instant paint from last-good snapshot
       loadData().then(function(){ painted ? renderCatalogBody() : showCatalog(); }); // then revalidate
       if ("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(function(){}); }
