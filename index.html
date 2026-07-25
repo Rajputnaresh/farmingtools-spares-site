@@ -261,6 +261,11 @@
   .item-bottom{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
   .rate{ font-weight:700; font-size:14.5px; color:var(--text); }
   .rate.na{ color:var(--muted); font-weight:600; font-size:12.5px; }
+  /* per-line photo cell + decline button on request / PI tables */
+  td.ln-thumb{ width:1%; padding:2px 4px; vertical-align:middle; }
+  .line-x{ background:#fff; border:1px solid var(--border); color:var(--danger); font-weight:700;
+    width:32px; height:32px; border-radius:8px; line-height:1; cursor:pointer; }
+  .line-x:hover{ background:#fdeceb; }
   .item-controls{ display:flex; align-items:center; gap:6px; margin-left:auto; flex-wrap:nowrap; flex-shrink:0; justify-content:flex-end; }
   .diagram-btn{
     background:var(--green-light); color:var(--green-dark); border:1px solid var(--border); border-radius:8px;
@@ -746,7 +751,7 @@
     _toastTimer = setTimeout(function(){
       t.classList.add("fade");
       setTimeout(function(){ t.classList.add("hidden"); }, 260);
-    }, 1600);
+    }, 2800);
   }
   // plain-language error from a Supabase/postgres error object
   function friendlyErr(e){
@@ -1275,6 +1280,16 @@
   // ================= SUPPLIER SIDE (Requests) — folded in from the old console =================
   function isSupplier(){ return !!(state.account && state.account.role && MANAGE_ROLES[state.account.role]); }
   function skuName(sku){ var i = skuToIndex(sku); var r = i >= 0 ? state.catalog[i] : null; return (r && (r.product_code || r.particular)) || sku; }
+  // small square part photo for order/request/PI lines — same asset the catalog tiles use,
+  // with the same group-icon fallback when a row has no extracted photo.
+  function lineThumb(sku, px){
+    var i = skuToIndex(sku), r = i >= 0 ? state.catalog[i] : null;
+    if (!r) return "";
+    var s = px || 34;
+    return '<img class="line-thumb" src="' + esc(partPhoto(i)) +
+      '" alt="" loading="lazy" style="width:' + s + 'px;height:' + s + 'px;object-fit:cover;border-radius:6px;background:var(--green-light);flex:none;" ' +
+      'onerror="this.style.display=\'none\'">';
+  }
 
   function showRequests(){
     hideAll();
@@ -1309,6 +1324,10 @@
     // my current stock, to prefill forwards with the DEFICIT and show have/asked per line
     var stkR = await sb.from("current_stock").select("sku, qty").eq("party_id", mine);
     var haveMap = {}; ((stkR && stkR.data) || []).forEach(function(x){ haveMap[x.sku] = x.qty; });
+    // which incoming orders have I ALREADY forwarded upward? a forward creates one of MY orders
+    // whose source_order_id points back at the request — so the Forward button can't double-fire.
+    var fwdR = await sb.from("orders").select("source_kind, source_order_id").eq("dealer_party", mine).not("source_order_id", "is", null);
+    var fwdSet = {}; ((fwdR && fwdR.data) || []).forEach(function(x){ fwdSet[x.source_kind + ":" + x.source_order_id] = true; });
     var lineIds = ords.map(function(o){ return o.id; });
     var euIds = eu.map(function(o){ return o.id; });
     var oLines = lineIds.length ? ((await sb.from("order_lines").select("order_id,sku,qty").in("order_id", lineIds)).data || []) : [];
@@ -1321,20 +1340,30 @@
     if (!ords.length){ dbox.innerHTML = '<p style="color:var(--muted);font-size:14px;margin:8px 2px;">No pending requests / कोई अनुरोध नहीं</p>'; }
     else dbox.innerHTML = ords.map(function(o){
       var ls = byO[o.id] || [];
-      var lineHtml = ls.map(function(l){ return '<tr><td>'+esc(skuName(l.sku))+'</td>'+
-        '<td class="num"><input type="number" class="rq-qty" data-sku="'+esc(l.sku)+'" value="'+l.qty+'" min="0" max="500" inputmode="numeric" aria-label="Quantity" style="width:64px;padding:6px;min-height:40px;text-align:right;"></td></tr>'; }).join("");
+      // photo + name, qty (editable for amend), and a per-line ✕ to decline just that part
+      var lineHtml = ls.map(function(l){ return '<tr>'+
+        '<td class="ln-thumb">'+lineThumb(l.sku)+'</td>'+
+        '<td>'+esc(skuName(l.sku))+'</td>'+
+        '<td class="num"><input type="number" class="rq-qty" data-sku="'+esc(l.sku)+'" value="'+l.qty+'" min="0" max="500" inputmode="numeric" aria-label="Quantity" style="width:60px;padding:6px;min-height:40px;text-align:right;"></td>'+
+        '<td class="num"><button class="line-x" data-reject-line="'+o.id+'" data-sku="'+esc(l.sku)+'" title="Decline this part / यह हटाएँ" aria-label="Decline this part">✕</button></td>'+
+        '</tr>'; }).join("");
       var ship = o.ship_to ? '<div class="ship-to">'+esc(o.ship_to)+'</div>' : "";
       var bill = o.bill_url ? ' · <a href="'+esc(o.bill_url)+'" target="_blank" rel="noopener">Bill / बिल</a>' : "";
+      // Forward ↑ only makes sense if I have a supplier above me (importer has none) and I
+      // haven't already forwarded this exact request.
+      var canFwd = !!state.account.parentId && !fwdSet['dealer:'+o.id];
+      var fwdBtn = canFwd ? '<button class="btn-soft" data-forward="'+o.id+'">Forward ↑</button>'
+        : (state.account.parentId && fwdSet['dealer:'+o.id]) ? '<span class="req-gloss" style="align-self:center;">Forwarded ↑ / भेज दिया</span>' : '';
       return '<div class="req-card">'+
         '<div><b>'+esc(pName[o.dealer_party]||"dealer")+'</b> · '+esc(o.pi_number||"")+(o.amended?' · <span style="color:var(--muted)">adjusted / बदला</span>':'')+bill+'</div>'+ship+
-        '<div class="tscroll"><table><thead><tr><th>Part</th><th class="num">Qty</th></tr></thead><tbody>'+lineHtml+'</tbody></table></div>'+
+        '<div class="tscroll"><table><thead><tr><th></th><th>Part</th><th class="num">Qty</th><th></th></tr></thead><tbody>'+lineHtml+'</tbody></table></div>'+
         '<div class="req-actions">'+
           '<button class="btn-primary req-primary" data-fulfill="'+o.id+'">Bill &amp; ship / बिल करें</button>'+
           '<div class="req-gloss">Moves stock to the buyer now — can’t be undone. / स्टॉक अभी जाएगा, वापस नहीं।</div>'+
           '<div class="req-sub">'+
-            '<button class="btn-soft" data-forward="'+o.id+'">Forward ↑</button>'+
+            fwdBtn+
             '<button class="btn-soft" data-billattach="'+o.id+'">Attach bill</button>'+
-            '<button class="btn-danger" data-reject-order="'+o.id+'">Reject</button>'+
+            '<button class="btn-danger" data-reject-order="'+o.id+'">Reject all</button>'+
           '</div>'+
         '</div><div class="req-msg" id="rm-'+o.id+'"></div></div>';
     }).join("");
@@ -1342,17 +1371,19 @@
     if (!eu.length){ rbox.innerHTML = '<p style="color:var(--muted);font-size:14px;margin:8px 2px;">No retail orders / कोई खुदरा ऑर्डर नहीं</p>'; }
     else rbox.innerHTML = eu.map(function(o){
       var ls = byE[o.id] || [];
-      var summ = ls.map(function(l){ return esc(skuName(l.sku))+'×'+l.qty; }).join(", ");
+      var summ = ls.map(function(l){ return lineThumb(l.sku, 22)+' '+esc(skuName(l.sku))+'×'+l.qty; }).join("&nbsp;&nbsp; ");
       // does the dealer already hold enough for the whole order? then no need to forward.
       var shortAny = ls.some(function(l){ return (haveMap[l.sku] || 0) < l.qty; });
-      var fwd = (state.account.parentId && shortAny) ? '<div class="fwd-eu" data-order="'+o.id+'">'+
+      var alreadyFwdEu = !!fwdSet['enduser:'+o.id];
+      var fwd = (state.account.parentId && shortAny && !alreadyFwdEu) ? '<div class="fwd-eu" data-order="'+o.id+'">'+
         '<div class="more-hint">Ask your supplier only for what you’re short. / जितना कम है उतना ही मँगाएँ।</div>'+
-        '<div class="tscroll"><table><thead><tr><th>Part</th><th class="num">Have</th><th class="num">Asked</th><th class="num">Order ↑</th></tr></thead><tbody>'+
+        '<div class="tscroll"><table><thead><tr><th></th><th>Part</th><th class="num">Have</th><th class="num">Asked</th><th class="num">Order ↑</th></tr></thead><tbody>'+
           ls.map(function(l){ var have = haveMap[l.sku] || 0, deficit = Math.max(0, l.qty - have);
-            return '<tr><td>'+esc(skuName(l.sku))+'</td><td class="num">'+have+'</td><td class="num">'+l.qty+'</td>'+
-            '<td class="num"><input type="number" class="fw-qty" data-sku="'+esc(l.sku)+'" value="'+deficit+'" min="0" max="500" inputmode="numeric" aria-label="Quantity to order" style="width:64px;padding:6px;min-height:40px;text-align:right;"></td></tr>'; }).join("")+
+            return '<tr><td class="ln-thumb">'+lineThumb(l.sku)+'</td><td>'+esc(skuName(l.sku))+'</td><td class="num">'+have+'</td><td class="num">'+l.qty+'</td>'+
+            '<td class="num"><input type="number" class="fw-qty" data-sku="'+esc(l.sku)+'" value="'+deficit+'" min="0" max="500" inputmode="numeric" aria-label="Quantity to order" style="width:60px;padding:6px;min-height:40px;text-align:right;"></td></tr>'; }).join("")+
         '</tbody></table></div>'+
-        '<button class="btn-soft" data-forward-eu="'+o.id+'" style="margin-top:6px;">Forward ↑ / ऊपर भेजें</button></div>' : "";
+        '<button class="btn-soft" data-forward-eu="'+o.id+'" style="margin-top:6px;">Forward ↑ / ऊपर भेजें</button></div>'
+        : (state.account.parentId && shortAny && alreadyFwdEu) ? '<div class="req-gloss" style="margin:4px 0;">Forwarded ↑ / भेज दिया</div>' : "";
       // stock is here → let the dealer close the sale (moves stock out to the customer)
       var canFulfill = !shortAny;
       return '<div class="req-card"><div><b>'+esc(o.customer_name||"customer")+'</b>'+(o.customer_phone?' · '+esc(o.customer_phone):'')+' — <b>'+inr(o.grand)+'</b></div>'+
@@ -1699,6 +1730,18 @@
     }
     var ba = t.closest && t.closest("[data-billattach]");
     if (ba){ billTargetOrder = Number(ba.getAttribute("data-billattach")); $("bill-file").click(); return; }
+    // decline ONE line off a request (out of stock / not available), keeping the rest
+    var rl = t.closest && t.closest("[data-reject-line]");
+    if (rl){
+      var rlid = Number(rl.getAttribute("data-reject-line")), rlsku = rl.getAttribute("data-sku");
+      if (!(await askConfirm("Decline "+skuName(rlsku)+" from this request? The rest stays.\n\nयह हिस्सा हटाएँ? बाकी रहेगा।", { danger:true, okLabel:"Decline / हटाएँ" }))) return;
+      var rlmsg = $("rm-"+rlid);
+      var rlr = await sb.rpc("reject_order_line", { p_order_id: rlid, p_sku: rlsku, p_reason: null });
+      if (rlr.error){ if (rlmsg){ rlmsg.className="req-msg err"; rlmsg.textContent = friendlyErr(rlr.error); } else showToast(friendlyErr(rlr.error)); return; }
+      showToast(rlr.data === "rejected" ? "Whole request declined / अनुरोध अस्वीकृत" : "Part removed / हिस्सा हटाया");
+      setTimeout(function(){ renderRequests(); updateRequestBadge(); }, 180);
+      return;
+    }
     var ro = t.closest && t.closest("[data-reject-order]");
     if (ro){
       var rid = Number(ro.getAttribute("data-reject-order"));
@@ -2075,7 +2118,7 @@
   function renderPI(){
     var pi = state.piInfo;
     var rowsHtml = pi.lines.map(function(l){
-      return '<tr><td>' + esc(l.code) + '</td><td>' + esc(l.particular) + '</td>' +
+      return '<tr><td class="ln-thumb">' + lineThumb(l.sku, 40) + '</td><td>' + esc(l.code) + '</td><td>' + esc(l.particular) + '</td>' +
         '<td class="num">' + l.qty + '</td><td class="num">' + inr(l.rate) + '</td>' +
         '<td class="num">' + inr(l.amount) + '</td></tr>';
     }).join("");
@@ -2097,7 +2140,7 @@
         '<strong>Date / दिनांक:</strong> ' + esc(pi.date) + ' &middot; <strong>Valid till / मान्य:</strong> ' + esc(pi.validTill) +
       '</div>' +
       '<div style="overflow-x:auto;"><table class="pi-table"><thead><tr>' +
-        '<th>Code</th><th>Particular</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount</th>' +
+        '<th></th><th>Code</th><th>Particular</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount</th>' +
       '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' +
       '<div class="pi-totals">' +
         '<div class="row"><span>Subtotal / उप-योग</span><span>' + inr(pi.subtotal) + '</span></div>' +
