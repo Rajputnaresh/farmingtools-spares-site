@@ -1,9 +1,12 @@
-// ponytail: minimal shell cache, no offline image caching (catalog images live under pages/g* and are network-only)
-const CACHE = 'kg-spares-v55';
-const SHELL = ['./', './index.html', './manifest.json'];
+// Shell precache now includes the vendored Supabase lib + catalog so the app boots
+// fully offline. Catalog images (pages/**) are cached on first view (cache-first runtime),
+// not precached — 1800 files / 37MB is far too much to push on install.
+const CACHE = 'kg-spares-v56';
+const IMG_CACHE = 'kg-img-v1';
+const SHELL = ['./', './index.html', './manifest.json', './vendor/supabase.js', './supabase/config.js', './catalog.json'];
 // exact-path match for the shell network-first branch below — NOT p.replace('./','')+endsWith,
 // which degenerately matched every request (endsWith('') is always true)
-const SHELL_PATHS = new Set(['/', '/index.html', '/manifest.json']);
+const SHELL_PATHS = new Set(['/', '/index.html', '/manifest.json', '/vendor/supabase.js', '/supabase/config.js']);
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)));
@@ -12,7 +15,7 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE && k !== IMG_CACHE).map((k) => caches.delete(k))))
   );
   self.clients.claim();
 });
@@ -36,7 +39,18 @@ self.addEventListener('notificationclick', (e) => {
 
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
-  if (url.origin !== self.location.origin) return; // never intercept cross-origin (esm.sh, Supabase, …)
+  if (url.origin !== self.location.origin) return; // never intercept cross-origin (Supabase API, …)
+
+  // catalog images: cache-first, cached on first view — makes browsing instant + offline
+  if (url.pathname.indexOf('/pages/') !== -1) {
+    e.respondWith(
+      caches.open(IMG_CACHE).then((c) => c.match(e.request).then((hit) =>
+        hit || fetch(e.request).then((res) => { if (res.ok) c.put(e.request, res.clone()); return res; })
+                     .catch(() => hit)))
+    );
+    return;
+  }
+
   const isData = url.pathname.endsWith('/catalog.json'); // accounts/stock/prices now live in Supabase
 
   if (isData) {

@@ -583,13 +583,16 @@
 <div id="modal-root"></div>
 
 <script src="supabase/config.js"></script>
-<script type="module">
-  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-  var c = window.LEDGER_CONFIG;
-  window.__sb = (c && c.SUPABASE_URL && c.SUPABASE_URL.indexOf("YOUR-PROJECT") === -1)
-    ? createClient(c.SUPABASE_URL, c.SUPABASE_ANON_KEY) : null;
-  window.__sbReady = true;
-  window.dispatchEvent(new Event("sb-ready"));
+<!-- Supabase is vendored locally (not esm.sh) so the SW can cache it: the app boots
+     instantly and works offline. A CDN import blocks the whole boot and can never be cached. -->
+<script src="vendor/supabase.js"></script>
+<script>
+  (function(){
+    var c = window.LEDGER_CONFIG, lib = window.supabase;
+    window.__sb = (lib && lib.createClient && c && c.SUPABASE_URL && c.SUPABASE_URL.indexOf("YOUR-PROJECT") === -1)
+      ? lib.createClient(c.SUPABASE_URL, c.SUPABASE_ANON_KEY) : null;
+    window.__sbReady = true;
+  })();
 </script>
 <script>
 (function(){
@@ -849,6 +852,30 @@
   // ---------- data load ----------
   // Catalog structure/names come from the static catalog.json (public, no prices).
   // Prices and availability come from Supabase, scoped to the signed-in dealer.
+  // Last-good snapshot of catalog+prices+identity, keyed per signed-in identity so a
+  // dealer and a retail link never share. Lets the app paint instantly (and boot offline)
+  // from cache, then revalidate over the network — no "prices popping in" lag.
+  function cacheScope(){ return state.enduser ? ("eu:"+state.enduser) : (state.session ? ("u:"+state.session.id) : "guest"); }
+  function dataKey(){ return "kg_snap_v1:" + cacheScope(); }
+  function persistData(){
+    try {
+      localStorage.setItem(dataKey(), JSON.stringify({
+        catalog: state.catalog, price: state.priceByIndex, avail: state.availByIndex,
+        account: state.account || null, parties: state.parties || null, ts: Date.now()
+      }));
+    } catch(e){}
+  }
+  function hydrateData(){
+    try {
+      var d = JSON.parse(localStorage.getItem(dataKey()) || "null");
+      if (!d || !Array.isArray(d.catalog) || !d.catalog.length) return false;
+      state.catalog = d.catalog; state.priceByIndex = d.price || []; state.availByIndex = d.avail || [];
+      if (d.account) state.account = d.account;
+      if (d.parties) state.parties = d.parties;
+      state._hydrated = true;
+      return true;
+    } catch(e){ return false; }
+  }
   function loadData(){
     state.loading = true; state.loadError = false;
     var catP = fetch("catalog.json").then(function(r){ if(!r.ok) throw new Error("http"); return r.json(); }).catch(function(){ return null; });
@@ -860,11 +887,13 @@
                                : (sb ? sb.rpc("importer_availability") : Promise.resolve({ data: [] }));
     return Promise.all([catP, priceP, availP]).then(function(res){
       state.loading = false;
-      if (res[0] === null){ state.loadError = true; state.catalog = []; }
+      // offline / fetch failure: keep whatever we hydrated from cache rather than blanking it
+      if (res[0] === null){ if (!state._hydrated) { state.loadError = true; state.catalog = []; } }
       else { state.catalog = Array.isArray(res[0]) ? res[0] : []; }
       state.priceByIndex = []; state.availByIndex = [];
       ((res[1] && res[1].data) || []).forEach(function(p){ var i = skuToIndex(p.sku); if (i >= 0) state.priceByIndex[i] = (p.net_rate != null ? p.net_rate : p.mrp); });
       ((res[2] && res[2].data) || []).forEach(function(a){ var i = skuToIndex(a.sku); if (i >= 0) state.availByIndex[i] = (a.qty != null ? a.qty : a.in_stock); });
+      persistData();
     });
   }
 
@@ -883,7 +912,8 @@
       state.parties = rows; // used to name the buyer on incoming requests
       state.account = mine ? { company: mine.name, role: mine.role, id: mine.id, parentId: mine.parent_id } : null;
       if (state.session && mine) state.session.role = mine.role;
-    }).catch(function(){ state.account = null; });
+      persistData(); // keep identity fresh for the next instant/offline boot
+    }).catch(function(){ if (!state._hydrated) state.account = null; }); // offline: keep cached identity
   }
   function attemptLogin(email, pw){
     var e = (email || "").trim();
@@ -1288,6 +1318,13 @@
     renderMoreStock();
     var sf = $("m-stock-filter"), sTimer = null;
     if (sf) sf.addEventListener("input", function(){ clearTimeout(sTimer); sTimer = setTimeout(drawMoreStock, 150); });
+    // clickable dashboard: drill party → parts → who-holds-it, and a back step
+    var sc = $("m-stock-card");
+    if (sc) sc.addEventListener("click", function(e){
+      var b = e.target.closest("[data-stock-back]"); if (b){ _stockDrill = null; drawMoreStock(); return; }
+      var pr = e.target.closest("[data-drill-party]"); if (pr){ _stockDrill = { type:'party', val:pr.getAttribute("data-drill-party") }; drawMoreStock(); return; }
+      var pt = e.target.closest("[data-drill-part]"); if (pt){ _stockDrill = { type:'part', val:pt.getAttribute("data-drill-part") }; drawMoreStock(); return; }
+    });
     // sku search filters
     [["m-t-search","m-t-sku"],["m-o-search","m-o-sku"]].forEach(function(pair){
       var s = $(pair[0]); if (!s) return;
@@ -1341,6 +1378,7 @@
   var _moreStock = [];
   async function renderMoreStock(){
     var card = $("m-stock-card"); if (!card) return;
+    _stockDrill = null; // fresh data → start at the party overview
     var r = await sb.from("current_stock").select("party_id, sku, qty").range(0, 99999);
     if (r.error){ card.innerHTML = '<div class="req-msg err">'+esc(friendlyErr(r.error))+'</div>'; return; }
     var pName = {}; (state.parties||[]).forEach(function(p){ pName[p.id]=p.name; });
@@ -1349,20 +1387,52 @@
       .sort(function(a,b){ return a.party.localeCompare(b.party) || String(a.part).localeCompare(String(b.part)); });
     drawMoreStock();
   }
+  // Drill state: null = party overview; {type:'party'|'part', val} = a detail level.
+  // The stock table is a clickable dashboard — tap a party to see its parts, tap a part
+  // to see who holds it. Back returns to the overview.
+  var _stockDrill = null;
   function drawMoreStock(){
     var card = $("m-stock-card"); if (!card) return;
+    if (!_moreStock.length){ card.innerHTML = '<div style="color:var(--muted);font-size:13px;">No stock recorded yet.</div>'; _stockDrill = null; return; }
     var q = (($("m-stock-filter")||{}).value||"").trim().toLowerCase();
-    var rows = q ? _moreStock.filter(function(r){ return (r.party+" "+r.part).toLowerCase().indexOf(q) !== -1; }) : _moreStock;
-    if (!_moreStock.length){ card.innerHTML = '<div style="color:var(--muted);font-size:13px;">No stock recorded yet.</div>'; return; }
-    if (!rows.length){ card.innerHTML = '<div style="color:var(--muted);font-size:13px;">No match for "'+esc(q)+'".</div>'; return; }
-    // cap the DOM: the importer can hold a row per SKU (~1,700). Render at most CAP and
-    // lean on the filter box for the rest — keeps the tab snappy on a cheap phone.
-    var CAP = 200, shown = rows.slice(0, CAP);
-    var count = q ? rows.length+" of "+_moreStock.length : String(_moreStock.length);
-    var note = rows.length > CAP ? ' — showing first '+CAP+', type above to find a part / छाँटें' : '';
-    card.innerHTML = '<div style="color:var(--muted);font-size:12.5px;margin-bottom:6px;">'+count+' stock line'+(_moreStock.length===1?"":"s")+note+'</div>'+
-      '<div class="tscroll"><table><thead><tr><th>Party</th><th>Part</th><th class="num">Qty</th></tr></thead><tbody>'+
-      shown.map(function(r){ return '<tr><td>'+esc(r.party)+'</td><td>'+esc(r.part)+'</td><td class="num">'+r.qty+'</td></tr>'; }).join("")+
+    var CAP = 200;
+    var back = '<button type="button" data-stock-back class="btn-soft" style="padding:6px 12px;min-height:36px;margin-bottom:8px;">‹ All stock / सारा स्टॉक</button>';
+
+    if (_stockDrill && _stockDrill.type === 'party'){
+      var rows = _moreStock.filter(function(r){ return r.party === _stockDrill.val && (!q || String(r.part).toLowerCase().indexOf(q) !== -1); })
+        .sort(function(a,b){ return String(a.part).localeCompare(String(b.part)); });
+      var total = rows.reduce(function(s,r){ return s + r.qty; }, 0);
+      card.innerHTML = back +
+        '<div style="font-weight:700;margin-bottom:2px;">'+esc(_stockDrill.val)+'</div>'+
+        '<div style="color:var(--muted);font-size:12.5px;margin-bottom:6px;">'+rows.length+' part'+(rows.length===1?"":"s")+' · '+total+' units total</div>'+
+        '<div class="tscroll"><table><thead><tr><th>Part</th><th class="num">Qty</th></tr></thead><tbody>'+
+        rows.slice(0,CAP).map(function(r){ return '<tr class="stock-row" data-drill-part="'+esc(r.part)+'" style="cursor:pointer;"><td>'+esc(r.part)+' ›</td><td class="num">'+r.qty+'</td></tr>'; }).join("")+
+        '</tbody></table></div>';
+      return;
+    }
+    if (_stockDrill && _stockDrill.type === 'part'){
+      var prows = _moreStock.filter(function(r){ return String(r.part) === _stockDrill.val && (!q || r.party.toLowerCase().indexOf(q) !== -1); })
+        .sort(function(a,b){ return a.party.localeCompare(b.party); });
+      var ptotal = prows.reduce(function(s,r){ return s + r.qty; }, 0);
+      card.innerHTML = back +
+        '<div style="font-weight:700;margin-bottom:2px;">'+esc(_stockDrill.val)+'</div>'+
+        '<div style="color:var(--muted);font-size:12.5px;margin-bottom:6px;">held by '+prows.length+' part'+(prows.length===1?"y":"ies")+' · '+ptotal+' units total</div>'+
+        '<div class="tscroll"><table><thead><tr><th>Party</th><th class="num">Qty</th></tr></thead><tbody>'+
+        prows.slice(0,CAP).map(function(r){ return '<tr><td>'+esc(r.party)+'</td><td class="num">'+r.qty+'</td></tr>'; }).join("")+
+        '</tbody></table></div>';
+      return;
+    }
+
+    // overview: one row per party (units + distinct parts), tap to drill in
+    var byParty = {};
+    _moreStock.forEach(function(r){ var p = byParty[r.party] || (byParty[r.party] = { party:r.party, lines:0, qty:0 }); p.lines++; p.qty += r.qty; });
+    var parties = Object.keys(byParty).map(function(k){ return byParty[k]; })
+      .filter(function(p){ return !q || p.party.toLowerCase().indexOf(q) !== -1; })
+      .sort(function(a,b){ return a.party.localeCompare(b.party); });
+    if (!parties.length){ card.innerHTML = '<div style="color:var(--muted);font-size:13px;">No match for "'+esc(q)+'".</div>'; return; }
+    card.innerHTML = '<div style="color:var(--muted);font-size:12.5px;margin-bottom:6px;">'+parties.length+' part'+(parties.length===1?"y":"ies")+' holding stock — tap to see parts / देखें</div>'+
+      '<div class="tscroll"><table><thead><tr><th>Party</th><th class="num">Parts</th><th class="num">Units</th></tr></thead><tbody>'+
+      parties.slice(0,CAP).map(function(p){ return '<tr class="stock-row" data-drill-party="'+esc(p.party)+'" style="cursor:pointer;"><td>'+esc(p.party)+' ›</td><td class="num">'+p.lines+'</td><td class="num">'+p.qty+'</td></tr>'; }).join("")+
       '</tbody></table></div>';
   }
   async function renderMoreApprovals(){
@@ -2307,7 +2377,8 @@
       state.enduser = supplierId;
       loadCart(); // identity resolved (retail link) — load that supplier's own retail cart key
       sb.rpc("supplier_name", { p_supplier: supplierId }).then(function(r){ state.supplierName = (r && r.data) || "Shop"; renderDealerStrip(); });
-      loadData().then(function(){ showCatalog(); });
+      var painted = hydrateData(); if (painted) showCatalog();       // instant paint from last-good snapshot
+      loadData().then(function(){ painted ? renderCatalogBody() : showCatalog(); }); // then revalidate
       if ("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(function(){}); }
       return;
     }
@@ -2318,9 +2389,10 @@
       var u = session.user;
       state.session = { id: u.id, email: u.email, role: null };
       loadCart(); // identity resolved (restored session) — load this account's own cart
+      var painted = hydrateData(); if (painted && state.account) showCatalog(); // instant paint (+offline)
       loadData().then(loadParty).then(function(){
-        if (!state.account){ showLogin(); return; }
-        showCatalog();
+        if (!state.account){ if (!painted) showLogin(); return; } // offline keeps the cached view
+        painted ? renderCatalogBody() : showCatalog();
       });
     }).catch(function(){ loadCart(); showLogin(); });
     if ("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(function(){}); }
