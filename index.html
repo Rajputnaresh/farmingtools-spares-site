@@ -566,6 +566,8 @@
       <input type="text" id="eu-name" autocomplete="name" placeholder="Full name">
       <label class="field-label" for="eu-phone">Phone / फ़ोन</label>
       <input type="text" id="eu-phone" inputmode="tel" autocomplete="tel" placeholder="10-digit mobile">
+      <label class="field-label" for="eu-offer">Your price offer (optional) / आपकी क़ीमत (वैकल्पिक)</label>
+      <input type="number" id="eu-offer" inputmode="numeric" min="0" placeholder="Propose a total — the shop can accept it / कुल क़ीमत सुझाएँ">
     </div>
     <div id="cart-oos-note" class="login-error hidden" style="margin-top:10px;">Remove out-of-stock items to continue / जारी रखने के लिए स्टॉक-रहित पुर्जे हटाएँ</div>
     <button class="generate-btn" id="generate-pi-btn">Generate PI</button>
@@ -869,6 +871,7 @@
     if (state.enduser) return { key: pi.clientKey, kind:"enduser", ts: Date.now(),
       args: { p_supplier: state.enduser, p_name: pi.dealerName,
         p_phone: (($("eu-phone") || {}).value || "").trim() || null,
+        p_offer: (parseInt((($("eu-offer") || {}).value || "").trim(), 10) || null),
         p_lines: pi.lines.map(function(l){ return { sku: l.sku, qty: l.qty }; }), p_client_key: pi.clientKey } };
     return { key: pi.clientKey, kind:"dealer", ts: Date.now(),
       args: { p_pi: pi.number, p_subtotal: pi.subtotal, p_gst: pi.gst, p_grand: pi.grand,
@@ -994,7 +997,7 @@
     // retail link: MRP (3×) from enduser_prices, and NO availability at all — a retail
     // customer never sees stock/quantity and can order any part in or out of stock.
     // dealers: own price + supplier stock.
-    var priceP = state.enduser ? sb.rpc("enduser_prices") : (sb ? sb.rpc("my_prices") : Promise.resolve({ data: [] }));
+    var priceP = state.enduser ? sb.rpc("enduser_prices", { p_supplier: state.enduser }) : (sb ? sb.rpc("my_prices") : Promise.resolve({ data: [] }));
     var availP = state.enduser ? Promise.resolve({ data: [] })
                                : (sb ? sb.rpc("importer_availability") : Promise.resolve({ data: [] }));
     return Promise.all([catP, priceP, availP]).then(function(res){
@@ -1018,11 +1021,11 @@
   }
   // resolve the signed-in user's party (company, role) from the tree; RLS returns only their branch
   function loadParty(){
-    return sb.from("parties").select("id,name,role,parent_id,auth_uid").then(function(res){
+    return sb.from("parties").select("id,name,role,parent_id,auth_uid,retail_mult").then(function(res){
       var rows = (res && res.data) || [], uid = state.session && state.session.id, mine = null;
       rows.forEach(function(p){ if (p.auth_uid === uid) mine = p; });
       state.parties = rows; // used to name the buyer on incoming requests
-      state.account = mine ? { company: mine.name, role: mine.role, id: mine.id, parentId: mine.parent_id } : null;
+      state.account = mine ? { company: mine.name, role: mine.role, id: mine.id, parentId: mine.parent_id, retailMult: mine.retail_mult } : null;
       if (state.session && mine) state.session.role = mine.role;
       persistData(); // keep identity fresh for the next instant/offline boot
     }).catch(function(){ if (!state._hydrated) state.account = null; }); // offline: keep cached identity
@@ -1388,8 +1391,12 @@
       var canFulfill = !shortAny;
       var addr = o.ship_to_addr ? '<div style="font-size:12.5px;color:var(--text);margin-top:2px;">📍 '+esc(o.ship_to_addr)+'</div>' : "";
       var euBill = o.bill_url ? '<a href="'+esc(o.bill_url)+'" target="_blank" rel="noopener" style="font-size:12.5px;font-weight:700;color:var(--green-dark);">View bill / बिल देखें</a>' : "";
+      // customer counter-offer: show it and let the shop accept (agreed total becomes the order total)
+      var offer = (o.offer_amount && Number(o.offer_amount) !== Number(o.grand))
+        ? '<div style="font-size:12.5px;margin-top:2px;">🏷️ Customer offered / ग्राहक की क़ीमत: <b>'+inr(o.offer_amount)+'</b> '+
+          '<button class="btn-soft" data-accept-offer="'+o.id+'" style="padding:2px 8px;min-height:28px;font-size:12px;">Accept / स्वीकारें</button></div>' : "";
       return '<div class="req-card"><div><b>'+esc(o.customer_name||"customer")+'</b>'+(o.customer_phone?' · '+esc(o.customer_phone):'')+' — <b>'+inr(o.grand)+'</b></div>'+
-        '<div style="font-size:12.5px;color:var(--muted);">'+esc(o.pi_number||"")+' · '+summ+'</div>'+addr+fwd+
+        '<div style="font-size:12.5px;color:var(--muted);">'+esc(o.pi_number||"")+' · '+summ+'</div>'+addr+offer+fwd+
         '<button class="btn-primary req-primary" data-fulfill-eu="'+o.id+'"'+(canFulfill?'':' disabled title="Not enough stock yet — forward the shortfall first"')+' style="margin-top:8px;">Bill &amp; ship / बिल करें</button>'+
         '<div class="req-sub" style="margin-top:6px;"><button class="btn-soft" data-billattach-eu="'+o.id+'">Attach my bill / मेरा बिल लगाएँ</button>'+euBill+'</div>'+
         '<div class="req-msg" id="rem-'+o.id+'"></div></div>';
@@ -1480,6 +1487,12 @@
         '<div style="align-self:end;"><button class="btn-soft m-btn" id="m-co-add" style="margin-top:0;">Add part / जोड़ें</button></div></div>'+
       '<div id="m-co-lines"></div>'+
       '<button class="btn-primary m-btn" id="m-co-create">Create order / ऑर्डर बनाएँ</button><div class="req-msg" id="m-co-msg"></div></details>';
+
+    html += '<details class="more-sec"><summary>Customer price / markup — ग्राहक मूल्य</summary>'+
+      '<p class="more-hint">What your retail customers see, as a multiple of the base price. 3 = MRP (default). Lower it to sell cheaper.</p>'+
+      '<div class="row2"><div><label class="m-lbl">Multiple (1–20)</label><input type="number" id="m-rm-mult" class="m-input" min="1" max="20" step="0.1" value="'+esc(String(a.retailMult||3))+'"></div>'+
+        '<div style="align-self:end;"><button class="btn-primary m-btn" id="m-rm-save" style="margin-top:0;">Save / सहेजें</button></div></div>'+
+      '<div class="req-msg" id="m-rm-msg"></div></details>';
 
     html += '<details class="more-sec"><summary>Your retail shop link — दुकान लिंक</summary>'+
       '<p class="more-hint">Share on WhatsApp. Customers see MRP and their orders come to you.</p>'+
@@ -1584,6 +1597,14 @@
       $("m-co-name").value=""; $("m-co-phone").value=""; $("m-co-addr").value="";
       m.textContent = "Order created ✓ — see it under Requests → retail.";
       showToast("Customer order created ✓ / ऑर्डर बना"); updateRequestBadge();
+    };
+    // customer price multiple
+    if ($("m-rm-save")) $("m-rm-save").onclick = async function(){
+      var mult = parseFloat($("m-rm-mult").value), m = $("m-rm-msg"); m.className="req-msg";
+      if (!(mult >= 1 && mult <= 20)){ m.className="req-msg err"; m.textContent = "Enter a multiple between 1 and 20."; return; }
+      var r = await sb.rpc("set_retail_mult", { p_mult: mult });
+      if (r.error){ m.className="req-msg err"; m.textContent = friendlyErr(r.error); return; }
+      state.account.retailMult = mult; m.textContent = "Saved ✓ — customers now see "+mult+"× base."; showToast("Customer price updated ✓");
     };
     // shop link
     if ($("m-store-copy")) $("m-store-copy").onclick = function(){
@@ -1785,6 +1806,17 @@
     if (ba){ billTargetOrder = Number(ba.getAttribute("data-billattach")); billTargetKind = "dealer"; $("bill-file").click(); return; }
     var bae = t.closest && t.closest("[data-billattach-eu]");
     if (bae){ billTargetOrder = Number(bae.getAttribute("data-billattach-eu")); billTargetKind = "enduser"; $("bill-file").click(); return; }
+    // accept the customer's counter-offer: the offered total becomes the order total
+    var ao = t.closest && t.closest("[data-accept-offer]");
+    if (ao){
+      var aid = Number(ao.getAttribute("data-accept-offer"));
+      if (!(await askConfirm("Accept the customer’s offered price for this order?\n\nग्राहक की क़ीमत स्वीकारें?", { okLabel:"Accept / स्वीकारें" }))) return;
+      var aomsg = $("rem-"+aid);
+      var aor = await sb.rpc("accept_enduser_offer", { p_order_id: aid });
+      if (aor.error){ if (aomsg){ aomsg.className="req-msg err"; aomsg.textContent = friendlyErr(aor.error); } else showToast(friendlyErr(aor.error)); return; }
+      showToast("Offer accepted ✓ / क़ीमत स्वीकृत"); renderRequests();
+      return;
+    }
     // decline ONE line off a request (out of stock / not available), keeping the rest
     var rl = t.closest && t.closest("[data-reject-line]");
     if (rl){
