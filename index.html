@@ -427,6 +427,8 @@
   table.pi-table th, table.pi-table td{ border:1px solid var(--border); padding:6px 5px; text-align:left; word-break:break-word; overflow-wrap:anywhere; }
   table.pi-table th{ background:var(--green-light); color:var(--green-dark); }
   table.pi-table td.num, table.pi-table th.num{ text-align:right; white-space:nowrap; }
+  .pi-pay{ margin-top:12px; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:var(--green-light); font-size:13px; }
+  .pi-pay-t{ font-weight:700; color:var(--green-dark); margin-bottom:4px; }
   .pi-totals{ margin-top:10px; font-size:13px; }
   .pi-totals .row{ display:flex; justify-content:space-between; padding:3px 0; font-size:13px; }
   .pi-grand{ display:flex; justify-content:space-between; font-weight:800; font-size:15px; margin-top:6px; border-top:1px solid var(--border); padding-top:8px; }
@@ -640,9 +642,10 @@
   // Dealer→importer PIs keep the importer identity (SELLER).
   function seller(){
     var s = state.enduser && state.supplierInfo;
-    if (!s) return { name: SELLER.name, gstin: SELLER.gstin, place: SELLER.place, phone: SELLER.phone };
+    if (!s) return { name: SELLER.name, gstin: SELLER.gstin, place: SELLER.place, phone: SELLER.phone, upi: "", qr: "" };
     return { name: s.name || "Shop", gstin: s.gstin || "",
-      place: [s.city, s.pin].filter(Boolean).join(" "), phone: s.phone || "" };
+      place: [s.city, s.pin].filter(Boolean).join(" "), phone: s.phone || "",
+      upi: s.upi_id || "", qr: s.bank_qr_url || "" };
   }
   var PI_VALID_DAYS = 15;
   var GST_PCT = 5;          // GST added on top of the subtotal at checkout (PI).
@@ -1021,11 +1024,11 @@
   }
   // resolve the signed-in user's party (company, role) from the tree; RLS returns only their branch
   function loadParty(){
-    return sb.from("parties").select("id,name,role,parent_id,auth_uid,retail_mult").then(function(res){
+    return sb.from("parties").select("id,name,role,parent_id,auth_uid,retail_mult,upi_id,bank_qr_url").then(function(res){
       var rows = (res && res.data) || [], uid = state.session && state.session.id, mine = null;
       rows.forEach(function(p){ if (p.auth_uid === uid) mine = p; });
       state.parties = rows; // used to name the buyer on incoming requests
-      state.account = mine ? { company: mine.name, role: mine.role, id: mine.id, parentId: mine.parent_id, retailMult: mine.retail_mult } : null;
+      state.account = mine ? { company: mine.name, role: mine.role, id: mine.id, parentId: mine.parent_id, retailMult: mine.retail_mult, upi: mine.upi_id, qr: mine.bank_qr_url } : null;
       if (state.session && mine) state.session.role = mine.role;
       persistData(); // keep identity fresh for the next instant/offline boot
     }).catch(function(){ if (!state._hydrated) state.account = null; }); // offline: keep cached identity
@@ -1494,6 +1497,14 @@
         '<div style="align-self:end;"><button class="btn-primary m-btn" id="m-rm-save" style="margin-top:0;">Save / सहेजें</button></div></div>'+
       '<div class="req-msg" id="m-rm-msg"></div></details>';
 
+    html += '<details class="more-sec"><summary>Payment details (UPI / QR) — भुगतान</summary>'+
+      '<p class="more-hint">Shown on your customer’s bill so they can pay you directly.</p>'+
+      '<label class="m-lbl">UPI ID</label><input type="text" id="m-pay-upi" class="m-input" placeholder="name@bank" value="'+esc(a.upi||"")+'">'+
+      '<button class="btn-primary m-btn" id="m-pay-save">Save UPI / सहेजें</button>'+
+      '<div class="row2" style="margin-top:8px;"><button class="btn-soft m-btn" id="m-pay-qr" style="margin-top:0;">Upload bank QR / QR डालें</button>'+
+        (a.qr ? '<a href="'+esc(a.qr)+'" target="_blank" rel="noopener" class="m-btn btn-soft" style="margin-top:0;text-align:center;">View QR</a>' : '<span></span>')+'</div>'+
+      '<div class="req-msg" id="m-pay-msg"></div></details>';
+
     html += '<details class="more-sec"><summary>Your retail shop link — दुकान लिंक</summary>'+
       '<p class="more-hint">Share on WhatsApp. Customers see MRP and their orders come to you.</p>'+
       '<input type="text" id="m-store-link" class="m-input" readonly value="'+esc(storeLink())+'">'+
@@ -1606,6 +1617,14 @@
       if (r.error){ m.className="req-msg err"; m.textContent = friendlyErr(r.error); return; }
       state.account.retailMult = mult; m.textContent = "Saved ✓ — customers now see "+mult+"× base."; showToast("Customer price updated ✓");
     };
+    // payment details
+    if ($("m-pay-save")) $("m-pay-save").onclick = async function(){
+      var m = $("m-pay-msg"); m.className="req-msg";
+      var r = await sb.rpc("set_payment_info", { p_upi: ($("m-pay-upi").value||"").trim() || null });
+      if (r.error){ m.className="req-msg err"; m.textContent = friendlyErr(r.error); return; }
+      state.account.upi = ($("m-pay-upi").value||"").trim(); m.textContent = "UPI saved ✓ / सहेजा गया"; showToast("Payment UPI saved ✓");
+    };
+    if ($("m-pay-qr")) $("m-pay-qr").onclick = function(){ billTargetOrder = 0; billTargetKind = "qr"; $("bill-file").click(); };
     // shop link
     if ($("m-store-copy")) $("m-store-copy").onclick = function(){
       var el = $("m-store-link"); el.select();
@@ -1845,18 +1864,26 @@
   async function onBillFileChosen(){
     var inp = $("bill-file"), file = inp.files && inp.files[0], id = billTargetOrder, kind = billTargetKind;
     inp.value = ""; billTargetOrder = null; billTargetKind = "dealer";
-    if (!file || !id) return;
+    if (!file) return;
+    if (kind !== "qr" && !id) return;
     if (file.size > 5*1024*1024){ showToast("File too large (max 5MB) / फ़ाइल बहुत बड़ी"); return; }
-    showToast("Uploading bill… / अपलोड हो रहा है");
+    var isQr = kind === "qr";
+    showToast(isQr ? "Uploading QR… / QR अपलोड हो रहा है" : "Uploading bill… / अपलोड हो रहा है");
     var ext = (file.name.split(".").pop() || "pdf").toLowerCase();
     // path is prefixed by the uploader's own auth uid — the storage policy only allows writing
     // into your own folder, so a signed-in user can't scatter files across the public bucket.
     var uid = (state.session && state.session.id) || "anon";
-    var path = uid + "/"+(kind === "enduser" ? "e" : "o")+id+"-"+(crypto.randomUUID ? crypto.randomUUID() : Date.now())+"."+ext;
+    var tag = isQr ? "qr" : (kind === "enduser" ? "e" : "o") + id;
+    var path = uid + "/"+tag+"-"+(crypto.randomUUID ? crypto.randomUUID() : Date.now())+"."+ext;
     var up = await sb.storage.from("bills").upload(path, file, { upsert:false });
     if (up.error){ showToast(friendlyErr(up.error)); return; }
     var pub = sb.storage.from("bills").getPublicUrl(path);
     var url = pub.data && pub.data.publicUrl;
+    if (isQr){
+      var qr = await sb.rpc("set_bank_qr", { p_url:url });
+      if (qr.error){ showToast(friendlyErr(qr.error)); return; }
+      state.account.qr = url; showToast("Bank QR saved ✓ / QR सहेजा"); renderMore(); return;
+    }
     var at = await sb.rpc(kind === "enduser" ? "attach_enduser_bill" : "attach_bill", { p_order_id:id, p_url:url });
     if (at.error){ showToast(friendlyErr(at.error)); return; }
     showToast("Bill attached ✓ / बिल लग गया"); renderRequests();
@@ -2233,6 +2260,10 @@
         '<div class="row"><span>Subtotal / उप-योग</span><span>' + inr(pi.subtotal) + '</span></div>' +
         '<div class="row"><span>GST @ ' + esc(pi.gstPct) + '%</span><span>+ ' + inr(pi.gst) + '</span></div>' +
         '<div class="pi-grand"><span>Grand Total / कुल</span><span>' + inr(pi.grand) + '</span></div></div>' +
+      ((sel.upi || sel.qr) ? '<div class="pi-pay"><div class="pi-pay-t">Pay / भुगतान</div>' +
+        (sel.upi ? '<div>UPI: <b>' + esc(sel.upi) + '</b> · <a href="upi://pay?pa=' + encodeURIComponent(sel.upi) + '&pn=' + encodeURIComponent(sel.name) + '&am=' + pi.grand + '&cu=INR">Pay via UPI / यूपीआई से भुगतान</a></div>' : '') +
+        (sel.qr ? '<img src="' + esc(sel.qr) + '" alt="Payment QR" style="width:150px;height:150px;object-fit:contain;margin-top:6px;" loading="lazy">' : '') +
+        '</div>' : '') +
       '<div class="pi-footer">This is a Proforma Invoice. Total includes ' + esc(pi.gstPct) + '% GST. Payment via UPI / bank transfer as agreed. Prices valid till ' + esc(pi.validTill) + '. | यह प्रोफार्मा इनवॉइस है, कुल में ' + esc(pi.gstPct) + '% GST शामिल है।</div>' +
       '<div class="pi-actions">' +
         '<button class="btn btn-outline btn-ico" id="pi-print-btn" style="margin-top:0;">' + svgIco("print") + 'Print</button>' +
