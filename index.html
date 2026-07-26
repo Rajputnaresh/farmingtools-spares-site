@@ -1149,11 +1149,25 @@
     state.curView = name;
     try {
       if (history.state && history.state.kgv) { if (history.state.kgv !== name) history.pushState({ kgv:name }, ""); }
-      else history.replaceState({ kgv:name }, "");
+      else {
+        // first view of this load: seed a sentinel root BELOW the real view so the browser
+        // Back button returns INTO the app (home tab) on the first press instead of exiting.
+        // Desktop Chrome has no swipe-back, so an accidental Back was dropping users out to a
+        // blank page — which read as being signed out.
+        history.replaceState({ kgv:"__root__" }, "");
+        history.pushState({ kgv:name }, "");
+      }
     } catch(e){}
   }
   window.addEventListener("popstate", function(e){
     var v = e.state && e.state.kgv;
+    // backed all the way to the sentinel root → stay in the app on the home tab (the _navPop
+    // guard stops showCatalog from re-pushing, so a second Back can still exit cleanly)
+    if (v === "__root__"){
+      if (!VIEW_SHOW || !VIEW_SHOW.catalog) return;
+      _navPop = true; try { VIEW_SHOW.catalog(); } finally { _navPop = false; }
+      return;
+    }
     if (!v || !VIEW_SHOW || !VIEW_SHOW[v]) return;
     _navPop = true;
     try { VIEW_SHOW[v](); } finally { _navPop = false; }
