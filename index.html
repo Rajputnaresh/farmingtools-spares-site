@@ -2395,9 +2395,6 @@
   function showImageModal(opts){
     lastFocus = document.activeElement;
     var missing = "<div class='empty-state'>Image not available.<br>छवि उपलब्ध नहीं है।</div>";
-    var onerr = opts.fb
-      ? "if(this.dataset.fb){this.src=this.dataset.fb;this.dataset.fb='';this.style.width='100%';}else{this.parentElement.innerHTML=\"" + missing + "\";}"
-      : "this.parentElement.innerHTML=\"" + missing + "\";";
     var root = $("modal-root");
     root.innerHTML =
       '<div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-label="' + esc(opts.label || "Image") + '">' +
@@ -2412,7 +2409,7 @@
           '</div>' +
           '<div class="modal-img-wrap" id="modal-img-wrap">' +
             '<img src="' + esc(opts.src) + '" alt="' + esc(opts.altText || opts.title) + '" id="modal-img"' +
-              (opts.fb ? ' data-fb="' + esc(opts.fb) + '"' : '') + ' onerror="' + onerr + '">' +
+              (opts.fb ? ' data-fb="' + esc(opts.fb) + '"' : '') + '>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -2425,6 +2422,20 @@
     $("modal-close").onclick = closeDiagram;
     $("modal-overlay").addEventListener("click", function(e){ if (e.target.id === "modal-overlay") closeDiagram(); });
     document.addEventListener("keydown", modalKeydown);
+    // load failure → swap to the fallback src once (data-fb), else show the "unavailable"
+    // notice. Wired in JS (not an inline onerror attribute) so the HTML markup inside
+    // `missing` can't break attribute quoting.
+    var imgEl = $("modal-img");
+    if (imgEl) imgEl.onerror = function(){
+      if (imgEl.dataset.fb){ imgEl.src = imgEl.dataset.fb; imgEl.dataset.fb = ""; imgEl.style.width = "100%"; }
+      else if (imgEl.parentElement){ imgEl.parentElement.innerHTML = missing; }
+    };
+    // scroll a tall page scan so the requested part's row sits in the middle of the view
+    if (opts.scrollFrac != null){
+      var im = $("modal-img"), wrap = $("modal-img-wrap");
+      var go = function(){ if (im && wrap && im.clientHeight) wrap.scrollTop = Math.max(0, opts.scrollFrac * im.clientHeight - wrap.clientHeight / 2); };
+      if (im.complete && im.clientHeight) go(); else im.addEventListener("load", go, { once: true });
+    }
     $("modal-close").focus();
   }
   // Tap the part photo → see it big and zoom in (pinch or the ± buttons).
@@ -2438,11 +2449,25 @@
       label: "Part photo"
     });
   }
-  function openDiagram(idx){
+  // Catalogue page scans are full-page strips (one PDF page ≈ 40+ rows, several thousand
+  // px tall). pos.json maps each catalog index → the row's vertical centre as a fraction
+  // (0..1) of the page, so the modal can scroll straight to the part instead of opening at
+  // the top — otherwise a part low on the page looks "missing". Loaded once, then cached.
+  var _ypos = null, _yposTried = false;
+  async function partYFrac(idx){
+    if (!_ypos && !_yposTried){
+      _yposTried = true;
+      try { var res = await fetch("pages/parts/pos.json"); if (res.ok) _ypos = await res.json(); } catch(e){}
+    }
+    return _ypos ? _ypos[String(idx)] : undefined; // undefined ⇒ don't scroll (top of page)
+  }
+  async function openDiagram(idx){
     var r = state.catalog[idx];
     if (!r) return;
+    var frac = await partYFrac(idx);
     showImageModal({
       src: pageScan(r),
+      scrollFrac: frac,
       title: (r.product_code || r.particular || "Catalog page") + " — catalogue page",
       altText: "Catalogue reference page " + r.pdf_page + " for group " + r.group + (r.product_code ? " (" + r.product_code + ")" : ""),
       label: "Catalogue page",
