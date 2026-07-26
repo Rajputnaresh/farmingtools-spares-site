@@ -522,6 +522,12 @@
       <input type="text" id="reg-phone" placeholder="10-digit mobile" inputmode="tel" autocomplete="tel">
       <label class="field-label" for="reg-email">Email / ईमेल</label>
       <input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email" autocapitalize="none">
+      <label class="field-label" for="reg-city">City / शहर</label>
+      <input type="text" id="reg-city" placeholder="e.g. Jaipur" autocomplete="address-level2">
+      <label class="field-label" for="reg-gstin">GSTIN <span style="color:var(--muted);font-weight:400;">(optional / वैकल्पिक)</span></label>
+      <input type="text" id="reg-gstin" placeholder="15-digit GST number" autocapitalize="characters" maxlength="15">
+      <label class="field-label" for="reg-upi">Bank UPI ID <span style="color:var(--muted);font-weight:400;">(optional / वैकल्पिक)</span></label>
+      <input type="text" id="reg-upi" placeholder="name@bank — shown on your bills" inputmode="email" autocapitalize="none">
       <label class="field-label" for="reg-password">Create a password / पासवर्ड बनाएँ</label>
       <div class="pw-wrap">
         <input type="password" id="reg-password" placeholder="at least 6 characters" autocomplete="new-password">
@@ -1068,7 +1074,8 @@
   }
   function doRegister(){
     var biz = $("reg-business").value.trim(), phone = $("reg-phone").value.trim(),
-        email = $("reg-email").value.trim(), pw = $("reg-password").value;
+        email = $("reg-email").value.trim(), pw = $("reg-password").value,
+        city = $("reg-city").value.trim(), gstin = $("reg-gstin").value.trim(), upi = $("reg-upi").value.trim();
     var err = $("register-error"); err.classList.add("hidden");
     if (!biz || !email || !pw){ err.textContent = "Business name, email and password are required. / नाम, ईमेल, पासवर्ड ज़रूरी।"; err.classList.remove("hidden"); return; }
     if (pw.length < 6){ err.textContent = "Password must be at least 6 characters. / पासवर्ड कम से कम 6 अक्षर।"; err.classList.remove("hidden"); return; }
@@ -1077,7 +1084,7 @@
     sb.auth.signUp({ email: email, password: pw }).then(function(res){
       if (res.error){ $("register-submit").disabled = false; err.textContent = res.error.message; err.classList.remove("hidden"); return; }
       // request_access needs the session signUp just created (email confirmation is off)
-      return sb.rpc("request_access", { p_business: biz, p_phone: phone, p_role: "dealer" }).then(function(r){
+      return sb.rpc("request_access", { p_business: biz, p_phone: phone, p_role: "dealer", p_gstin: gstin, p_city: city, p_upi: upi }).then(function(r){
         $("register-submit").disabled = false;
         if (r && r.data === "already_active"){
           // their supplier pre-created them (invite) — already linked, sign straight in
@@ -1085,7 +1092,7 @@
           state.session = { id: u.id, email: u.email, role: null };
           saveSession();
           loadCart(); // identity now known — switch from the guest cart to this account's own cart
-          ["reg-business","reg-phone","reg-email","reg-password"].forEach(function(id){ $(id).value = ""; });
+          ["reg-business","reg-phone","reg-email","reg-password","reg-city","reg-gstin","reg-upi"].forEach(function(id){ $(id).value = ""; });
           loadData().then(loadParty).then(function(){ if (state.account) showCatalog(); else showRegister(false); });
           return;
         }
@@ -1745,7 +1752,7 @@
     var rows = r.data || [];
     if (!rows.length){ card.innerHTML = '<div style="color:var(--muted);font-size:13px;">No pending registrations.</div>'; return; }
     card.innerHTML = rows.map(function(x){ return '<div class="req-card"><div><b>'+esc(x.business_name||"(no name)")+'</b> — '+esc(x.requested_role)+'</div>'+
-      '<div style="color:var(--muted);font-size:12.5px;">'+esc(x.email||"")+(x.phone?' · '+esc(x.phone):'')+'</div>'+
+      '<div style="color:var(--muted);font-size:12.5px;">'+esc(x.email||"")+(x.phone?' · '+esc(x.phone):'')+(x.city?' · '+esc(x.city):'')+'</div>'+((x.gstin||x.upi_id)?'<div style="color:var(--muted);font-size:12.5px;">'+(x.gstin?'GSTIN: '+esc(x.gstin):'')+(x.gstin&&x.upi_id?' · ':'')+(x.upi_id?'UPI: '+esc(x.upi_id):'')+'</div>':'')+
       '<label class="m-lbl">Margin % (blank=default)</label><input type="number" id="m-am-'+x.id+'" class="m-input" min="0" placeholder="default">'+
       '<div class="req-actions"><button class="btn-primary" data-approve="'+x.id+'">Approve / स्वीकृत</button>'+
       '<button class="btn-danger" data-reject-signup="'+x.id+'">Reject / अस्वीकार</button></div><div class="req-msg" id="m-amsg-'+x.id+'"></div></div>'; }).join("");
