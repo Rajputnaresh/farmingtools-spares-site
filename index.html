@@ -1386,9 +1386,12 @@
         : (state.account.parentId && shortAny && alreadyFwdEu) ? '<div class="req-gloss" style="margin:4px 0;">Forwarded ↑ / भेज दिया</div>' : "";
       // stock is here → let the dealer close the sale (moves stock out to the customer)
       var canFulfill = !shortAny;
+      var addr = o.ship_to_addr ? '<div style="font-size:12.5px;color:var(--text);margin-top:2px;">📍 '+esc(o.ship_to_addr)+'</div>' : "";
+      var euBill = o.bill_url ? '<a href="'+esc(o.bill_url)+'" target="_blank" rel="noopener" style="font-size:12.5px;font-weight:700;color:var(--green-dark);">View bill / बिल देखें</a>' : "";
       return '<div class="req-card"><div><b>'+esc(o.customer_name||"customer")+'</b>'+(o.customer_phone?' · '+esc(o.customer_phone):'')+' — <b>'+inr(o.grand)+'</b></div>'+
-        '<div style="font-size:12.5px;color:var(--muted);">'+esc(o.pi_number||"")+' · '+esc(summ)+'</div>'+fwd+
+        '<div style="font-size:12.5px;color:var(--muted);">'+esc(o.pi_number||"")+' · '+summ+'</div>'+addr+fwd+
         '<button class="btn-primary req-primary" data-fulfill-eu="'+o.id+'"'+(canFulfill?'':' disabled title="Not enough stock yet — forward the shortfall first"')+' style="margin-top:8px;">Bill &amp; ship / बिल करें</button>'+
+        '<div class="req-sub" style="margin-top:6px;"><button class="btn-soft" data-billattach-eu="'+o.id+'">Attach my bill / मेरा बिल लगाएँ</button>'+euBill+'</div>'+
         '<div class="req-msg" id="rem-'+o.id+'"></div></div>';
     }).join("");
   }
@@ -1402,6 +1405,16 @@
   }
   var ROLE_BELOW = { importer:["distributor","dealer","shopkeeper"], distributor:["dealer","shopkeeper"], dealer:["shopkeeper"] };
   function storeLink(){ return location.origin + location.pathname.replace(/[^/]*$/, "index.html") + "?s=" + state.account.id; }
+  // new-customer-order line builder state + renderer
+  var _coLines = [];
+  function drawCoLines(){
+    var box = $("m-co-lines"); if (!box) return;
+    if (!_coLines.length){ box.innerHTML = ""; return; }
+    box.innerHTML = '<div class="tscroll"><table><thead><tr><th></th><th>Part</th><th class="num">Qty</th><th></th></tr></thead><tbody>'+
+      _coLines.map(function(l){ return '<tr><td class="ln-thumb">'+lineThumb(l.sku)+'</td><td>'+esc(skuName(l.sku))+'</td>'+
+        '<td class="num">'+l.qty+'</td><td class="num"><button class="line-x" data-co-del="'+esc(l.sku)+'" aria-label="Remove">✕</button></td></tr>'; }).join("")+
+      '</tbody></table></div>';
+  }
   function skuOptionsHtml(list){
     return list.map(function(c){ return '<option value="'+esc(c.sku)+'">'+esc(c.product_code||c.sku)+' — '+esc((c.particular||"").slice(0,40))+'</option>'; }).join("");
   }
@@ -1456,6 +1469,18 @@
         '<div><label class="m-lbl">Reason</label><input type="text" id="m-adj-note" class="m-input" placeholder="e.g. breakage"></div></div>'+
       '<button class="btn-primary m-btn" id="m-adj-btn">Apply correction / लागू करें</button><div class="req-msg" id="m-adj-msg"></div></details>';
 
+    html += '<details class="more-sec"><summary>New customer order — नया ग्राहक ऑर्डर</summary>'+
+      '<p class="more-hint">Raise an order for a walk-in customer, with their delivery address. If you’re short, forward the shortfall up — then Bill &amp; ship it from Requests with your own bill.</p>'+
+      '<label class="m-lbl">Customer name / ग्राहक</label><input type="text" id="m-co-name" class="m-input" placeholder="e.g. Ramesh">'+
+      '<div class="row2"><div><label class="m-lbl">Phone / फ़ोन</label><input type="text" id="m-co-phone" class="m-input" inputmode="tel"></div>'+
+        '<div><label class="m-lbl">Deliver to / पता</label><input type="text" id="m-co-addr" class="m-input" placeholder="village / town"></div></div>'+
+      '<label class="m-lbl">Part / पुर्ज़ा</label><input type="text" id="m-co-search" class="m-input" placeholder="Type code or name to filter…" autocomplete="off">'+
+      '<select id="m-co-sku" class="m-input">'+skuOpts+'</select>'+
+      '<div class="row2"><div><label class="m-lbl">Qty</label><input type="number" id="m-co-qty" class="m-input" min="1" value="1" inputmode="numeric"></div>'+
+        '<div style="align-self:end;"><button class="btn-soft m-btn" id="m-co-add" style="margin-top:0;">Add part / जोड़ें</button></div></div>'+
+      '<div id="m-co-lines"></div>'+
+      '<button class="btn-primary m-btn" id="m-co-create">Create order / ऑर्डर बनाएँ</button><div class="req-msg" id="m-co-msg"></div></details>';
+
     html += '<details class="more-sec"><summary>Your retail shop link — दुकान लिंक</summary>'+
       '<p class="more-hint">Share on WhatsApp. Customers see MRP and their orders come to you.</p>'+
       '<input type="text" id="m-store-link" class="m-input" readonly value="'+esc(storeLink())+'">'+
@@ -1485,7 +1510,7 @@
       var pt = e.target.closest("[data-nav-part]"); if (pt){ _stockStack.push({ t:'part', val:pt.getAttribute("data-nav-part"), label:pt.getAttribute("data-nav-label") }); drawMoreStock(); return; }
     });
     // sku search filters
-    [["m-t-search","m-t-sku"],["m-o-search","m-o-sku"],["m-adj-search","m-adj-sku"]].forEach(function(pair){
+    [["m-t-search","m-t-sku"],["m-o-search","m-o-sku"],["m-adj-search","m-adj-sku"],["m-co-search","m-co-sku"]].forEach(function(pair){
       var s = $(pair[0]); if (!s) return;
       s.oninput = function(){ var q = this.value.trim().toLowerCase();
         var list = q ? (state.catalog||[]).filter(function(c){ return ((c.product_code||"")+" "+(c.particular||"")).toLowerCase().indexOf(q) !== -1; }).slice(0,200) : (state.catalog||[]);
@@ -1531,6 +1556,34 @@
       var r = await sb.rpc("adjust_stock", { p_sku:sku, p_delta:delta, p_note:note });
       if (r.error){ m.className="req-msg err"; m.textContent = friendlyErr(r.error); return; }
       m.textContent = "Corrected ✓"; $("m-adj-note").value=""; showToast("Stock corrected ✓ / स्टॉक सुधरा"); renderMoreStock();
+    };
+    // new customer order — build a line list, then place it as an enduser order on MY shop
+    _coLines = [];
+    if ($("m-co-add")) $("m-co-add").onclick = function(){
+      var sku = $("m-co-sku").value, qty = Math.max(1, Math.min(500, parseInt($("m-co-qty").value,10)||0));
+      if (!sku || !qty) return;
+      var ex = _coLines.filter(function(l){ return l.sku === sku; })[0];
+      if (ex) ex.qty = Math.min(500, ex.qty + qty); else _coLines.push({ sku:sku, qty:qty });
+      $("m-co-qty").value = "1"; drawCoLines();
+    };
+    if ($("m-co-lines")) $("m-co-lines").onclick = function(e){
+      var x = e.target.closest("[data-co-del]"); if (!x) return;
+      _coLines = _coLines.filter(function(l){ return l.sku !== x.getAttribute("data-co-del"); }); drawCoLines();
+    };
+    if ($("m-co-create")) $("m-co-create").onclick = async function(){
+      var m = $("m-co-msg"); m.className="req-msg";
+      var name = ($("m-co-name").value||"").trim();
+      if (!name){ m.className="req-msg err"; m.textContent = "Enter the customer’s name. / ग्राहक का नाम भरें।"; return; }
+      if (!_coLines.length){ m.className="req-msg err"; m.textContent = "Add at least one part. / कम से कम एक पुर्ज़ा जोड़ें।"; return; }
+      m.textContent = "Creating…";
+      var r = await sb.rpc("place_enduser_order", { p_supplier: state.account.id, p_name: name,
+        p_phone: ($("m-co-phone").value||"").trim() || null, p_addr: ($("m-co-addr").value||"").trim() || null,
+        p_lines: _coLines.map(function(l){ return { sku:l.sku, qty:l.qty }; }), p_client_key: uuid() });
+      if (r.error){ m.className="req-msg err"; m.textContent = friendlyErr(r.error); return; }
+      _coLines = []; drawCoLines();
+      $("m-co-name").value=""; $("m-co-phone").value=""; $("m-co-addr").value="";
+      m.textContent = "Order created ✓ — see it under Requests → retail.";
+      showToast("Customer order created ✓ / ऑर्डर बना"); updateRequestBadge();
     };
     // shop link
     if ($("m-store-copy")) $("m-store-copy").onclick = function(){
@@ -1666,7 +1719,7 @@
   }
 
   // ---- seller actions (event delegation on the Requests view) ----
-  var billTargetOrder = null;
+  var billTargetOrder = null, billTargetKind = "dealer";
   async function onRequestsClick(e){
     var t = e.target;
     // retail close-out: move stock out to the customer, mark the order billed
@@ -1729,7 +1782,9 @@
       return;
     }
     var ba = t.closest && t.closest("[data-billattach]");
-    if (ba){ billTargetOrder = Number(ba.getAttribute("data-billattach")); $("bill-file").click(); return; }
+    if (ba){ billTargetOrder = Number(ba.getAttribute("data-billattach")); billTargetKind = "dealer"; $("bill-file").click(); return; }
+    var bae = t.closest && t.closest("[data-billattach-eu]");
+    if (bae){ billTargetOrder = Number(bae.getAttribute("data-billattach-eu")); billTargetKind = "enduser"; $("bill-file").click(); return; }
     // decline ONE line off a request (out of stock / not available), keeping the rest
     var rl = t.closest && t.closest("[data-reject-line]");
     if (rl){
@@ -1756,8 +1811,8 @@
     }
   }
   async function onBillFileChosen(){
-    var inp = $("bill-file"), file = inp.files && inp.files[0], id = billTargetOrder;
-    inp.value = ""; billTargetOrder = null;
+    var inp = $("bill-file"), file = inp.files && inp.files[0], id = billTargetOrder, kind = billTargetKind;
+    inp.value = ""; billTargetOrder = null; billTargetKind = "dealer";
     if (!file || !id) return;
     if (file.size > 5*1024*1024){ showToast("File too large (max 5MB) / फ़ाइल बहुत बड़ी"); return; }
     showToast("Uploading bill… / अपलोड हो रहा है");
@@ -1765,12 +1820,12 @@
     // path is prefixed by the uploader's own auth uid — the storage policy only allows writing
     // into your own folder, so a signed-in user can't scatter files across the public bucket.
     var uid = (state.session && state.session.id) || "anon";
-    var path = uid + "/o"+id+"-"+(crypto.randomUUID ? crypto.randomUUID() : Date.now())+"."+ext;
+    var path = uid + "/"+(kind === "enduser" ? "e" : "o")+id+"-"+(crypto.randomUUID ? crypto.randomUUID() : Date.now())+"."+ext;
     var up = await sb.storage.from("bills").upload(path, file, { upsert:false });
     if (up.error){ showToast(friendlyErr(up.error)); return; }
     var pub = sb.storage.from("bills").getPublicUrl(path);
     var url = pub.data && pub.data.publicUrl;
-    var at = await sb.rpc("attach_bill", { p_order_id:id, p_url:url });
+    var at = await sb.rpc(kind === "enduser" ? "attach_enduser_bill" : "attach_bill", { p_order_id:id, p_url:url });
     if (at.error){ showToast(friendlyErr(at.error)); return; }
     showToast("Bill attached ✓ / बिल लग गया"); renderRequests();
   }
