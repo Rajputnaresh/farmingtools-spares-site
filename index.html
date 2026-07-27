@@ -472,6 +472,26 @@
     .pi-actions, .back-link, .pi-success{ display:none !important; }
     header.app-header, nav.bottom-nav{ display:none !important; }
   }
+
+  /* ---- desktop / laptop: use the wide screen instead of a thin phone column.
+     The green header and bottom nav stay full-width bars but align their content
+     to the same centred column as the body; the catalogue browses 2-up (3-up on
+     big screens) so the parts list fills the space instead of a lone column. ---- */
+  @media (min-width: 860px){
+    main{ max-width:1040px; }
+    header.app-header{ padding-inline:max(12px, calc(50% - 520px)); }
+    nav.bottom-nav{ padding-inline:max(0px, calc(50% - 520px)); }
+    #catalog-body{ display:grid; grid-template-columns:1fr 1fr; gap:8px 12px; align-items:start; }
+    #catalog-body > .item{ margin-bottom:0; }
+    #catalog-body > .browse-head, #catalog-body > .browse-back,
+    #catalog-body > .result-count, #catalog-body > .list-reset,
+    #catalog-body > .show-more, #catalog-body > .empty-state,
+    #catalog-body > .tiles{ grid-column:1 / -1; }
+    .tiles{ grid-template-columns:repeat(3, 1fr); }
+  }
+  @media (min-width: 1200px){
+    #catalog-body{ grid-template-columns:1fr 1fr 1fr; }
+  }
 </style>
 </head>
 <body>
