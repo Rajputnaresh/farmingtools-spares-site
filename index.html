@@ -75,6 +75,8 @@
   .logout-link{ background:rgba(255,255,255,.15); border:none; color:#fff; border-radius:10px; min-height:44px; min-width:44px; display:inline-flex; align-items:center; justify-content:center; }
 
   main{ padding:10px 10px 90px; max-width:640px; margin:0 auto; }
+  /* one shared per-view heading — was an identical inline style on Cart/Orders/Requests/More */
+  .view-title{ color:var(--green-dark); font-size:17px; margin:4px 0 10px; }
 
   /* login */
   .login-wrap{ padding:40px 20px; max-width:420px; margin:0 auto; }
@@ -84,7 +86,12 @@
   input[type=text], input[type=number], input[type=password], input[type=email], input[type=search]{
     width:100%; padding:12px; border:1px solid var(--border); border-radius:10px;
     font-size:16px; background:#fff; min-height:48px; -webkit-appearance:none; appearance:none;
+    color:var(--text);
   }
+  select{ color:var(--text); }
+  /* one placeholder treatment app-wide: brand muted at full opacity (Firefox dims by default),
+     so every hint clears 4.5:1 instead of the browser-default light gray */
+  input::placeholder, textarea::placeholder{ color:var(--muted); opacity:1; }
   .btn{
     display:inline-block; border:none; border-radius:10px; padding:12px 16px;
     font-size:15px; font-weight:700; min-height:48px;
@@ -142,7 +149,7 @@
   .stk-list{ display:flex; flex-direction:column; gap:6px; margin-top:8px; }
   .stk-row{ display:flex; align-items:center; gap:10px; width:100%; text-align:left;
     background:#fff; border:1px solid var(--border); border-radius:10px; padding:10px 12px;
-    min-height:52px; font:inherit; color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    min-height:52px; font:inherit; color:var(--text); cursor:pointer; -webkit-tap-highlight-color:transparent; }
   .stk-row:active{ background:var(--green-light); }
   .stk-main{ flex:1; min-width:0; display:flex; flex-direction:column; }
   .stk-name{ font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
@@ -385,7 +392,7 @@
   .req-card .btn-primary{ width:auto; margin-top:0; }
   /* branded in-app confirm sheet — replaces native confirm() for stock-moving actions */
   .cf-box{ max-width:340px; width:calc(100% - 32px); padding:18px; }
-  .cf-msg{ font-size:14.5px; line-height:1.5; white-space:pre-line; color:var(--ink); margin-bottom:16px; }
+  .cf-msg{ font-size:14.5px; line-height:1.5; white-space:pre-line; color:var(--text); margin-bottom:16px; }
   .cf-row{ display:flex; gap:10px; }
   .cf-row button{ flex:1; min-height:46px; border-radius:10px; font-weight:600; font-size:14px; }
   .req-msg{ font-size:12.5px; margin-top:6px; color:var(--muted); }
@@ -582,7 +589,7 @@
 
   <!-- CART -->
   <section id="view-cart" class="hidden">
-    <h2 style="color:var(--green-dark);font-size:17px;margin:4px 0 10px;">Cart / कार्ट</h2>
+    <h2 class="view-title">Cart / कार्ट</h2>
     <div id="cart-list"></div>
     <div class="grand-total-bar">
       <span>Subtotal / उप-योग</span>
@@ -609,13 +616,13 @@
 
   <!-- Orders -->
   <section id="view-orders" class="hidden">
-    <h2 style="color:var(--green-dark);font-size:17px;margin:4px 0 10px;">My Orders / मेरे ऑर्डर</h2>
+    <h2 class="view-title">My Orders / मेरे ऑर्डर</h2>
     <div id="orders-list"></div>
   </section>
 
   <!-- Requests (supplier: orders placed to me + retail orders on my shop) -->
   <section id="view-requests" class="hidden">
-    <h2 style="color:var(--green-dark);font-size:17px;margin:4px 0 10px;">Requests / अनुरोध</h2>
+    <h2 class="view-title">Requests / अनुरोध</h2>
     <div id="req-dealer-list"></div>
     <h3 style="color:var(--green-dark);font-size:15px;margin:18px 0 6px;">Retail orders / खुदरा ऑर्डर</h3>
     <div id="req-retail-list"></div>
@@ -623,7 +630,7 @@
 
   <!-- More (business hub) -->
   <section id="view-more" class="hidden">
-    <h2 style="color:var(--green-dark);font-size:17px;margin:4px 0 10px;">More / अधिक</h2>
+    <h2 class="view-title">More / अधिक</h2>
     <div id="more-body"></div>
   </section>
 
