@@ -175,7 +175,7 @@
     background:var(--green-light); border:1px solid var(--border); border-radius:10px;
     padding:8px 10px; margin-bottom:10px; font-size:13px;
   }
-  .dealer-strip .name{ font-weight:700; color:var(--green-dark); }
+  .dealer-strip .name{ font-weight:700; color:var(--green-dark); text-transform:capitalize; }
 
   /* search & filters */
   .search-row{ position:relative; margin-bottom:8px; }
@@ -249,6 +249,12 @@
     background:var(--bg); cursor:zoom-in;
   }
   .item-thumb:focus-visible{ outline:3px solid var(--focus, #2b6cff); outline-offset:2px; }
+  /* while the lazy JPEG loads, show a quiet wrench glyph so slow-3G lists don't read as "no photos";
+     the loaded image (object-fit:cover) fully covers it */
+  img.item-thumb[data-g]{
+    background-image:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b6b60' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.8 2.8-2.1-2.1 2.9-2.7z'/></svg>");
+    background-repeat:no-repeat; background-position:center; background-size:26px;
+  }
   /* fallback when no per-part photo exists — a calm group icon, never a misleading page crop */
   .thumb-ph{ display:flex; align-items:center; justify-content:center; cursor:default; color:var(--green-dark); background:var(--green-light); }
   .thumb-ph .t-icon{ width:30px; height:30px; }
@@ -605,6 +611,7 @@
       <input type="number" id="eu-offer" inputmode="numeric" min="0" placeholder="Propose a total — the shop can accept it / कुल क़ीमत सुझाएँ">
     </div>
     <div id="cart-oos-note" class="login-error hidden" style="margin-top:10px;">Remove out-of-stock items to continue / जारी रखने के लिए स्टॉक-रहित पुर्जे हटाएँ</div>
+    <p id="eu-reassure" class="hidden" style="font-size:12.5px;color:var(--green-dark);font-weight:600;margin:10px 2px 0;">No payment now — the shop will confirm your order. / अभी भुगतान नहीं — दुकान आपके ऑर्डर की पुष्टि करेगी।</p>
     <button class="generate-btn" id="generate-pi-btn">Generate PO / परचेज़ ऑर्डर बनाएँ</button>
   </section>
 
@@ -641,11 +648,11 @@
 <input type="file" id="bill-file" accept="application/pdf,image/*" class="hidden" aria-hidden="true">
 
 <nav class="bottom-nav hidden" id="bottom-nav">
-  <button id="nav-catalog" class="active"><span class="ico" data-ico="home" aria-hidden="true"></span><span class="nl">Shop</span><span class="nl-hi">दुकान</span></button>
-  <button id="nav-cart"><span class="ico" data-ico="cart" aria-hidden="true"></span><span class="nav-badge hidden" id="cart-badge">0</span><span class="nl">Cart</span><span class="nl-hi">कार्ट</span></button>
-  <button id="nav-orders" class="hidden"><span class="ico" data-ico="orders" aria-hidden="true"></span><span class="nl">Orders</span><span class="nl-hi">ऑर्डर</span></button>
-  <button id="nav-requests" class="hidden"><span class="ico" data-ico="bell" aria-hidden="true"></span><span class="nav-badge hidden" id="req-badge">0</span><span class="nl">Requests</span><span class="nl-hi">अनुरोध</span></button>
-  <button id="nav-more" class="hidden"><span class="ico" data-ico="more" aria-hidden="true"></span><span class="nl">More</span><span class="nl-hi">अधिक</span></button>
+  <button id="nav-catalog" class="active" aria-label="Shop / दुकान"><span class="ico" data-ico="home" aria-hidden="true"></span><span class="nl">Shop</span><span class="nl-hi">दुकान</span></button>
+  <button id="nav-cart" aria-label="Cart / कार्ट"><span class="ico" data-ico="cart" aria-hidden="true"></span><span class="nav-badge hidden" id="cart-badge">0</span><span class="nl">Cart</span><span class="nl-hi">कार्ट</span></button>
+  <button id="nav-orders" class="hidden" aria-label="My orders / मेरे ऑर्डर"><span class="ico" data-ico="orders" aria-hidden="true"></span><span class="nl">Orders</span><span class="nl-hi">ऑर्डर</span></button>
+  <button id="nav-requests" class="hidden" aria-label="Requests / अनुरोध"><span class="ico" data-ico="bell" aria-hidden="true"></span><span class="nav-badge hidden" id="req-badge">0</span><span class="nl">Requests</span><span class="nl-hi">अनुरोध</span></button>
+  <button id="nav-more" class="hidden" aria-label="More / अधिक"><span class="ico" data-ico="more" aria-hidden="true"></span><span class="nl">More</span><span class="nl-hi">अधिक</span></button>
 </nav>
 
 <div id="modal-root"></div>
@@ -1283,6 +1290,9 @@
     updateNavVisibility();
     setActiveNav("nav-cart"); pushView("cart");
     $("eu-contact").classList.toggle("hidden", !state.enduser);
+    // retail customers don't issue POs — plain words + "no payment" reassurance at the money moment
+    $("eu-reassure").classList.toggle("hidden", !state.enduser);
+    $("generate-pi-btn").textContent = state.enduser ? "Send order / ऑर्डर भेजें" : "Generate PO / परचेज़ ऑर्डर बनाएँ";
     renderCart(); updateCartBadge();
   }
   function showPI(){ hideAll(); $("view-pi").classList.remove("hidden"); $("header-actions").classList.remove("hidden"); updateAuthButton(); pushView("pi"); renderPI(); }
@@ -2249,8 +2259,10 @@
     if (q) announce(total + (total === 1 ? " part" : " parts") + " found");
 
     if (!total){
-      body.innerHTML = head + '<div class="empty-state">No parts match.<br>कोई पुर्जा नहीं मिला।</div>';
+      body.innerHTML = head + '<div class="empty-state">No parts match. / कोई पुर्जा नहीं मिला।<br>Try the part code from the catalogue page. / कैटलॉग पेज का पार्ट कोड आज़माएँ।' +
+        '<br><button class="retry-btn" id="empty-clear-btn" type="button">Clear search / खोज हटाएँ</button></div>';
       $("list-reset").onclick = resetToBrowse;
+      $("empty-clear-btn").onclick = resetToBrowse;
       return;
     }
 
@@ -2373,7 +2385,7 @@
             '<div class="cart-item-name">' + esc(nice(r.particular)) + '</div>' +
             '<div class="cart-item-code">' + (r.product_code ? esc(r.product_code) : "—") + ' &middot; ' + inr(rate) + ' each</div>' +
           '</div>' +
-          '<button class="remove-btn" type="button" data-remove="' + k + '">Remove</button></div>' +
+          '<button class="remove-btn" type="button" data-remove="' + k + '">Remove / हटाएँ</button></div>' +
         '<div class="cart-item-bottom">' +
           '<div class="stepper" data-idx="' + k + '">' +
             '<button class="qty-minus" type="button" aria-label="Decrease quantity">−</button>' +
@@ -2436,7 +2448,9 @@
       : state.piOrderOk === "queued"
       ? '<div class="notice">✓ Saved on your phone — it will be sent automatically when you’re online. / फ़ोन पर सेव — ऑनलाइन होते ही अपने आप भेजा जाएगा।</div>'
       : state.piOrderOk === false
-      ? '<div class="login-error">⚠ Order could not be saved — check internet and tap Generate PO again. / ऑर्डर सेव नहीं हुआ — इंटरनेट देखें और फिर से कोशिश करें।</div>'
+      ? '<div class="login-error">⚠ Order could not be saved — check internet and try again. / ऑर्डर सेव नहीं हुआ — इंटरनेट देखें और फिर से कोशिश करें।</div>'
+      : state.enduser
+      ? '<div class="pi-success">✓ Order sent to the shop — they will confirm. You can also share it on WhatsApp below. / ऑर्डर दुकान को भेज दिया गया — वे पुष्टि करेंगे। नीचे व्हाट्सऐप पर भी भेज सकते हैं।</div>'
       : '<div class="pi-success">✓ Purchase Order ready. Share it on WhatsApp below. / परचेज़ ऑर्डर तैयार है, नीचे व्हाट्सऐप पर भेजें।</div>';
     var sel = pi.sellerOverride || seller();
     $("pi-box").innerHTML =
