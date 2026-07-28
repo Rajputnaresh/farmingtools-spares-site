@@ -364,9 +364,9 @@
   .btn-primary:active, .req-primary:active, .req-sub button:active, .add-btn:active, .cf-row button:active, .m-btn:active, .generate-btn:active{ transform:scale(.97); }
   /* a handled request fades out before the list re-renders — confirms the action landed */
   @keyframes cardOut{ to{ opacity:0; transform:scale(.98); } }
-  .req-card.req-done{ animation:cardOut .18s ease forwards; pointer-events:none; }
+  .req-card.req-done, .disp-sec.req-done{ animation:cardOut .18s ease forwards; pointer-events:none; }
   @media (prefers-reduced-motion: reduce){
-    #toast:not(.hidden), #cf-overlay, #cf-overlay .cf-box, .nav-badge.bump, #req-badge.pulse, .req-card.req-done{ animation:none !important; }
+    #toast:not(.hidden), #cf-overlay, #cf-overlay .cf-box, .nav-badge.bump, #req-badge.pulse, .req-card.req-done, .disp-sec.req-done{ animation:none !important; }
     .btn-primary, .req-primary, .req-sub button, .add-btn, .cf-row button, .m-btn, .generate-btn, .more-sec > summary::after{ transition:none !important; }
   }
   /* subtle view-in so tab switches read as intentional, not a jump-cut */
@@ -393,8 +393,6 @@
   .order-row{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; gap:8px; font-size:13.5px; }
   /* Requests (supplier) cards */
   .req-card{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:10px; font-size:13.5px; }
-  /* awaiting-dispatch = you owe a physical action — amber hairline + faint wash marks it apart */
-  .req-card.disp-wait{ border-color:var(--warn-border,#f0c96b); background:#fffdf4; }
   .req-card table{ width:100%; border-collapse:collapse; font-size:13px; margin-top:6px; }
   .req-card th, .req-card td{ text-align:left; padding:4px 6px; border-bottom:1px solid var(--border); }
   .req-card th.num, .req-card td.num{ text-align:right; }
@@ -430,6 +428,9 @@
   .more-sec > *:not(summary){ margin:0 14px; }
   .more-sec > *:not(summary):first-of-type{ margin-top:12px; }
   .more-sec > *:last-child{ margin-bottom:14px; }
+  /* a width:100% field plus the 14px side margins above overflows the card and gets clipped
+     by overflow:hidden — subtract the gutters so direct-child inputs sit inside the rounded box */
+  .more-sec > .m-input{ width:calc(100% - 28px); }
   /* grouped More menu: intent headers + informative closed rows */
   .more-group{ font-size:13px; font-weight:700; color:var(--green-dark); margin:18px 2px 6px; }
   .more-group:first-of-type{ margin-top:14px; }
@@ -437,6 +438,16 @@
   .ms-badge{ display:inline-block; min-width:20px; text-align:center; background:var(--danger); color:#fff; border-radius:10px; font-size:11.5px; font-weight:700; padding:1px 6px; margin-left:8px; }
   .ms-share{ float:right; display:inline-flex; align-items:center; gap:5px; background:var(--green); color:#fff; border:none; border-radius:8px; font-size:12.5px; font-weight:700; padding:6px 10px; margin:-4px 0 4px 8px; min-height:32px; }
   .ms-share .ico svg{ width:15px; height:15px; }
+  /* awaiting dispatch: one collapsed row per parcel (amber = you owe a physical action).
+     Defined after .more-sec so the warm colours win over the shared accordion shell. */
+  .disp-sec{ border-color:var(--warn-border,#f0c96b); background:#fffdf4; }
+  .disp-sec[open] > summary{ border-bottom-color:var(--warn-border,#f0c96b); }
+  .disp-n{
+    display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px;
+    margin-right:8px; border-radius:50%; background:var(--warn-ink,#7a5b00); color:#fff;
+    font-size:12px; font-weight:700; vertical-align:2px;
+  }
+  .disp-sec .ms-hint{ margin-left:30px; } /* align the sub-line under the name, clear of the number */
   .more-hint{ color:var(--muted); font-size:12.5px; }
   .m-lbl{ display:block; font-size:12.5px; font-weight:600; margin:8px 0 4px; }
   .m-input{ width:100%; box-sizing:border-box; padding:11px; min-height:46px; font-size:16px; border:1px solid var(--border); border-radius:10px; background:#fff; }
@@ -1584,24 +1595,32 @@
       // drop-shipped orders are dispatched by the UPSTREAM supplier, not me — keep them out of my list
       bd = bd.filter(function(o){ return !fwdSet['dealer:'+o.id]; });
       be = be.filter(function(o){ return !fwdSet['enduser:'+o.id]; });
-      function dispCard(kind, o, who){
+      // ONE PARCEL PER CARD, collapsed. Several billed orders for the same buyer used to render
+      // as identical expanded forms, which read as "why is it asking for the LR again?" — the
+      // numbered, closed summary makes the count obvious and only opens the parcel being packed.
+      var dispTotal = bd.length + be.length;
+      function dispCard(kind, o, who, n){
         var tag = kind+":"+o.id;
-        // date + destination make each card unmistakably ITS order — several billed orders
-        // for the same buyer otherwise look like duplicates of one another
-        var d = o.created_at ? new Date(o.created_at).toLocaleDateString("en-IN",{day:"2-digit",month:"short"}) : "";
+        var d = o.created_at ? new Date(o.created_at).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "";
         var dest = kind === "dealer" ? (o.ship_to || "") : [o.customer_phone, o.ship_to_addr].filter(Boolean).join(" · ");
-        return '<div class="req-card disp-wait">'+
-          '<div><b>'+esc(who)+'</b> · '+esc(o.pi_number||"")+' · <b>'+inr(o.grand)+'</b> · <span class="badge-amber">To ship / भेजना है</span></div>'+
-          '<div style="font-size:12.5px;color:var(--muted);">'+(d ? 'Billed '+esc(d) : '')+(dest ? ' · 📍 '+esc(dest) : '')+'</div>'+
+        return '<details class="more-sec disp-sec"'+(dispTotal === 1 ? ' open' : '')+'>'+
+          '<summary><span class="disp-n">'+n+'</span><b>'+esc(who)+'</b> — <b>'+inr(o.grand)+'</b>'+
+            '<span class="ms-hint">Order '+esc(o.pi_number||"")+(d ? ' · billed '+esc(d) : '')+
+              (dest ? '<br>📍 '+esc(dest) : '')+'</span></summary>'+
+          '<p class="more-hint">Courier details for this parcel only. / सिर्फ़ इसी पार्सल की जानकारी।</p>'+
           '<label class="m-lbl">Courier / कूरियर</label><input class="m-input disp-carrier" placeholder="e.g. Delhivery, Bus, Post office" maxlength="60">'+
           '<label class="m-lbl">AWB / LR no. / नंबर</label><input class="m-input disp-track" placeholder="tracking / LR number" maxlength="80">'+
-          '<div class="req-sub" style="margin-top:8px;"><button class="btn-soft" data-lr="'+tag+'">Attach LR copy / एलआर लगाएँ</button>'+
-            '<button class="btn-primary" data-complete="'+tag+'" style="flex:1;">Mark shipped & complete / पूरा करें</button></div>'+
-          '<div class="req-msg" id="dm-'+kind+'-'+o.id+'"></div></div>';
+          '<div class="req-sub" style="margin-top:8px;"><button class="btn-soft" data-lr="'+tag+'">Photo of LR (optional) / एलआर फ़ोटो</button>'+
+            '<button class="btn-primary" data-complete="'+tag+'" style="flex:1;">Parcel sent ✓ / भेज दिया</button></div>'+
+          '<div class="req-msg" id="dm-'+kind+'-'+o.id+'"></div></details>';
       }
-      disp.innerHTML = (bd.length || be.length)
-        ? bd.map(function(o){ return dispCard("dealer", o, pName[o.dealer_party]||"dealer"); }).join("")
-          + be.map(function(o){ return dispCard("enduser", o, o.customer_name||"customer"); }).join("")
+      var dispN = 0;
+      disp.innerHTML = dispTotal
+        ? '<p class="more-hint" style="margin:0 0 8px;">'+dispTotal+' order'+(dispTotal === 1 ? '' : 's')+
+            ' billed and waiting. Each one is its own parcel with its own courier and LR number — tap an order to fill it in. / '+
+            'हर ऑर्डर अलग पार्सल है, उसका अपना कूरियर और एलआर नंबर — भरने के लिए ऑर्डर पर टैप करें।</p>'+
+          bd.map(function(o){ return dispCard("dealer", o, pName[o.dealer_party]||"dealer", ++dispN); }).join("")
+          + be.map(function(o){ return dispCard("enduser", o, o.customer_name||"customer", ++dispN); }).join("")
         : '<p style="color:var(--muted);font-size:13px;margin:8px 2px;">Nothing awaiting dispatch / कुछ नहीं</p>';
     }
   }
@@ -2060,7 +2079,7 @@
     var cpl = t.closest && t.closest("[data-complete]");
     if (cpl){
       var ctag = cpl.getAttribute("data-complete"), cparts = ctag.split(":"), ckind = cparts[0], cid = Number(cparts[1]);
-      var ccard = cpl.closest(".req-card");
+      var ccard = cpl.closest(".disp-sec, .req-card");
       var carrier = ((ccard.querySelector(".disp-carrier")||{}).value||"").trim();
       var track = ((ccard.querySelector(".disp-track")||{}).value||"").trim();
       var cmsgEl = $("dm-"+ckind+"-"+cid);
@@ -2072,7 +2091,7 @@
       if (cr.error){ if (cmsgEl){ cmsgEl.className="req-msg err"; cmsgEl.textContent=friendlyErr(cr.error); } return; }
       delete lrPending[ctag];
       showToast("Order completed ✓ / ऑर्डर पूरा");
-      var dcard = cpl.closest(".req-card"); if (dcard) dcard.classList.add("req-done");
+      var dcard = cpl.closest(".disp-sec, .req-card"); if (dcard) dcard.classList.add("req-done");
       setTimeout(function(){ renderRequests(); }, 180);
       return;
     }
