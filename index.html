@@ -385,6 +385,8 @@
   .order-row{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; gap:8px; font-size:13.5px; }
   /* Requests (supplier) cards */
   .req-card{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:10px; font-size:13.5px; }
+  /* awaiting-dispatch = you owe a physical action — amber hairline + faint wash marks it apart */
+  .req-card.disp-wait{ border-color:var(--warn-border,#f0c96b); background:#fffdf4; }
   .req-card table{ width:100%; border-collapse:collapse; font-size:13px; margin-top:6px; }
   .req-card th, .req-card td{ text-align:left; padding:4px 6px; border-bottom:1px solid var(--border); }
   .req-card th.num, .req-card td.num{ text-align:right; }
@@ -435,7 +437,8 @@
   .row2 > div{ flex:1; min-width:0; }
   .badge-green, .badge-amber, .badge-red{ display:inline-block; border-radius:8px; padding:2px 8px; font-size:11px; font-weight:700; margin-bottom:3px; }
   .badge-green{ background:var(--green-light); color:var(--green-dark); }
-  .badge-amber{ background:var(--bg); color:var(--muted); border:1px solid var(--border); }
+  /* waiting is a warm state, not an inactive one — placed orders read amber until billed */
+  .badge-amber{ background:var(--warn-tint,#fff6e0); color:var(--warn-ink,#7a5b00); border:1px solid var(--warn-border,#f0c96b); }
   .badge-red{ background:var(--danger-tint,#fdeceb); color:var(--danger); border:1px solid var(--danger-border,#f0b4ac); }
 
   /* PI */
@@ -1555,8 +1558,8 @@
       be = be.filter(function(o){ return !fwdSet['enduser:'+o.id]; });
       function dispCard(kind, o, who){
         var tag = kind+":"+o.id;
-        return '<div class="req-card">'+
-          '<div><b>'+esc(who)+'</b> · '+esc(o.pi_number||"")+' · <b>'+inr(o.grand)+'</b> · <span style="color:var(--muted)">Billed / बिल हुआ</span></div>'+
+        return '<div class="req-card disp-wait">'+
+          '<div><b>'+esc(who)+'</b> · '+esc(o.pi_number||"")+' · <b>'+inr(o.grand)+'</b> · <span class="badge-amber">To ship / भेजना है</span></div>'+
           '<label class="m-lbl">Courier / कूरियर</label><input class="m-input disp-carrier" placeholder="e.g. Delhivery, Bus, Post office" maxlength="60">'+
           '<label class="m-lbl">AWB / LR no. / नंबर</label><input class="m-input disp-track" placeholder="tracking / LR number" maxlength="80">'+
           '<div class="req-sub" style="margin-top:8px;"><button class="btn-soft" data-lr="'+tag+'">Attach LR copy / एलआर लगाएँ</button>'+
