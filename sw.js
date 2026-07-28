@@ -1,12 +1,17 @@
 // Shell precache now includes the vendored Supabase lib + catalog so the app boots
 // fully offline. Catalog images (pages/**) are cached on first view (cache-first runtime),
 // not precached — 1800 files / 37MB is far too much to push on install.
-const CACHE = 'kg-spares-v86';
+const CACHE = 'kg-spares-v87';
 const IMG_CACHE = 'kg-img-v1';
 const SHELL = ['./', './index.html', './manifest.json', './vendor/supabase.js', './supabase/config.js', './catalog.json'];
-// exact-path match for the shell network-first branch below — NOT p.replace('./','')+endsWith,
-// which degenerately matched every request (endsWith('') is always true)
-const SHELL_PATHS = new Set(['/', '/index.html', '/manifest.json', '/vendor/supabase.js', '/supabase/config.js']);
+// Exact-path match for the shell network-first branch below. Resolve each entry against this
+// worker's OWN location: the app is served from /farmingtools-spares-site/, not the domain root,
+// so hard-coded '/index.html' never matched and the precached shell was never read — offline was
+// a white screen even though install() had cached every file correctly.
+const SHELL_PATHS = new Set(
+  ['./', './index.html', './manifest.json', './vendor/supabase.js', './supabase/config.js']
+    .map((p) => new URL(p, self.location).pathname)
+);
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)));
