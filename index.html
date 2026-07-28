@@ -605,7 +605,7 @@
       <input type="number" id="eu-offer" inputmode="numeric" min="0" placeholder="Propose a total — the shop can accept it / कुल क़ीमत सुझाएँ">
     </div>
     <div id="cart-oos-note" class="login-error hidden" style="margin-top:10px;">Remove out-of-stock items to continue / जारी रखने के लिए स्टॉक-रहित पुर्जे हटाएँ</div>
-    <button class="generate-btn" id="generate-pi-btn">Generate PI</button>
+    <button class="generate-btn" id="generate-pi-btn">Generate PO / परचेज़ ऑर्डर बनाएँ</button>
   </section>
 
   <!-- PI -->
@@ -626,6 +626,8 @@
     <div id="req-dealer-list"></div>
     <h3 style="color:var(--green-dark);font-size:15px;margin:18px 0 6px;">Retail orders / खुदरा ऑर्डर</h3>
     <div id="req-retail-list"></div>
+    <h3 style="color:var(--green-dark);font-size:15px;margin:18px 0 6px;">Awaiting dispatch / भेजना बाकी</h3>
+    <div id="req-dispatch-list"></div>
   </section>
 
   <!-- More (business hub) -->
@@ -1299,13 +1301,13 @@
       var el = $(nid); if (el) el.classList.toggle("active", nid === id);
     });
   }
-  var ORDER_STATUS_LABEL = { placed: "Placed / दर्ज", billed: "Billed / बिल्ड", rejected: "Declined / अस्वीकृत" };
+  var ORDER_STATUS_LABEL = { placed: "Placed / दर्ज", billed: "Billed / बिल्ड", completed: "Completed / पूरा", rejected: "Declined / अस्वीकृत" };
   async function renderMyOrders(){
     var box = $("orders-list");
     if (!state.account){ box.innerHTML = ""; return; }
     box.innerHTML = '<p style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</p>';
     var res = await sb.from("orders")
-      .select("pi_number, subtotal, gst, grand, status, created_at, amended, bill_url, ship_to, reject_reason")
+      .select("pi_number, subtotal, gst, grand, status, created_at, amended, bill_url, ship_to, reject_reason, carrier, tracking_no, lr_url")
       .eq("dealer_party", state.account.id)
       .order("created_at", { ascending: false });
     if (res.error){
@@ -1320,7 +1322,7 @@
       return;
     }
     box.innerHTML = rows.map(function(o){
-      var badge = o.status === "billed" ? "badge-green" : "badge-amber";
+      var badge = (o.status === "billed" || o.status === "completed") ? "badge-green" : "badge-amber";
       var d = o.created_at ? new Date(o.created_at).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }) : "";
       // amended = supplier adjusted quantities before billing; ship_to shows on forwarded
       // purchase requests (drop-ship); bill_url = the bill travels with the order.
@@ -1329,6 +1331,9 @@
       if (o.status === "rejected" && o.reject_reason) extra += '<div style="font-size:12px;color:var(--danger);">Reason / कारण: ' + esc(o.reject_reason) + '</div>';
       if (o.ship_to) extra += '<div style="font-size:12px;color:var(--muted);">' + esc(o.ship_to) + '</div>';
       if (o.bill_url) extra += '<a href="' + esc(o.bill_url) + '" target="_blank" rel="noopener" style="font-size:12.5px;font-weight:700;color:var(--green-dark);">View bill / बिल देखें</a>';
+      // dispatch: courier + AWB/LR + LR copy once the supplier marks the order shipped
+      if (o.carrier || o.tracking_no) extra += '<div style="font-size:12px;color:var(--text);">🚚 ' + esc([o.carrier, o.tracking_no].filter(Boolean).join(" · ")) + '</div>';
+      if (o.lr_url) extra += '<a href="' + esc(o.lr_url) + '" target="_blank" rel="noopener" style="font-size:12.5px;font-weight:700;color:var(--green-dark);display:block;">View LR / एलआर देखें</a>';
       return '<div class="order-row">' +
         '<div><strong>' + esc(o.pi_number || "") + '</strong><div style="font-size:12px;color:var(--muted);">' + d + '</div>' + extra + '</div>' +
         '<div style="text-align:right;"><span class="' + badge + '">' + (ORDER_STATUS_LABEL[o.status] || o.status || "") + '</span>' +
@@ -1373,6 +1378,19 @@
   async function renderRequests(){
     if (!isSupplier()) return;
     var dbox = $("req-dealer-list"), rbox = $("req-retail-list");
+    // live re-total as the fulfiller edits Qty/Rate (bound once; dbox persists across renders)
+    if (!dbox._recalcBound){ dbox._recalcBound = true; dbox.addEventListener("input", function(e){
+      if (!e.target.classList || !(e.target.classList.contains("rq-qty") || e.target.classList.contains("rq-rate"))) return;
+      var card = e.target.closest(".req-card"); if (!card) return;
+      var total = 0;
+      card.querySelectorAll("tbody tr").forEach(function(tr){
+        var q = tr.querySelector(".rq-qty"), rt = tr.querySelector(".rq-rate"), am = tr.querySelector(".rq-amt");
+        if (!q || !rt || !am) return;
+        var amt = Math.max(0,Math.min(500,parseInt(q.value,10)||0)) * Math.max(0,parseInt(rt.value,10)||0);
+        am.textContent = inr(amt); total += amt;
+      });
+      var tEl = card.querySelector(".rq-total"); if (tEl) tEl.textContent = inr(total + Math.round(total*0.05));
+    }); }
     dbox.innerHTML = '<p style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</p>'; rbox.innerHTML = "";
     var mine = state.account.id;
     // scoped server-side: only open requests placed to me + retail orders on my shop, newest first
@@ -1381,7 +1399,7 @@
     var ords = (r1.data) || [];
     var r2 = await sb.from("enduser_orders").select("*").eq("supplier_party", mine).eq("status", "placed").order("created_at", { ascending:false });
     var eu = (r2.data) || [];
-    // my current stock, to prefill forwards with the DEFICIT and show have/asked per line
+    // my current stock — used only to detect if I'm short (→ offer to forward the whole order up)
     var stkR = await sb.from("current_stock").select("sku, qty").eq("party_id", mine);
     var haveMap = {}; ((stkR && stkR.data) || []).forEach(function(x){ haveMap[x.sku] = x.qty; });
     // which incoming orders have I ALREADY forwarded upward? a forward creates one of MY orders
@@ -1390,7 +1408,7 @@
     var fwdSet = {}; ((fwdR && fwdR.data) || []).forEach(function(x){ fwdSet[x.source_kind + ":" + x.source_order_id] = true; });
     var lineIds = ords.map(function(o){ return o.id; });
     var euIds = eu.map(function(o){ return o.id; });
-    var oLines = lineIds.length ? ((await sb.from("order_lines").select("order_id,sku,qty").in("order_id", lineIds)).data || []) : [];
+    var oLines = lineIds.length ? ((await sb.from("order_lines").select("order_id,sku,qty,rate,amount,list_rate").in("order_id", lineIds)).data || []) : [];
     var eLines = euIds.length ? ((await sb.from("enduser_order_lines").select("order_id,sku,qty").in("order_id", euIds)).data || []) : [];
     var byO = {}; oLines.forEach(function(l){ (byO[l.order_id]=byO[l.order_id]||[]).push(l); });
     var byE = {}; eLines.forEach(function(l){ (byE[l.order_id]=byE[l.order_id]||[]).push(l); });
@@ -1400,11 +1418,18 @@
     if (!ords.length){ dbox.innerHTML = '<p style="color:var(--muted);font-size:14px;margin:8px 2px;">No pending requests / कोई अनुरोध नहीं</p>'; }
     else dbox.innerHTML = ords.map(function(o){
       var ls = byO[o.id] || [];
-      // photo + name, qty (editable for amend), and a per-line ✕ to decline just that part
-      var lineHtml = ls.map(function(l){ return '<tr>'+
+      // photo + name, editable qty AND rate (counter-price), live amount, per-line ✕ to decline
+      var lineHtml = ls.map(function(l){
+        var amt = (l.rate||0)*(l.qty||0);
+        // if the fulfiller already countered, keep the buyer's original asked rate visible ("both prices")
+        var wasNote = (l.list_rate!=null && Number(l.list_rate)!==Number(l.rate))
+          ? '<div style="font-size:10px;color:var(--muted);text-decoration:line-through;">'+inr(l.list_rate)+'</div>' : '';
+        return '<tr>'+
         '<td class="ln-thumb">'+lineThumb(l.sku)+'</td>'+
         '<td>'+esc(skuName(l.sku))+'</td>'+
-        '<td class="num"><input type="number" class="rq-qty" data-sku="'+esc(l.sku)+'" value="'+l.qty+'" min="0" max="500" inputmode="numeric" aria-label="Quantity" style="width:60px;padding:6px;min-height:40px;text-align:right;"></td>'+
+        '<td class="num"><input type="number" class="rq-qty" data-sku="'+esc(l.sku)+'" value="'+l.qty+'" min="0" max="500" inputmode="numeric" aria-label="Quantity" style="width:56px;padding:6px;min-height:40px;text-align:right;"></td>'+
+        '<td class="num"><input type="number" class="rq-rate" data-sku="'+esc(l.sku)+'" value="'+(l.rate||0)+'" min="0" inputmode="numeric" aria-label="Rate — tap to counter" style="width:72px;padding:6px;min-height:40px;text-align:right;">'+wasNote+'</td>'+
+        '<td class="num rq-amt">'+inr(amt)+'</td>'+
         '<td class="num"><button class="line-x" data-reject-line="'+o.id+'" data-sku="'+esc(l.sku)+'" title="Decline this part / यह हटाएँ" aria-label="Decline this part">✕</button></td>'+
         '</tr>'; }).join("");
       var ship = o.ship_to ? '<div class="ship-to">'+esc(o.ship_to)+'</div>' : "";
@@ -1416,7 +1441,9 @@
         : (state.account.parentId && fwdSet['dealer:'+o.id]) ? '<span class="req-gloss" style="align-self:center;">Forwarded ↑ / भेज दिया</span>' : '';
       return '<div class="req-card">'+
         '<div><b>'+esc(pName[o.dealer_party]||"dealer")+'</b> · '+esc(o.pi_number||"")+(o.amended?' · <span style="color:var(--muted)">adjusted / बदला</span>':'')+bill+'</div>'+ship+
-        '<div class="tscroll"><table><thead><tr><th></th><th>Part</th><th class="num">Qty</th><th></th></tr></thead><tbody>'+lineHtml+'</tbody></table></div>'+
+        '<div class="tscroll"><table><thead><tr><th></th><th>Part</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount</th><th></th></tr></thead><tbody>'+lineHtml+'</tbody></table></div>'+
+        '<div style="text-align:right;font-weight:700;font-size:13px;margin-top:6px;">Total / कुल: <span class="rq-total">'+inr(o.grand)+'</span> <span class="req-gloss" style="display:inline;font-weight:400;">incl. GST</span></div>'+
+        '<div class="req-gloss">Tap Qty or Rate to adjust before billing — the buyer sees the change. / बिल से पहले मात्रा या दर बदल सकते हैं।</div>'+
         '<div class="req-actions">'+
           '<button class="btn-primary req-primary" data-fulfill="'+o.id+'">Bill &amp; ship / बिल करें</button>'+
           '<div class="req-gloss">Moves stock to the buyer now — can’t be undone. / स्टॉक अभी जाएगा, वापस नहीं।</div>'+
@@ -1435,14 +1462,11 @@
       // does the dealer already hold enough for the whole order? then no need to forward.
       var shortAny = ls.some(function(l){ return (haveMap[l.sku] || 0) < l.qty; });
       var alreadyFwdEu = !!fwdSet['enduser:'+o.id];
+      // drop-ship: if short on ANY line, the WHOLE order is sourced from the supplier (no split) —
+      // your own stock stays untouched; the supplier ships straight to the customer in your name.
       var fwd = (state.account.parentId && shortAny && !alreadyFwdEu) ? '<div class="fwd-eu" data-order="'+o.id+'">'+
-        '<div class="more-hint">Ask your supplier only for what you’re short. / जितना कम है उतना ही मँगाएँ।</div>'+
-        '<div class="tscroll"><table><thead><tr><th></th><th>Part</th><th class="num">Have</th><th class="num">Asked</th><th class="num">Order ↑</th></tr></thead><tbody>'+
-          ls.map(function(l){ var have = haveMap[l.sku] || 0, deficit = Math.max(0, l.qty - have);
-            return '<tr><td class="ln-thumb">'+lineThumb(l.sku)+'</td><td>'+esc(skuName(l.sku))+'</td><td class="num">'+have+'</td><td class="num">'+l.qty+'</td>'+
-            '<td class="num"><input type="number" class="fw-qty" data-sku="'+esc(l.sku)+'" value="'+deficit+'" min="0" max="500" inputmode="numeric" aria-label="Quantity to order" style="width:60px;padding:6px;min-height:40px;text-align:right;"></td></tr>'; }).join("")+
-        '</tbody></table></div>'+
-        '<button class="btn-soft" data-forward-eu="'+o.id+'" style="margin-top:6px;">Forward ↑ / ऊपर भेजें</button></div>'
+        '<div class="more-hint">You’re short — forward the whole order up. Your supplier ships it directly to the customer in your name; your own stock stays untouched. / पूरा ऑर्डर सप्लायर को भेजें — वे सीधे ग्राहक को आपके नाम से भेजेंगे, आपका स्टॉक वैसा ही रहेगा।</div>'+
+        '<button class="btn-soft" data-forward-eu="'+o.id+'" style="margin-top:6px;">Forward whole order ↑ / पूरा ऑर्डर भेजें</button></div>'
         : (state.account.parentId && shortAny && alreadyFwdEu) ? '<div class="req-gloss" style="margin:4px 0;">Forwarded ↑ / भेज दिया</div>' : "";
       // stock is here → let the dealer close the sale (moves stock out to the customer)
       var canFulfill = !shortAny;
@@ -1458,6 +1482,28 @@
         '<div class="req-sub" style="margin-top:6px;"><button class="btn-soft" data-billattach-eu="'+o.id+'">Attach my bill / मेरा बिल लगाएँ</button>'+euBill+'</div>'+
         '<div class="req-msg" id="rem-'+o.id+'"></div></div>';
     }).join("");
+
+    // ---- Awaiting dispatch: orders I billed but haven't shipped. Add courier + AWB/LR (+ LR copy),
+    // then mark complete — completing a drop-ship order also completes it for the downstream buyer. ----
+    var disp = $("req-dispatch-list");
+    if (disp){
+      var bd = ((await sb.from("orders").select("id,pi_number,dealer_party,grand").eq("importer_party", mine).eq("status","billed").order("created_at",{ascending:false})).data) || [];
+      var be = ((await sb.from("enduser_orders").select("id,pi_number,customer_name,grand").eq("supplier_party", mine).eq("status","billed").order("created_at",{ascending:false})).data) || [];
+      function dispCard(kind, o, who){
+        var tag = kind+":"+o.id;
+        return '<div class="req-card">'+
+          '<div><b>'+esc(who)+'</b> · '+esc(o.pi_number||"")+' · <b>'+inr(o.grand)+'</b> · <span style="color:var(--muted)">Billed / बिल हुआ</span></div>'+
+          '<label class="m-lbl">Courier / कूरियर</label><input class="m-input disp-carrier" placeholder="e.g. Delhivery, Bus, Post office" maxlength="60">'+
+          '<label class="m-lbl">AWB / LR no. / नंबर</label><input class="m-input disp-track" placeholder="tracking / LR number" maxlength="80">'+
+          '<div class="req-sub" style="margin-top:8px;"><button class="btn-soft" data-lr="'+tag+'">Attach LR copy / एलआर लगाएँ</button>'+
+            '<button class="btn-primary" data-complete="'+tag+'" style="flex:1;">Mark shipped & complete / पूरा करें</button></div>'+
+          '<div class="req-msg" id="dm-'+kind+'-'+o.id+'"></div></div>';
+      }
+      disp.innerHTML = (bd.length || be.length)
+        ? bd.map(function(o){ return dispCard("dealer", o, pName[o.dealer_party]||"dealer"); }).join("")
+          + be.map(function(o){ return dispCard("enduser", o, o.customer_name||"customer"); }).join("")
+        : '<p style="color:var(--muted);font-size:13px;margin:8px 2px;">Nothing awaiting dispatch / कुछ नहीं</p>';
+    }
   }
 
   // set of party ids at or below `root` in the parent_id tree
@@ -1814,6 +1860,7 @@
 
   // ---- seller actions (event delegation on the Requests view) ----
   var billTargetOrder = null, billTargetKind = "dealer";
+  var lrTargetTag = null, lrPending = {};   // uploaded LR-copy URLs, keyed by "kind:id" until the order is completed
   async function onRequestsClick(e){
     var t = e.target;
     // retail close-out: move stock out to the customer, mark the order billed
@@ -1831,10 +1878,16 @@
     if (ff){
       var id = Number(ff.getAttribute("data-fulfill"));
       var card = ff.closest(".req-card");
-      var changed = [];
-      card.querySelectorAll(".rq-qty").forEach(function(inp){
-        var q = Math.max(0, Math.min(500, parseInt(inp.value,10)||0));
-        if (q !== Number(inp.defaultValue)) changed.push({ sku: inp.getAttribute("data-sku"), qty: q });
+      var changed = [], rateChanged = false;
+      card.querySelectorAll("tbody tr").forEach(function(tr){
+        var qI = tr.querySelector(".rq-qty"), rI = tr.querySelector(".rq-rate");
+        if (!qI) return;
+        var q = Math.max(0, Math.min(500, parseInt(qI.value,10)||0));
+        var rt = rI ? Math.max(0, parseInt(rI.value,10)||0) : null;
+        var qC = q !== Number(qI.defaultValue);
+        var rC = rI && rt !== Number(rI.defaultValue);
+        if (rC) rateChanged = true;
+        if (qC || rC) changed.push({ sku: qI.getAttribute("data-sku"), qty: q, rate: rt });
       });
       // show the actual ledger movement (part ×qty, from you → to the buyer) so the supplier
       // approves the real delta, not a description of it — "the ledger is the truth".
@@ -1845,11 +1898,11 @@
         if (q > 0) moves.push(skuName(inp.getAttribute("data-sku")) + " ×" + q);
       });
       var delta = moves.length ? "\n\nMoves now:\n" + moves.join("\n") + "\n\n− from your stock   →   + to " + buyer : "";
-      var note = changed.length ? "\nQuantities were adjusted — the buyer sees the change." : "";
+      var note = changed.length ? ("\n" + (rateChanged ? "Price/qty" : "Quantities") + " adjusted — the buyer sees the change.") : "";
       if (!(await askConfirm("Bill & ship this order? This can't be undone." + delta + note + "\n\nबिल करें? स्टॉक अभी जाएगा, वापस नहीं होगा।", { okLabel:"Bill & ship / बिल करें" }))) return;
       var m = $("rm-"+id); if (m){ m.className="req-msg"; m.textContent = "Billing…"; }
       if (changed.length){
-        var a = await sb.rpc("amend_order_qty", { p_order_id:id, p_lines:changed });
+        var a = await sb.rpc("revise_order", { p_order_id:id, p_lines:changed });
         if (a.error){ if (m){ m.className="req-msg err"; m.textContent = friendlyErr(a.error); } return; }
       }
       var f = await sb.rpc("fulfill_order", { p_order_id:id });
@@ -1863,9 +1916,11 @@
     if (fw){
       var isEu = fw.hasAttribute("data-forward-eu");
       var fid = Number(fw.getAttribute(isEu ? "data-forward-eu" : "data-forward"));
-      var pLines = null, box = fw.closest(".fwd-eu");
-      if (box){ pLines = {}; box.querySelectorAll(".fw-qty").forEach(function(inp){ pLines[inp.getAttribute("data-sku")] = Math.max(0, Math.min(500, parseInt(inp.value,10)||0)); }); }
-      if (!(await askConfirm("Forward to your supplier at your buy rate?\nIt's billed to you under your own name — they never see the customer.\n\nअपने सप्लायर को भेजें?", { okLabel:"Forward / भेजें" }))) return;
+      // drop-ship forwards the WHOLE order (pLines stays null → full qty). Legacy per-line
+      // inputs are only honoured if some UI still renders them.
+      var pLines = null, box = fw.closest(".fwd-eu"), qInputs = box ? box.querySelectorAll(".fw-qty") : [];
+      if (qInputs.length){ pLines = {}; qInputs.forEach(function(inp){ pLines[inp.getAttribute("data-sku")] = Math.max(0, Math.min(500, parseInt(inp.value,10)||0)); }); }
+      if (!(await askConfirm("Forward the whole order to your supplier at your buy rate?\nThey ship it directly to the customer for you, in your name.\n\nपूरा ऑर्डर अपने सप्लायर को भेजें?", { okLabel:"Forward / भेजें" }))) return;
       fw.disabled = true;
       var fmsg = isEu ? $("rem-"+fid) : $("rm-"+fid);
       var r = await sb.rpc("forward_order", { p_kind: isEu?"enduser":"dealer", p_order_id: fid, p_lines: pLines });
@@ -1879,6 +1934,29 @@
     if (ba){ billTargetOrder = Number(ba.getAttribute("data-billattach")); billTargetKind = "dealer"; $("bill-file").click(); return; }
     var bae = t.closest && t.closest("[data-billattach-eu]");
     if (bae){ billTargetOrder = Number(bae.getAttribute("data-billattach-eu")); billTargetKind = "enduser"; $("bill-file").click(); return; }
+    // LR copy upload for the dispatch card (kind:id tag, held in lrPending until "complete")
+    var lrb = t.closest && t.closest("[data-lr]");
+    if (lrb){ lrTargetTag = lrb.getAttribute("data-lr"); billTargetKind = "lr"; $("bill-file").click(); return; }
+    // mark an order shipped & completed (with courier + AWB/LR + optional LR copy)
+    var cpl = t.closest && t.closest("[data-complete]");
+    if (cpl){
+      var ctag = cpl.getAttribute("data-complete"), cparts = ctag.split(":"), ckind = cparts[0], cid = Number(cparts[1]);
+      var ccard = cpl.closest(".req-card");
+      var carrier = ((ccard.querySelector(".disp-carrier")||{}).value||"").trim();
+      var track = ((ccard.querySelector(".disp-track")||{}).value||"").trim();
+      var cmsgEl = $("dm-"+ckind+"-"+cid);
+      if (!carrier && !track && !lrPending[ctag]){
+        if (!(await askConfirm("Mark complete without any dispatch details?\n\nबिना डिस्पैच जानकारी के पूरा करें?", { okLabel:"Complete / पूरा करें" }))) return;
+      } else if (!(await askConfirm("Mark this order shipped & complete?\nBoth you and the buyer will see it as done.\n\nभेज दिया और पूरा करें?", { okLabel:"Complete / पूरा करें" }))) return;
+      if (cmsgEl){ cmsgEl.className="req-msg"; cmsgEl.textContent="Completing…"; }
+      var cr = await sb.rpc("complete_order", { p_kind:ckind, p_order_id:cid, p_carrier:carrier||null, p_tracking:track||null, p_lr_url: lrPending[ctag]||null });
+      if (cr.error){ if (cmsgEl){ cmsgEl.className="req-msg err"; cmsgEl.textContent=friendlyErr(cr.error); } return; }
+      delete lrPending[ctag];
+      showToast("Order completed ✓ / ऑर्डर पूरा");
+      var dcard = cpl.closest(".req-card"); if (dcard) dcard.classList.add("req-done");
+      setTimeout(function(){ renderRequests(); }, 180);
+      return;
+    }
     // accept the customer's counter-offer: the offered total becomes the order total
     var ao = t.closest && t.closest("[data-accept-offer]");
     if (ao){
@@ -1917,8 +1995,24 @@
   }
   async function onBillFileChosen(){
     var inp = $("bill-file"), file = inp.files && inp.files[0], id = billTargetOrder, kind = billTargetKind;
+    var lrTag = lrTargetTag; lrTargetTag = null;
     inp.value = ""; billTargetOrder = null; billTargetKind = "dealer";
     if (!file) return;
+    // LR copy → upload and hold the URL until the order is completed (no id, uses the kind:id tag)
+    if (kind === "lr"){
+      if (!lrTag) return;
+      if (file.size > 5*1024*1024){ showToast("File too large (max 5MB) / फ़ाइल बहुत बड़ी"); return; }
+      showToast("Uploading LR… / अपलोड हो रहा है");
+      var lext = (file.name.split(".").pop() || "pdf").toLowerCase();
+      var luid = (state.session && state.session.id) || "anon";
+      var lpath = luid + "/lr-"+lrTag.replace(":","")+"-"+(crypto.randomUUID ? crypto.randomUUID() : Date.now())+"."+lext;
+      var lup = await sb.storage.from("bills").upload(lpath, file, { upsert:false });
+      if (lup.error){ showToast(friendlyErr(lup.error)); return; }
+      var lpub = sb.storage.from("bills").getPublicUrl(lpath);
+      lrPending[lrTag] = lpub.data && lpub.data.publicUrl;
+      showToast("LR attached ✓ — now tap Complete / एलआर लगा");
+      return;
+    }
     if (kind !== "qr" && !id) return;
     if (file.size > 5*1024*1024){ showToast("File too large (max 5MB) / फ़ाइल बहुत बड़ी"); return; }
     var isQr = kind === "qr";
@@ -2260,7 +2354,7 @@
 
   function buildPI(){
     var now = new Date();
-    var num = "PI-" + now.getFullYear() + pad2(now.getMonth()+1) + pad2(now.getDate()) +
+    var num = "PO-" + now.getFullYear() + pad2(now.getMonth()+1) + pad2(now.getDate()) +
       "-" + pad2(now.getHours()) + pad2(now.getMinutes()) + pad2(now.getSeconds());
     var valid = new Date(now.getTime() + PI_VALID_DAYS * 86400000);
     var keys = Object.keys(state.cart).filter(function(k){ return state.cart[k] > 0; });
@@ -2295,15 +2389,15 @@
       ? '<div class="notice">✓ Saved on your phone — it will be sent automatically when you’re online. / फ़ोन पर सेव — ऑनलाइन होते ही अपने आप भेजा जाएगा।</div>'
       : state.piOrderOk === false
       ? '<div class="login-error">⚠ Order could not be saved — check internet and tap Generate PI again. / ऑर्डर सेव नहीं हुआ — इंटरनेट देखें और फिर से कोशिश करें।</div>'
-      : '<div class="pi-success">✓ PI ready. Share it on WhatsApp below. / पीआई तैयार है, नीचे व्हाट्सऐप पर भेजें।</div>';
+      : '<div class="pi-success">✓ Purchase Order ready. Share it on WhatsApp below. / परचेज़ ऑर्डर तैयार है, नीचे व्हाट्सऐप पर भेजें।</div>';
     var sel = seller();
     $("pi-box").innerHTML =
       bannerHtml +
       '<div class="pi-seller"><div class="biz">' + esc(sel.name) + '</div>' +
         '<div class="biz-line">' + (sel.gstin ? 'GSTIN: ' + esc(sel.gstin) + ' &middot; ' : '') + esc(sel.place) + (sel.phone ? '<br>Phone: ' + esc(sel.phone) : '') + '</div></div>' +
-      '<div class="pi-head"><h2>PROFORMA INVOICE</h2><div class="pi-no">' + esc(pi.number) + '</div></div>' +
+      '<div class="pi-head"><h2>PURCHASE ORDER</h2><div class="pi-no">' + esc(pi.number) + '</div></div>' +
       '<div class="pi-meta">' +
-        '<strong>Dealer / डीलर:</strong> ' + esc(pi.dealerName) + (pi.dealerCode ? ' (' + esc(pi.dealerCode) + ')' : '') +
+        '<strong>Buyer / ख़रीदार:</strong> ' + esc(pi.dealerName) + (pi.dealerCode ? ' (' + esc(pi.dealerCode) + ')' : '') +
         (pi.dealerGstin ? '<br><strong>GSTIN:</strong> ' + esc(pi.dealerGstin) : '') + '<br>' +
         '<strong>Date / दिनांक:</strong> ' + esc(pi.date) + ' &middot; <strong>Valid till / मान्य:</strong> ' + esc(pi.validTill) +
       '</div>' +
@@ -2318,7 +2412,7 @@
         (sel.upi ? '<div>UPI: <b>' + esc(sel.upi) + '</b> · <a href="upi://pay?pa=' + encodeURIComponent(sel.upi) + '&pn=' + encodeURIComponent(sel.name) + '&am=' + pi.grand + '&cu=INR">Pay via UPI / यूपीआई से भुगतान</a></div>' : '') +
         (sel.qr ? '<img src="' + esc(sel.qr) + '" alt="Payment QR" style="width:150px;height:150px;object-fit:contain;margin-top:6px;" loading="lazy">' : '') +
         '</div>' : '') +
-      '<div class="pi-footer">This is a Proforma Invoice. Total includes ' + esc(pi.gstPct) + '% GST. Payment via UPI / bank transfer as agreed. Prices valid till ' + esc(pi.validTill) + '. | यह प्रोफार्मा इनवॉइस है, कुल में ' + esc(pi.gstPct) + '% GST शामिल है।</div>' +
+      '<div class="pi-footer">This is a Purchase Order (buyer’s request). Total includes ' + esc(pi.gstPct) + '% GST. Payment via UPI / bank transfer as agreed. Prices valid till ' + esc(pi.validTill) + '. | यह परचेज़ ऑर्डर है (ख़रीदार का अनुरोध), कुल में ' + esc(pi.gstPct) + '% GST शामिल है।</div>' +
       '<div class="pi-actions">' +
         '<button class="btn btn-outline btn-ico" id="pi-print-btn" style="margin-top:0;">' + svgIco("print") + 'Print</button>' +
         '<button class="btn wa-btn btn-ico" id="pi-wa-btn" style="margin-top:0;">' + svgIco("whatsapp") + 'Share PDF on WhatsApp</button>' +
@@ -2342,9 +2436,42 @@
     if (cur) out.push(cur);
     return out.length ? out : [""];
   }
-  function buildPIPdf(pi){
-    var W = 595, H = 842, M = 40;
-    var cols = { code: M, part: M + 85, qty: M + 345, rate: M + 395, amt: M + 460 };
+  // Load a part JPEG for embedding: parse its SOF for width/height/components and return the
+  // raw bytes as a latin1 string (JPEG passes straight through PDF /DCTDecode — no re-encode).
+  // Returns null on any failure so the PDF degrades gracefully to text-only.
+  async function loadPdfImage(url){
+    try{
+      var res = await fetch(url); if (!res.ok) return null;
+      var buf = new Uint8Array(await res.arrayBuffer());
+      if (buf.length < 4 || buf[0] !== 0xFF || buf[1] !== 0xD8) return null;  // must be a JPEG
+      var w = 0, h = 0, comps = 3, i = 2;
+      while (i < buf.length - 8){
+        if (buf[i] !== 0xFF){ i++; continue; }
+        var m = buf[i+1];
+        if (m === 0x01 || (m >= 0xD0 && m <= 0xD9)){ i += 2; continue; }  // markers with no length
+        if (m >= 0xC0 && m <= 0xCF && m !== 0xC4 && m !== 0xC8 && m !== 0xCC){  // SOFn
+          h = (buf[i+5] << 8) | buf[i+6]; w = (buf[i+7] << 8) | buf[i+8]; comps = buf[i+9]; break;
+        }
+        i += 2 + ((buf[i+2] << 8) | buf[i+3]);
+      }
+      if (!w || !h) return null;
+      var str = "";
+      for (var k = 0; k < buf.length; k += 8192) str += String.fromCharCode.apply(null, buf.subarray(k, k + 8192));
+      return { data: str, w: w, h: h, cs: comps === 1 ? "/DeviceGray" : "/DeviceRGB" };
+    } catch(e){ return null; }
+  }
+
+  async function buildPIPdf(pi){
+    var W = 595, H = 842, M = 40, IMG = 46, TX = M + IMG + 10;
+    var cols = { qty: M + 350, rate: M + 400, amt: M + 465 };
+    // best-effort: load each line's part photo; a failed/absent one just leaves that row text-only
+    var imgList = [], imgByLine = {};
+    for (var li = 0; li < pi.lines.length; li++){
+      var idx = skuToIndex(pi.lines[li].sku);
+      if (idx < 0) continue;
+      var im = await loadPdfImage(partPhoto(idx));
+      if (im){ im.name = "Im" + imgList.length; imgByLine[li] = im.name; imgList.push(im); }
+    }
     var pages = [], s = "", y;
     function esc(t){ return pdfSafe(t); }
     function txt(x, yy, size, bold, t){
@@ -2359,20 +2486,22 @@
       line(M, y, W - M, y); y -= 16;
     }
     function docHead(){
-      txt(M, y, 13, true, "PROFORMA INVOICE");
+      txt(M, y, 13, true, "PURCHASE ORDER");
       txt(W - M - 170, y, 11, true, pi.number); y -= 18;
-      txt(M, y, 10, false, "Dealer: " + pi.dealerName + (pi.dealerCode ? " (" + pi.dealerCode + ")" : "") + (pi.dealerGstin ? "  GSTIN: " + pi.dealerGstin : "")); y -= 13;
+      txt(M, y, 10, false, "Buyer: " + pi.dealerName + (pi.dealerCode ? " (" + pi.dealerCode + ")" : "") + (pi.dealerGstin ? "  GSTIN: " + pi.dealerGstin : "")); y -= 13;
       txt(M, y, 10, false, "Date: " + pi.date + "   Valid till: " + pi.validTill); y -= 18;
-      txt(cols.code, y, 9, true, "Code"); txt(cols.part, y, 9, true, "Particular");
-      txt(cols.qty, y, 9, true, "Qty"); txt(cols.rate, y, 9, true, "Rate"); txt(cols.amt, y, 9, true, "Amount");
+      txt(TX, y, 9, true, "Part"); txt(cols.qty, y, 9, true, "Qty"); txt(cols.rate, y, 9, true, "Rate"); txt(cols.amt, y, 9, true, "Amount");
       y -= 5; line(M, y, W - M, y); y -= 13;
     }
     newPage(); sellerBlock(); docHead();
-    pi.lines.forEach(function(l){
-      var wrapped = wrapText(l.particular, 58), rowH = wrapped.length * 11 + 5;
+    pi.lines.forEach(function(l, li){
+      var wrapped = wrapText(l.particular, 46), rowH = Math.max((wrapped.length + 1) * 11 + 6, IMG + 8);
       if (y - rowH < M + 90){ newPage(); sellerBlock(); docHead(); }
-      txt(cols.code, y, 9, false, l.code);
-      wrapped.forEach(function(w, i){ txt(cols.part, y - i * 11, 9, false, w); });
+      var nm = imgByLine[li];
+      // draw the part photo (large) at the left of the row — origin is bottom-left, so shift down
+      if (nm) s += "q " + IMG + " 0 0 " + IMG + " " + M + " " + (y - IMG + 9) + " cm /" + nm + " Do Q\n";
+      txt(TX, y, 9, true, l.code);
+      wrapped.forEach(function(w, i){ txt(TX, y - (i + 1) * 11, 9, false, w); });
       txt(cols.qty, y, 9, false, String(l.qty));
       txt(cols.rate, y, 9, false, "Rs." + l.rate);
       txt(cols.amt, y, 9, false, "Rs." + l.amount);
@@ -2382,21 +2511,26 @@
     txt(cols.rate - 60, y, 9, false, "Subtotal:"); txt(cols.amt, y, 9, false, "Rs." + pi.subtotal); y -= 13;
     txt(cols.rate - 60, y, 9, false, "GST @ " + pi.gstPct + "%:"); txt(cols.amt, y, 9, false, "+ Rs." + pi.gst); y -= 15;
     txt(cols.rate - 60, y, 12, true, "Grand Total:"); txt(cols.amt, y, 12, true, "Rs." + pi.grand); y -= 24;
-    wrapText("This is a Proforma Invoice. Total includes " + pi.gstPct + "% GST. Payment via UPI / bank transfer as agreed. Prices valid till " + pi.validTill + ".", 95)
+    wrapText("This is a Purchase Order (buyer's request). Total includes " + pi.gstPct + "% GST. Payment via UPI / bank transfer as agreed. Prices valid till " + pi.validTill + ".", 95)
       .forEach(function(w){ txt(M, y, 8, false, w); y -= 10; });
     pages.push(s);
 
-    var objs = [], kidsIds = [], fontId1 = 3 + pages.length * 2, fontId2 = fontId1 + 1;
+    var objs = [], kidsIds = [], fontId1 = 3 + pages.length * 2, fontId2 = fontId1 + 1, imgIdStart = fontId2 + 1;
+    var xobjRes = imgList.length ? ("/XObject << " + imgList.map(function(im, k){ return "/" + im.name + " " + (imgIdStart + k) + " 0 R"; }).join(" ") + " >> ") : "";
     objs.push("<< /Type /Catalog /Pages 2 0 R >>");
     pages.forEach(function(_, i){ kidsIds.push(3 + i * 2); });
     objs.push("<< /Type /Pages /Count " + pages.length + " /Kids [" + kidsIds.map(function(id){ return id + " 0 R"; }).join(" ") + "] >>");
     pages.forEach(function(content, i){
       objs.push("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + W + " " + H + "] " +
-        "/Resources << /Font << /F1 " + fontId1 + " 0 R /F2 " + fontId2 + " 0 R >> >> /Contents " + (4 + i * 2) + " 0 R >>");
+        "/Resources << /Font << /F1 " + fontId1 + " 0 R /F2 " + fontId2 + " 0 R >> " + xobjRes + ">> /Contents " + (4 + i * 2) + " 0 R >>");
       objs.push("<< /Length " + content.length + " >>\nstream\n" + content + "endstream");
     });
     objs.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
     objs.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
+    imgList.forEach(function(im){
+      objs.push("<< /Type /XObject /Subtype /Image /Width " + im.w + " /Height " + im.h +
+        " /ColorSpace " + im.cs + " /BitsPerComponent 8 /Filter /DCTDecode /Length " + im.data.length + " >>\nstream\n" + im.data + "\nendstream");
+    });
 
     var pdf = "%PDF-1.4\n", offsets = [];
     objs.forEach(function(body, i){ offsets.push(pdf.length); pdf += (i + 1) + " 0 obj\n" + body + "\nendobj\n"; });
@@ -2410,12 +2544,13 @@
     return new Blob([bytes], { type: "application/pdf" });
   }
 
-  function shareWhatsApp(pi){
-    var blob = buildPIPdf(pi);
+  async function shareWhatsApp(pi){
+    showToast("Preparing PDF… / पीडीएफ बन रही है");
+    var blob = await buildPIPdf(pi);
     var file = new File([blob], pi.number + ".pdf", { type: "application/pdf" });
     if (navigator.canShare && navigator.canShare({ files: [file] })){
       navigator.share({ files: [file], title: pi.number,
-        text: SELLER.name + " — Proforma Invoice " + pi.number + " — Grand Total Rs." + pi.grand })
+        text: pi.dealerName + " — Purchase Order " + pi.number + " — Grand Total Rs." + pi.grand })
         .catch(function(){});
     } else {
       var url = URL.createObjectURL(blob);
