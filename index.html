@@ -408,6 +408,46 @@
   }
   .ship-warn{ background:var(--danger-tint,#fdeceb); border:1px solid var(--danger-border,#f0b4ac); color:var(--danger);
     border-radius:10px; padding:10px 12px; font-size:13px; font-weight:600; }
+
+  /* money: the two numbers a trader checks every morning */
+  .money-row{ display:flex; gap:10px; margin-top:12px; }
+  .money-tile{ flex:1; min-width:0; border-radius:12px; padding:10px 12px; border:1px solid var(--border); background:#fff; }
+  .money-tile.in{ background:var(--green-light); border-color:#bfe9cb; }
+  .money-tile.out{ background:var(--warn-tint,#fff6e0); border-color:var(--warn-border,#f0c96b); }
+  .mt-lbl{ font-size:11.5px; font-weight:600; color:var(--muted); line-height:1.25; }
+  .money-tile.in .mt-lbl{ color:var(--green-dark); }
+  .money-tile.out .mt-lbl{ color:var(--warn-ink,#7a5b00); }
+  .mt-val{ font-size:20px; font-weight:800; margin-top:2px; font-variant-numeric:tabular-nums; }
+  .money-tile.in .mt-val{ color:var(--green-dark); }
+  .money-tile.out .mt-val{ color:var(--warn-ink,#7a5b00); }
+  .pay-row{ display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding:9px 0; border-bottom:1px solid var(--border); font-size:13.5px; }
+  .pay-row:last-of-type{ border-bottom:none; }
+  .pay-due{ font-weight:800; color:var(--danger); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .pay-adv{ font-weight:800; color:var(--green-dark); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .pay-clear{ font-weight:700; color:var(--muted); font-size:12.5px; white-space:nowrap; }
+
+  /* first-run setup checklist — states the consequence, not just the missing field */
+  .setup-card{ background:var(--warn-tint,#fff6e0); border:1px solid var(--warn-border,#f0c96b);
+    border-radius:12px; padding:12px 14px; margin-bottom:8px; }
+  .setup-h{ font-weight:800; font-size:14px; color:var(--warn-ink,#7a5b00); }
+  .setup-list{ margin:6px 0 0; padding-left:18px; font-size:13px; color:var(--text); line-height:1.55; }
+  .setup-foot{ margin-top:6px; font-size:12px; color:var(--warn-ink,#7a5b00); }
+
+  /* ---- finish: quiet depth + typographic tightening. Cards get one soft shadow so they read
+     as objects on a surface rather than outlines; headings tighten slightly; numbers stay
+     tabular. Nothing decorative — the tool still has to look like infrastructure. ---- */
+  .item, .order-row, .req-card, .more-sec, .more-card, .tile, .money-tile{
+    box-shadow:0 1px 2px rgba(27,43,32,.05);
+  }
+  h1, h2, .view-title, .mt-val{ letter-spacing:-0.01em; }
+  .view-title{ font-weight:800; }
+  header.app-header h1{ letter-spacing:-0.015em; }
+  /* pressing a row should feel like pressing a real button on a cheap phone */
+  .tile:active, .item:active .add-btn{ transform:scale(.985); }
+  .tile{ transition:border-color .15s ease, box-shadow .15s ease, transform .1s ease; }
+  @media (hover:hover){ .tile:hover{ box-shadow:0 2px 8px rgba(27,43,32,.10); } }
+  @media (prefers-reduced-motion: reduce){ .tile{ transition:none; } .tile:active{ transform:none; } }
   .ship-to{ background:var(--green-light); border:1px solid var(--border); border-radius:8px; padding:8px 10px; margin:8px 0 2px; font-weight:600; font-size:13px; }
   /* one clear primary (irreversible stock move), the rest demoted below it */
   .req-actions{ margin-top:10px; }
@@ -1134,12 +1174,12 @@
   }
   // resolve the signed-in user's party (company, role) from the tree; RLS returns only their branch
   function loadParty(){
-    return sb.from("parties").select("id,name,role,parent_id,auth_uid,retail_mult,upi_id,bank_qr_url,address,city,pin,phone").then(function(res){
+    return sb.from("parties").select("id,name,role,parent_id,auth_uid,retail_mult,upi_id,bank_qr_url,address,city,pin,phone,gstin").then(function(res){
       var rows = (res && res.data) || [], uid = state.session && state.session.id, mine = null;
       rows.forEach(function(p){ if (p.auth_uid === uid) mine = p; });
       state.parties = rows; // used to name the buyer on incoming requests
       state.account = mine ? { company: mine.name, role: mine.role, id: mine.id, parentId: mine.parent_id, retailMult: mine.retail_mult, upi: mine.upi_id, qr: mine.bank_qr_url,
-                              address: mine.address, city: mine.city, pin: mine.pin, phone: mine.phone } : null;
+                              address: mine.address, city: mine.city, pin: mine.pin, phone: mine.phone, gstin: mine.gstin } : null;
       if (state.session && mine) state.session.role = mine.role;
       persistData(); // keep identity fresh for the next instant/offline boot
     }).catch(function(){ if (!state._hydrated) state.account = null; }); // offline: keep cached identity
@@ -1386,13 +1426,23 @@
     var box = $("orders-list");
     if (!state.account){ box.innerHTML = ""; return; }
     // one-time: open the seller's Proforma Invoice for a billed/completed order
-    if (!box._piBound){ box._piBound = true; box.addEventListener("click", function(e){
+    if (!box._piBound){ box._piBound = true; box.addEventListener("click", async function(e){
       var b = e.target.closest && e.target.closest("[data-viewpi]");
-      if (b) viewOrderPI(Number(b.getAttribute("data-viewpi")));
+      if (b){ viewOrderPI(Number(b.getAttribute("data-viewpi"))); return; }
+      // the buyer closes the loop: nobody but the receiver knows the parcel actually arrived
+      var g = e.target.closest && e.target.closest("[data-got]");
+      if (g){
+        var gid = Number(g.getAttribute("data-got"));
+        if (!(await askConfirm("Confirm you received this order?\n\nक्या आपको यह ऑर्डर मिल गया?", { okLabel:"Yes, received / हाँ, मिल गया" }))) return;
+        var rr = await sb.rpc("confirm_received", { p_order_id: gid });
+        if (rr.error){ showToast(friendlyErr(rr.error)); return; }
+        showToast("Marked as received ✓ / मिल गया");
+        renderMyOrders();
+      }
     }); }
     box.innerHTML = '<p style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</p>';
     var res = await sb.from("orders")
-      .select("id, importer_party, pi_number, subtotal, gst, grand, status, created_at, amended, bill_url, ship_to, reject_reason, carrier, tracking_no, lr_url")
+      .select("id, importer_party, pi_number, subtotal, gst, grand, status, created_at, amended, bill_url, ship_to, reject_reason, carrier, tracking_no, lr_url, received_at")
       .eq("dealer_party", state.account.id)
       .order("created_at", { ascending: false });
     if (res.error){
@@ -1422,6 +1472,10 @@
       // once billed/completed, the buyer can pull the seller's Proforma Invoice (seller = their
       // direct supplier — the importer stays hidden on a drop-shipped shopkeeper order)
       if (o.status === "billed" || o.status === "completed") extra += '<button class="list-reset" data-viewpi="' + o.id + '" style="padding:2px 0;min-height:36px;display:block;">📄 View invoice (PI) / इनवॉइस देखें</button>';
+      // delivery is only real once the receiver says so
+      if (o.received_at) extra += '<div style="font-size:12.5px;font-weight:700;color:var(--green-dark);">✓ Received / मिल गया</div>';
+      else if (o.status === "billed" || o.status === "completed")
+        extra += '<button class="btn-soft" data-got="' + o.id + '" style="margin-top:6px;padding:6px 12px;min-height:40px;font-size:13px;">Mark received / मिल गया</button>';
       return '<div class="order-row">' +
         '<div><strong>' + esc(o.pi_number || "") + '</strong><div style="font-size:12px;color:var(--muted);">' + d + '</div>' + extra + '</div>' +
         '<div style="text-align:right;"><span class="' + badge + '">' + (ORDER_STATUS_LABEL[o.status] || o.status || "") + '</span>' +
@@ -1744,10 +1798,26 @@
 
     var html = '<div class="more-card"><div style="font-weight:700;">'+esc(name)+'</div><div style="color:var(--muted);font-size:13px;">'+esc(role)+'</div></div>';
 
+    // Say plainly what is still missing and why it matters — these blanks are what break
+    // couriers, bills and payments later, and nothing else in the app asks for them twice.
+    var todo = [];
+    if (!String(a.address||"").trim()) todo.push("Delivery address — parcels cannot reach you / पता");
+    if (!String(a.phone||"").trim())   todo.push("Phone — the courier needs it / फ़ोन");
+    if (!String(a.gstin||"").trim())   todo.push("GSTIN — printed on your bills / बिल पर छपेगा");
+    if (!String(a.upi||"").trim())     todo.push("UPI — so buyers can pay you / भुगतान के लिए");
+    if (todo.length) html += '<div class="setup-card"><div class="setup-h">Finish setting up / सेटअप पूरा करें</div>'+
+      '<ul class="setup-list">'+todo.map(function(t){ return '<li>'+esc(t)+'</li>'; }).join("")+'</ul>'+
+      '<div class="setup-foot">Fill these in below — they take a minute and prevent problems later. / नीचे भरें।</div></div>';
+
     // grouped by intent, most-used first; closed rows carry a one-line hint so nothing is a mystery box
     html += '<div class="more-group">Daily / रोज़ का काम</div>';
 
-    html += '<details class="more-sec" open><summary>Stock &amp; my network / स्टॉक व नेटवर्क<span class="ms-hint">Who holds what, everywhere / किसके पास कितना है</span></summary>'+
+    // Money first: in a credit trade "who owes what" is the question asked every morning, and
+    // it is short. The stock dashboard is long, so it now opens on demand instead.
+    html += '<details class="more-sec" open><summary>Money / पैसा<span class="ms-hint">Who owes whom / कौन कितना देना है</span></summary>'+
+      '<div id="m-money-card"><div style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</div></div></details>';
+
+    html += '<details class="more-sec"><summary>Stock &amp; my network / स्टॉक व नेटवर्क<span class="ms-hint">Who holds what, everywhere / किसके पास कितना है</span></summary>'+
       '<input type="search" id="m-stock-filter" placeholder="Filter — part or party / खोजें" autocomplete="off" class="m-input">'+
       '<div id="m-stock-card"><div style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</div></div></details>';
 
@@ -1814,15 +1884,18 @@
 
     // a party with no street address cannot be shipped to — open the section and flag it until filled
     var addrMissing = !String(a.address || "").trim();
-    var secAddress = '<details class="more-sec"'+(addrMissing ? ' open' : '')+'><summary>My delivery address — मेरा पता'+
-      (addrMissing ? '<span class="ms-badge">!</span>' : '')+
-      '<span class="ms-hint">Where your supplier sends your parcels / आपके पार्सल यहाँ आएँगे</span></summary>'+
+    var detailsMissing = addrMissing || !String(a.phone||"").trim() || !String(a.gstin||"").trim();
+    var secAddress = '<details class="more-sec"'+(detailsMissing ? ' open' : '')+'><summary>My business details — मेरी जानकारी'+
+      (detailsMissing ? '<span class="ms-badge">!</span>' : '')+
+      '<span class="ms-hint">Address for your parcels, GSTIN for your bills / पता और GSTIN</span></summary>'+
       (addrMissing ? '<p class="more-hint" style="color:var(--warn-ink);font-weight:600;">Please fill this in — without it your supplier cannot courier anything to you. / यह भरें, वरना सप्लायर पार्सल नहीं भेज सकता।</p>' : '')+
       '<label class="m-lbl">Address / पता</label><input type="text" id="m-ad-addr" class="m-input" maxlength="300" placeholder="Shop no., street, landmark" value="'+esc(a.address||"")+'">'+
       '<div class="row2"><div><label class="m-lbl">City / शहर</label><input type="text" id="m-ad-city" class="m-input" value="'+esc(a.city||"")+'"></div>'+
         '<div><label class="m-lbl">PIN / पिन</label><input type="text" id="m-ad-pin" class="m-input" inputmode="numeric" maxlength="6" value="'+esc(a.pin||"")+'"></div></div>'+
       '<label class="m-lbl">Phone / फ़ोन</label><input type="text" id="m-ad-phone" class="m-input" inputmode="tel" maxlength="20" value="'+esc(a.phone||"")+'">'+
-      '<button class="btn-primary m-btn" id="m-ad-save">Save address / पता सहेजें</button><div class="req-msg" id="m-ad-msg"></div></details>';
+      '<label class="m-lbl">GSTIN <span style="color:var(--muted);font-weight:400;">— printed on your bills / बिल पर</span></label>'+
+      '<input type="text" id="m-ad-gstin" class="m-input" maxlength="15" autocapitalize="characters" placeholder="08ABCDE1234F1Z5" value="'+esc(a.gstin||"")+'">'+
+      '<button class="btn-primary m-btn" id="m-ad-save">Save details / सहेजें</button><div class="req-msg" id="m-ad-msg"></div></details>';
 
     var secLink = '<details class="more-sec"><summary>Your retail shop link — दुकान लिंक'+
       '<button type="button" class="ms-share" id="ms-share-wa">'+svgIco("whatsapp")+'Share / भेजें</button>'+
@@ -1847,8 +1920,63 @@
     wireMore(isImporter);
   }
 
+  // ---- money: what my buyers owe me, what I owe my supplier ----
+  async function renderMoreMoney(){
+    var card = $("m-money-card"); if (!card || !sb) return;
+    var r = await sb.rpc("my_balances");
+    if (r.error){ card.innerHTML = '<div class="req-msg err">'+esc(friendlyErr(r.error))+'</div>'; return; }
+    var rows = r.data || [];
+    var cust = rows.filter(function(x){ return x.relation === "customer"; });
+    var sup  = rows.filter(function(x){ return x.relation === "supplier"; });
+    var owedToMe = cust.reduce(function(s,x){ return s + Number(x.outstanding||0); }, 0);
+    var iOwe     = sup.reduce(function(s,x){ return s + Number(x.outstanding||0); }, 0);
+    var html =
+      '<div class="money-row">'+
+        '<div class="money-tile in"><div class="mt-lbl">They owe you / आपको मिलने हैं</div><div class="mt-val">'+inr(owedToMe)+'</div></div>'+
+        '<div class="money-tile out"><div class="mt-lbl">You owe / आपको देने हैं</div><div class="mt-val">'+inr(iOwe)+'</div></div>'+
+      '</div>';
+    function line(x){
+      var out = Number(x.outstanding||0);
+      var cls = out > 0 ? "pay-due" : (out < 0 ? "pay-adv" : "pay-clear");
+      var tag = out > 0 ? "" : (out < 0 ? " (advance / एडवांस)" : " ✓ settled / चुकता");
+      return '<div class="pay-row"><div><b>'+esc(x.party_name||"")+'</b>'+
+        '<div style="color:var(--muted);font-size:12px;">Billed '+inr(x.billed)+' · Paid '+inr(x.paid)+'</div></div>'+
+        '<div class="'+cls+'">'+inr(Math.abs(out))+esc(tag)+'</div></div>';
+    }
+    if (sup.length)  html += '<p class="more-hint" style="margin:12px 0 2px;"><b>My supplier / मेरा सप्लायर</b></p>' + sup.map(line).join("");
+    if (cust.length) html += '<p class="more-hint" style="margin:12px 0 2px;"><b>My buyers / मेरे ख़रीदार</b></p>' + cust.map(line).join("");
+    if (!cust.length && !sup.length) html += '<p class="more-hint">No trading partners yet. / अभी कोई नहीं।</p>';
+    if (cust.length){
+      html += '<p class="more-hint" style="margin-top:14px;"><b>Money received? Write it here / पैसा मिला? यहाँ लिखें</b></p>'+
+        '<label class="m-lbl">From / किससे</label><select id="m-pay-from" class="m-input">'+
+          cust.map(function(x){ return '<option value="'+esc(x.party_id)+'">'+esc(x.party_name)+'</option>'; }).join("")+'</select>'+
+        '<div class="row2"><div><label class="m-lbl">Amount / रकम</label><input type="number" id="m-pay-amt" class="m-input" min="1" inputmode="numeric" placeholder="₹"></div>'+
+          '<div><label class="m-lbl">How / कैसे</label><select id="m-pay-mode" class="m-input">'+
+            '<option value="cash">Cash / नकद</option><option value="upi">UPI</option>'+
+            '<option value="bank">Bank / बैंक</option><option value="cheque">Cheque / चेक</option></select></div></div>'+
+        '<label class="m-lbl">Note (optional) / टिप्पणी</label><input type="text" id="m-pay-note" class="m-input" maxlength="200" placeholder="e.g. against PI-2026...">'+
+        '<button class="btn-primary m-btn" id="m-pay-record">Save payment / सहेजें</button>'+
+        '<div class="req-msg" id="m-payrec-msg"></div>';
+    }
+    card.innerHTML = html;
+    if ($("m-pay-record")) $("m-pay-record").onclick = async function(){
+      var m = $("m-payrec-msg"); m.className = "req-msg";
+      var amt = Number($("m-pay-amt").value || 0);
+      if (!(amt > 0)){ m.className="req-msg err"; m.textContent = "Enter an amount. / रकम डालें।"; return; }
+      var who = $("m-pay-from").options[$("m-pay-from").selectedIndex].text;
+      if (!(await askConfirm("Record "+inr(amt)+" received from "+who+"?\n\n"+who+" से "+inr(amt)+" मिले — सही है?", { okLabel:"Save / सहेजें" }))) return;
+      var rr = await sb.rpc("record_payment", { p_from: $("m-pay-from").value, p_amount: amt,
+        p_mode: $("m-pay-mode").value, p_note: ($("m-pay-note").value||"").trim() || null });
+      if (rr.error){ m.className="req-msg err"; m.textContent = friendlyErr(rr.error); return; }
+      showToast("Payment saved ✓ / भुगतान दर्ज");
+      $("m-pay-amt").value = ""; $("m-pay-note").value = "";
+      renderMoreMoney();
+    };
+  }
+
   function wireMore(isImporter){
     $("more-signout").onclick = doSignOut;
+    renderMoreMoney();
     // stock list
     renderMoreStock();
     var sf = $("m-stock-filter"), sTimer = null;
@@ -1960,9 +2088,12 @@
           pin = ($("m-ad-pin").value||"").trim(), ph = ($("m-ad-phone").value||"").trim();
       if (!addr){ m.className="req-msg err"; m.textContent = "Address is required. / पता ज़रूरी है।"; return; }
       if (pin && !/^[0-9]{6}$/.test(pin)){ m.className="req-msg err"; m.textContent = "PIN must be 6 digits. / पिन 6 अंकों का हो।"; return; }
-      var r = await sb.rpc("set_my_delivery", { p_address: addr, p_city: city||null, p_pin: pin||null, p_phone: ph||null });
+      var gst = (($("m-ad-gstin")||{}).value||"").trim().toUpperCase();
+      if (gst && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(gst)){
+        m.className="req-msg err"; m.textContent = "GSTIN must be 15 characters like 08ABCDE1234F1Z5. / GSTIN 15 अक्षर का हो।"; return; }
+      var r = await sb.rpc("set_my_delivery", { p_address: addr, p_city: city||null, p_pin: pin||null, p_phone: ph||null, p_gstin: gst||null });
       if (r.error){ m.className="req-msg err"; m.textContent = friendlyErr(r.error); return; }
-      await loadParty(); m.textContent = "Address saved ✓ / पता सहेजा गया"; showToast("Address saved ✓ / पता सहेजा गया");
+      await loadParty(); m.textContent = "Saved ✓ / सहेजा गया"; showToast("Details saved ✓ / जानकारी सहेजी गई");
       renderMore();
     };
     // shop link
@@ -3068,6 +3199,13 @@
       if (!Object.keys(state.cart).some(function(k){ return state.cart[k] > 0; })) return;
       if (state.enduser && !(($("eu-name") || {}).value || "").trim()){
         showToast("Please enter your name / कृपया नाम डालें"); $("eu-name").focus(); return;
+      }
+      // a signed-in buyer with no delivery address cannot be shipped to — ask for it at the
+      // exact moment it matters instead of letting a parcel become undeliverable later
+      if (!state.enduser && state.account && !String(state.account.address || "").trim()){
+        askConfirm("Your supplier needs a delivery address before they can send this order.\n\nAdd it now?\n\nपार्सल भेजने के लिए आपका पता चाहिए। अभी जोड़ें?",
+          { okLabel:"Add address / पता जोड़ें" }).then(function(go){ if (go) showMore(); });
+        return;
       }
       var btn = this;
       btn.disabled = true;
