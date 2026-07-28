@@ -72,7 +72,14 @@
     border-radius:50%; font-size:11px; font-weight:700; min-width:18px; height:18px;
     display:flex; align-items:center; justify-content:center; padding:0 3px;
   }
-  .logout-link{ background:rgba(255,255,255,.15); border:none; color:#fff; border-radius:10px; min-height:44px; min-width:44px; display:inline-flex; align-items:center; justify-content:center; }
+  /* the icon alone read as a mystery glyph — it carries a visible bilingual label, stacked
+     English-over-Hindi exactly like the bottom-nav buttons so the vocabulary matches */
+  .logout-link{ background:rgba(255,255,255,.15); border:none; color:#fff; border-radius:10px; min-height:44px; min-width:44px; padding:4px 10px; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+  .logout-link .lo-label{ display:flex; flex-direction:column; align-items:flex-start; line-height:1.15; }
+  .logout-link .lo-label .nl{ font-size:12px; font-weight:700; }
+  .logout-link .lo-label .nl-hi{ font-size:10px; font-weight:600; opacity:.9; }
+  /* very narrow phones: the brand needs the room, so the label folds away and the icon stands alone */
+  @media (max-width: 359px){ .logout-link .lo-label{ display:none; } }
 
   main{ padding:10px 10px 90px; max-width:640px; margin:0 auto; }
   /* one shared per-view heading — was an identical inline style on Cart/Orders/Requests/More */
@@ -553,7 +560,7 @@
     <div class="sub">Spare parts ordering / स्पेयर पार्ट्स ऑर्डर</div>
   </button>
   <div class="header-actions hidden" id="header-actions">
-    <button class="logout-link" id="auth-btn" aria-label="Sign Out / साइन आउट" title="Sign Out / साइन आउट"><span class="ico" data-ico="logout" aria-hidden="true"></span></button>
+    <button class="logout-link" id="auth-btn" aria-label="Sign out / साइन आउट" title="Sign out / साइन आउट"><span class="ico" data-ico="logout" aria-hidden="true"></span><span class="lo-label"><span class="nl">Sign out</span><span class="nl-hi">साइन आउट</span></span></button>
   </div>
 </header>
 
