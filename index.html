@@ -1305,9 +1305,14 @@
   async function renderMyOrders(){
     var box = $("orders-list");
     if (!state.account){ box.innerHTML = ""; return; }
+    // one-time: open the seller's Proforma Invoice for a billed/completed order
+    if (!box._piBound){ box._piBound = true; box.addEventListener("click", function(e){
+      var b = e.target.closest && e.target.closest("[data-viewpi]");
+      if (b) viewOrderPI(Number(b.getAttribute("data-viewpi")));
+    }); }
     box.innerHTML = '<p style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</p>';
     var res = await sb.from("orders")
-      .select("pi_number, subtotal, gst, grand, status, created_at, amended, bill_url, ship_to, reject_reason, carrier, tracking_no, lr_url")
+      .select("id, importer_party, pi_number, subtotal, gst, grand, status, created_at, amended, bill_url, ship_to, reject_reason, carrier, tracking_no, lr_url")
       .eq("dealer_party", state.account.id)
       .order("created_at", { ascending: false });
     if (res.error){
@@ -1334,12 +1339,45 @@
       // dispatch: courier + AWB/LR + LR copy once the supplier marks the order shipped
       if (o.carrier || o.tracking_no) extra += '<div style="font-size:12px;color:var(--text);">🚚 ' + esc([o.carrier, o.tracking_no].filter(Boolean).join(" · ")) + '</div>';
       if (o.lr_url) extra += '<a href="' + esc(o.lr_url) + '" target="_blank" rel="noopener" style="font-size:12.5px;font-weight:700;color:var(--green-dark);display:block;">View LR / एलआर देखें</a>';
+      // once billed/completed, the buyer can pull the seller's Proforma Invoice (seller = their
+      // direct supplier — the importer stays hidden on a drop-shipped shopkeeper order)
+      if (o.status === "billed" || o.status === "completed") extra += '<button class="list-reset" data-viewpi="' + o.id + '" style="padding:2px 0;min-height:36px;display:block;">📄 View invoice (PI) / इनवॉइस देखें</button>';
       return '<div class="order-row">' +
         '<div><strong>' + esc(o.pi_number || "") + '</strong><div style="font-size:12px;color:var(--muted);">' + d + '</div>' + extra + '</div>' +
         '<div style="text-align:right;"><span class="' + badge + '">' + (ORDER_STATUS_LABEL[o.status] || o.status || "") + '</span>' +
         '<div style="font-weight:600;">' + inr(o.grand) + '</div></div>' +
         '</div>';
     }).join("");
+  }
+
+  // Build & show the seller's Proforma Invoice for one of my billed/completed orders.
+  // Seller = my direct supplier (orders.importer_party) — for a drop-shipped shopkeeper order
+  // that's the DEALER, so the upstream importer never appears on the shopkeeper's invoice.
+  async function viewOrderPI(orderId){
+    showToast("Loading invoice… / इनवॉइस लोड हो रही है");
+    var oR = await sb.from("orders").select("id, importer_party, pi_number, subtotal, gst, grand, created_at").eq("id", orderId).single();
+    if (oR.error || !oR.data){ showToast("Could not load invoice / इनवॉइस लोड नहीं हुई"); return; }
+    var o = oR.data;
+    var lR = await sb.from("order_lines").select("sku, qty, rate, amount").eq("order_id", orderId);
+    var lines = ((lR && lR.data) || []).map(function(l){
+      var i = skuToIndex(l.sku), r = i >= 0 ? state.catalog[i] : null;
+      return { code: (r && r.product_code) || "—", sku: l.sku, particular: r ? nice(r.particular) : l.sku, qty: l.qty, rate: l.rate, amount: l.amount };
+    });
+    var sup = null, sR = await sb.rpc("supplier_info", { p_supplier: o.importer_party });
+    if (sR && sR.data){ var s = Array.isArray(sR.data) ? sR.data[0] : sR.data;
+      if (s) sup = { name: s.name || "Supplier", gstin: s.gstin || "", place: [s.city, s.pin].filter(Boolean).join(" "), phone: s.phone || "", upi: s.upi_id || "", qr: s.bank_qr_url || "" }; }
+    var now = o.created_at ? new Date(o.created_at) : new Date();
+    state.piOrderOk = null;
+    state.piInfo = {
+      docType: "PI",
+      number: (o.pi_number ? o.pi_number.replace(/^PO-/, "PI-") : ("PI-" + orderId)),
+      date: fmtDate(now), validTill: fmtDate(new Date(now.getTime() + PI_VALID_DAYS * 86400000)),
+      dealerName: (state.account && (state.account.company || state.session.id)) || "Buyer",
+      dealerCode: "", dealerGstin: (state.account && state.account.gstin) || "",
+      lines: lines, subtotal: Number(o.subtotal) || 0, gst: Number(o.gst) || 0, gstPct: GST_PCT, grand: Number(o.grand) || 0,
+      sellerOverride: sup
+    };
+    showPI();
   }
 
   // ================= SUPPLIER SIDE (Requests) — folded in from the old console =================
@@ -2385,17 +2423,20 @@
         '<td class="num">' + inr(l.amount) + '</td></tr>';
     }).join("");
 
-    var bannerHtml = state.piOrderOk === "queued"
+    var isPI = pi.docType === "PI";
+    var bannerHtml = isPI
+      ? '<div class="pi-success">✓ Proforma Invoice from your supplier. / आपके सप्लायर का प्रोफ़ॉर्मा इनवॉइस।</div>'
+      : state.piOrderOk === "queued"
       ? '<div class="notice">✓ Saved on your phone — it will be sent automatically when you’re online. / फ़ोन पर सेव — ऑनलाइन होते ही अपने आप भेजा जाएगा।</div>'
       : state.piOrderOk === false
-      ? '<div class="login-error">⚠ Order could not be saved — check internet and tap Generate PI again. / ऑर्डर सेव नहीं हुआ — इंटरनेट देखें और फिर से कोशिश करें।</div>'
+      ? '<div class="login-error">⚠ Order could not be saved — check internet and tap Generate PO again. / ऑर्डर सेव नहीं हुआ — इंटरनेट देखें और फिर से कोशिश करें।</div>'
       : '<div class="pi-success">✓ Purchase Order ready. Share it on WhatsApp below. / परचेज़ ऑर्डर तैयार है, नीचे व्हाट्सऐप पर भेजें।</div>';
-    var sel = seller();
+    var sel = pi.sellerOverride || seller();
     $("pi-box").innerHTML =
       bannerHtml +
       '<div class="pi-seller"><div class="biz">' + esc(sel.name) + '</div>' +
         '<div class="biz-line">' + (sel.gstin ? 'GSTIN: ' + esc(sel.gstin) + ' &middot; ' : '') + esc(sel.place) + (sel.phone ? '<br>Phone: ' + esc(sel.phone) : '') + '</div></div>' +
-      '<div class="pi-head"><h2>PURCHASE ORDER</h2><div class="pi-no">' + esc(pi.number) + '</div></div>' +
+      '<div class="pi-head"><h2>' + (isPI ? 'PROFORMA INVOICE' : 'PURCHASE ORDER') + '</h2><div class="pi-no">' + esc(pi.number) + '</div></div>' +
       '<div class="pi-meta">' +
         '<strong>Buyer / ख़रीदार:</strong> ' + esc(pi.dealerName) + (pi.dealerCode ? ' (' + esc(pi.dealerCode) + ')' : '') +
         (pi.dealerGstin ? '<br><strong>GSTIN:</strong> ' + esc(pi.dealerGstin) : '') + '<br>' +
@@ -2412,7 +2453,7 @@
         (sel.upi ? '<div>UPI: <b>' + esc(sel.upi) + '</b> · <a href="upi://pay?pa=' + encodeURIComponent(sel.upi) + '&pn=' + encodeURIComponent(sel.name) + '&am=' + pi.grand + '&cu=INR">Pay via UPI / यूपीआई से भुगतान</a></div>' : '') +
         (sel.qr ? '<img src="' + esc(sel.qr) + '" alt="Payment QR" style="width:150px;height:150px;object-fit:contain;margin-top:6px;" loading="lazy">' : '') +
         '</div>' : '') +
-      '<div class="pi-footer">This is a Purchase Order (buyer’s request). Total includes ' + esc(pi.gstPct) + '% GST. Payment via UPI / bank transfer as agreed. Prices valid till ' + esc(pi.validTill) + '. | यह परचेज़ ऑर्डर है (ख़रीदार का अनुरोध), कुल में ' + esc(pi.gstPct) + '% GST शामिल है।</div>' +
+      '<div class="pi-footer">' + (isPI ? 'This is a Proforma Invoice from the seller. ' : 'This is a Purchase Order (buyer’s request). ') + 'Total includes ' + esc(pi.gstPct) + '% GST. Payment via UPI / bank transfer as agreed. Prices valid till ' + esc(pi.validTill) + '. | ' + (isPI ? 'यह प्रोफ़ॉर्मा इनवॉइस है (विक्रेता से)।' : 'यह परचेज़ ऑर्डर है (ख़रीदार का अनुरोध)।') + ' कुल में ' + esc(pi.gstPct) + '% GST शामिल है।</div>' +
       '<div class="pi-actions">' +
         '<button class="btn btn-outline btn-ico" id="pi-print-btn" style="margin-top:0;">' + svgIco("print") + 'Print</button>' +
         '<button class="btn wa-btn btn-ico" id="pi-wa-btn" style="margin-top:0;">' + svgIco("whatsapp") + 'Share PDF on WhatsApp</button>' +
@@ -2480,13 +2521,13 @@
     function line(x1, y1, x2, y2){ s += "0.6 w " + x1 + " " + y1 + " m " + x2 + " " + y2 + " l S\n"; }
     function newPage(){ if (s) pages.push(s); s = ""; y = H - M; }
     function sellerBlock(){
-      var ps = seller();
+      var ps = pi.sellerOverride || seller();
       txt(M, y, 17, true, ps.name); y -= 15;
       txt(M, y, 9, false, (ps.gstin ? "GSTIN: " + ps.gstin + "  |  " : "") + ps.place + (ps.phone ? "  |  Phone: " + ps.phone : "")); y -= 16;
       line(M, y, W - M, y); y -= 16;
     }
     function docHead(){
-      txt(M, y, 13, true, "PURCHASE ORDER");
+      txt(M, y, 13, true, pi.docType === "PI" ? "PROFORMA INVOICE" : "PURCHASE ORDER");
       txt(W - M - 170, y, 11, true, pi.number); y -= 18;
       txt(M, y, 10, false, "Buyer: " + pi.dealerName + (pi.dealerCode ? " (" + pi.dealerCode + ")" : "") + (pi.dealerGstin ? "  GSTIN: " + pi.dealerGstin : "")); y -= 13;
       txt(M, y, 10, false, "Date: " + pi.date + "   Valid till: " + pi.validTill); y -= 18;
@@ -2511,7 +2552,7 @@
     txt(cols.rate - 60, y, 9, false, "Subtotal:"); txt(cols.amt, y, 9, false, "Rs." + pi.subtotal); y -= 13;
     txt(cols.rate - 60, y, 9, false, "GST @ " + pi.gstPct + "%:"); txt(cols.amt, y, 9, false, "+ Rs." + pi.gst); y -= 15;
     txt(cols.rate - 60, y, 12, true, "Grand Total:"); txt(cols.amt, y, 12, true, "Rs." + pi.grand); y -= 24;
-    wrapText("This is a Purchase Order (buyer's request). Total includes " + pi.gstPct + "% GST. Payment via UPI / bank transfer as agreed. Prices valid till " + pi.validTill + ".", 95)
+    wrapText((pi.docType === "PI" ? "This is a Proforma Invoice from the seller. " : "This is a Purchase Order (buyer's request). ") + "Total includes " + pi.gstPct + "% GST. Payment via UPI / bank transfer as agreed. Prices valid till " + pi.validTill + ".", 95)
       .forEach(function(w){ txt(M, y, 8, false, w); y -= 10; });
     pages.push(s);
 
