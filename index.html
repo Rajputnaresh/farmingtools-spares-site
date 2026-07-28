@@ -417,6 +417,13 @@
   .more-sec > *:not(summary){ margin:0 14px; }
   .more-sec > *:not(summary):first-of-type{ margin-top:12px; }
   .more-sec > *:last-child{ margin-bottom:14px; }
+  /* grouped More menu: intent headers + informative closed rows */
+  .more-group{ font-size:13px; font-weight:700; color:var(--green-dark); margin:18px 2px 6px; }
+  .more-group:first-of-type{ margin-top:14px; }
+  .ms-hint{ display:block; font-size:12px; font-weight:400; color:var(--muted); margin-top:2px; padding-right:18px; }
+  .ms-badge{ display:inline-block; min-width:20px; text-align:center; background:var(--danger); color:#fff; border-radius:10px; font-size:11.5px; font-weight:700; padding:1px 6px; margin-left:8px; }
+  .ms-share{ float:right; display:inline-flex; align-items:center; gap:5px; background:var(--green); color:#fff; border:none; border-radius:8px; font-size:12.5px; font-weight:700; padding:6px 10px; margin:-4px 22px 0 8px; min-height:32px; }
+  .ms-share .ico svg{ width:15px; height:15px; }
   .more-hint{ color:var(--muted); font-size:12.5px; }
   .m-lbl{ display:block; font-size:12.5px; font-weight:600; margin:8px 0 4px; }
   .m-input{ width:100%; box-sizing:border-box; padding:11px; min-height:46px; font-size:16px; border:1px solid var(--border); border-radius:10px; background:#fff; }
@@ -1596,11 +1603,14 @@
 
     var html = '<div class="more-card"><div style="font-weight:700;">'+esc(name)+'</div><div style="color:var(--muted);font-size:13px;">'+esc(role)+'</div></div>';
 
-    html += '<details class="more-sec"><summary>Stock &amp; my network / स्टॉक व नेटवर्क</summary>'+
+    // grouped by intent, most-used first; closed rows carry a one-line hint so nothing is a mystery box
+    html += '<div class="more-group">Daily / रोज़ का काम</div>';
+
+    html += '<details class="more-sec" open><summary>Stock &amp; my network / स्टॉक व नेटवर्क<span class="ms-hint">Who holds what, everywhere / किसके पास कितना है</span></summary>'+
       '<input type="search" id="m-stock-filter" placeholder="Filter — part or party / खोजें" autocomplete="off" class="m-input">'+
       '<div id="m-stock-card"><div style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</div></div></details>';
 
-    if (below.length) html += '<details class="more-sec"><summary>Add a dealer / shopkeeper — नया जोड़ें</summary>'+
+    var secAddDealer = !below.length ? '' : '<details class="more-sec"><summary>Add a dealer / shopkeeper — नया जोड़ें<span class="ms-hint">Create a login for a party under you / अपने नीचे नया लॉगिन बनाएँ</span></summary>'+
       '<p class="more-hint">They activate their login by opening the app, tapping <b>Create an account</b>, and using the email you enter here.</p>'+
       '<label class="m-lbl">Business name / नाम</label><input type="text" id="m-d-name" class="m-input" placeholder="e.g. Sharma Agro">'+
       '<div class="row2"><div><label class="m-lbl">Role</label><select id="m-d-role" class="m-input">'+below.map(function(r){return '<option value="'+r+'">'+r+'</option>';}).join("")+'</select></div>'+
@@ -1610,7 +1620,7 @@
         '<div><label class="m-lbl">City</label><input type="text" id="m-d-city" class="m-input"></div></div>'+
       '<button class="btn-primary m-btn" id="m-d-add">Add / जोड़ें</button><div class="req-msg" id="m-d-msg"></div></details>';
 
-    if (below.length) html += '<details class="more-sec"><summary>Bill / transfer stock — ट्रांसफर</summary>'+
+    var secTransfer = !below.length ? '' : '<details class="more-sec"><summary>Bill / transfer stock — ट्रांसफर<span class="ms-hint">Billing moves stock down to a party / बिल = स्टॉक ट्रांसफर</span></summary>'+
       '<p class="more-hint">Billing moves stock: it leaves you and lands on the receiving party.</p>'+
       '<label class="m-lbl">Bill to</label><select id="m-t-to" class="m-input">'+partyOpts+'</select>'+
       '<label class="m-lbl">Part</label><input type="text" id="m-t-search" class="m-input" placeholder="Type code or name to filter…" autocomplete="off">'+
@@ -1619,14 +1629,14 @@
         '<div><label class="m-lbl">PI (optional)</label><input type="text" id="m-t-pi" class="m-input" placeholder="PI-…"></div></div>'+
       '<button class="btn-primary m-btn" id="m-t-btn">Record transfer / ट्रांसफर करें</button><div class="req-msg" id="m-t-msg"></div></details>';
 
-    if (isImporter) html += '<details class="more-sec"><summary>Add external stock (importer) — नया स्टॉक</summary>'+
+    var secExternal = !isImporter ? '' : '<details class="more-sec"><summary>Add external stock — नया स्टॉक<span class="ms-hint">New imports land on your balance / नया आयात आपके खाते में</span></summary>'+
       '<p class="more-hint">Bring newly-imported stock into the network at your own balance.</p>'+
       '<label class="m-lbl">Part</label><input type="text" id="m-o-search" class="m-input" placeholder="Type code or name to filter…" autocomplete="off">'+
       '<select id="m-o-sku" class="m-input">'+skuOpts+'</select>'+
       '<label class="m-lbl">Qty</label><input type="number" id="m-o-qty" class="m-input" min="1" value="1" inputmode="numeric">'+
       '<button class="btn-primary m-btn" id="m-o-btn">Add stock / जोड़ें</button><div class="req-msg" id="m-o-msg"></div></details>';
 
-    if (isImporter) html += '<details class="more-sec"><summary>Correct stock (physical count) — स्टॉक सुधारें</summary>'+
+    var secCorrect = !isImporter ? '' : '<details class="more-sec"><summary>Correct stock (physical count) — स्टॉक सुधारें<span class="ms-hint">Fix the ledger after counting / गिनती के बाद सुधार</span></summary>'+
       '<p class="more-hint">After a physical count: enter the change, + to add or − to remove (breakage, miscount). Keeps the ledger honest.</p>'+
       '<label class="m-lbl">Part</label><input type="text" id="m-adj-search" class="m-input" placeholder="Type code or name to filter…" autocomplete="off">'+
       '<select id="m-adj-sku" class="m-input">'+skuOpts+'</select>'+
@@ -1634,7 +1644,7 @@
         '<div><label class="m-lbl">Reason</label><input type="text" id="m-adj-note" class="m-input" placeholder="e.g. breakage"></div></div>'+
       '<button class="btn-primary m-btn" id="m-adj-btn">Apply correction / लागू करें</button><div class="req-msg" id="m-adj-msg"></div></details>';
 
-    html += '<details class="more-sec"><summary>New customer order — नया ग्राहक ऑर्डर</summary>'+
+    var secCustOrder = '<details class="more-sec"><summary>New customer order — नया ग्राहक ऑर्डर<span class="ms-hint">Walk-in customer, with delivery address / वॉक-इन ग्राहक का ऑर्डर</span></summary>'+
       '<p class="more-hint">Raise an order for a walk-in customer, with their delivery address. If you’re short, forward the shortfall up — then Bill &amp; ship it from Requests with your own bill.</p>'+
       '<label class="m-lbl">Customer name / ग्राहक</label><input type="text" id="m-co-name" class="m-input" placeholder="e.g. Ramesh">'+
       '<div class="row2"><div><label class="m-lbl">Phone / फ़ोन</label><input type="text" id="m-co-phone" class="m-input" inputmode="tel"></div>'+
@@ -1646,13 +1656,13 @@
       '<div id="m-co-lines"></div>'+
       '<button class="btn-primary m-btn" id="m-co-create">Create order / ऑर्डर बनाएँ</button><div class="req-msg" id="m-co-msg"></div></details>';
 
-    html += '<details class="more-sec"><summary>Customer price / markup — ग्राहक मूल्य</summary>'+
+    var secPrice = '<details class="more-sec"><summary>Customer price / markup — ग्राहक मूल्य<span class="ms-hint">What retail customers pay / ग्राहक जो क़ीमत देखते हैं</span></summary>'+
       '<p class="more-hint">What your retail customers see, as a multiple of the base price. 3 = MRP (default). Lower it to sell cheaper.</p>'+
       '<div class="row2"><div><label class="m-lbl">Multiple (1–20)</label><input type="number" id="m-rm-mult" class="m-input" min="1" max="20" step="0.1" value="'+esc(String(a.retailMult||3))+'"></div>'+
         '<div style="align-self:end;"><button class="btn-primary m-btn" id="m-rm-save" style="margin-top:0;">Save / सहेजें</button></div></div>'+
       '<div class="req-msg" id="m-rm-msg"></div></details>';
 
-    html += '<details class="more-sec"><summary>Payment details (UPI / QR) — भुगतान</summary>'+
+    var secPay = '<details class="more-sec"><summary>Payment details (UPI / QR) — भुगतान<span class="ms-hint">Shown on your customer’s bill / ग्राहक के बिल पर दिखेगा</span></summary>'+
       '<p class="more-hint">Shown on your customer’s bill so they can pay you directly.</p>'+
       '<label class="m-lbl">UPI ID</label><input type="text" id="m-pay-upi" class="m-input" placeholder="name@bank" value="'+esc(a.upi||"")+'">'+
       '<button class="btn-primary m-btn" id="m-pay-save">Save UPI / सहेजें</button>'+
@@ -1660,14 +1670,23 @@
         (a.qr ? '<a href="'+esc(a.qr)+'" target="_blank" rel="noopener" class="m-btn btn-soft" style="margin-top:0;text-align:center;">View QR</a>' : '<span></span>')+'</div>'+
       '<div class="req-msg" id="m-pay-msg"></div></details>';
 
-    html += '<details class="more-sec"><summary>Your retail shop link — दुकान लिंक</summary>'+
+    var secLink = '<details class="more-sec"><summary>Your retail shop link — दुकान लिंक'+
+      '<button type="button" class="ms-share" id="ms-share-wa">'+svgIco("whatsapp")+'Share / भेजें</button>'+
+      '<span class="ms-hint">Customers order at MRP on WhatsApp / व्हाट्सऐप पर आपकी दुकान</span></summary>'+
       '<p class="more-hint">Share on WhatsApp. Customers see MRP and their orders come to you.</p>'+
       '<input type="text" id="m-store-link" class="m-input" readonly value="'+esc(storeLink())+'">'+
       '<div class="row2"><button class="btn-primary m-btn" id="m-store-copy">Copy link / कॉपी</button>'+
         '<button class="btn-soft m-btn" id="m-store-wa">Share on WhatsApp</button></div></details>';
 
-    if (isImporter) html += '<details class="more-sec"><summary>Pending registrations — पंजीकरण</summary>'+
+    var secApprovals = !isImporter ? '' : '<details class="more-sec"><summary>Pending registrations — पंजीकरण<span class="ms-badge hidden" id="m-badge-appr">0</span>'+
+      '<span class="ms-hint">Approve new signups / नए पंजीकरण स्वीकृत करें</span></summary>'+
       '<div id="m-approvals-card"><div style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</div></div></details>';
+
+    // Daily continues with transfer + walk-in order; then shop setup, network admin, importer-only tools
+    html += secTransfer + secCustOrder;
+    html += '<div class="more-group">My shop / मेरी दुकान</div>' + secLink + secPrice + secPay;
+    if (secAddDealer || secApprovals) html += '<div class="more-group">My network / मेरा नेटवर्क</div>' + secAddDealer + secApprovals;
+    if (isImporter) html += '<div class="more-group">Importer tools / इम्पोर्टर</div>' + secExternal + secCorrect;
 
     html += '<button class="more-link more-signout" id="more-signout">Sign out / साइन आउट</button>';
     $("more-body").innerHTML = html;
@@ -1789,6 +1808,11 @@
     if ($("m-store-wa")) $("m-store-wa").onclick = function(){
       window.open("https://wa.me/?text="+encodeURIComponent("Order farm spare parts here: "+$("m-store-link").value), "_blank");
     };
+    // one-tap share from the closed row — don't let the tap also toggle the accordion
+    if ($("ms-share-wa")) $("ms-share-wa").onclick = function(e){
+      e.preventDefault(); e.stopPropagation();
+      window.open("https://wa.me/?text="+encodeURIComponent("Order farm spare parts here: "+storeLink()), "_blank");
+    };
     if (isImporter){ renderMoreApprovals(); var ac = $("m-approvals-card"); if (ac) ac.addEventListener("click", onApprovalsClick); }
   }
 
@@ -1884,6 +1908,8 @@
     var r = await sb.from("signup_requests").select("*").eq("status","pending").order("created_at");
     if (r.error){ card.innerHTML = '<div class="req-msg err">'+esc(friendlyErr(r.error))+'</div>'; return; }
     var rows = r.data || [];
+    var bdg = $("m-badge-appr");
+    if (bdg){ bdg.textContent = String(rows.length); bdg.classList.toggle("hidden", !rows.length); }
     if (!rows.length){ card.innerHTML = '<div style="color:var(--muted);font-size:13px;">No pending registrations.</div>'; return; }
     card.innerHTML = rows.map(function(x){ return '<div class="req-card"><div><b>'+esc(x.business_name||"(no name)")+'</b> — '+esc(x.requested_role)+'</div>'+
       '<div style="color:var(--muted);font-size:12.5px;">'+esc(x.email||"")+(x.phone?' · '+esc(x.phone):'')+(x.city?' · '+esc(x.city):'')+'</div>'+((x.gstin||x.upi_id)?'<div style="color:var(--muted);font-size:12.5px;">'+(x.gstin?'GSTIN: '+esc(x.gstin):'')+(x.gstin&&x.upi_id?' · ':'')+(x.upi_id?'UPI: '+esc(x.upi_id):'')+'</div>':'')+
