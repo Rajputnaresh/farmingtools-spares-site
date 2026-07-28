@@ -1572,15 +1572,20 @@
     // then mark complete — completing a drop-ship order also completes it for the downstream buyer. ----
     var disp = $("req-dispatch-list");
     if (disp){
-      var bd = ((await sb.from("orders").select("id,pi_number,dealer_party,grand").eq("importer_party", mine).eq("status","billed").order("created_at",{ascending:false})).data) || [];
-      var be = ((await sb.from("enduser_orders").select("id,pi_number,customer_name,grand").eq("supplier_party", mine).eq("status","billed").order("created_at",{ascending:false})).data) || [];
+      var bd = ((await sb.from("orders").select("id,pi_number,dealer_party,grand,created_at,ship_to").eq("importer_party", mine).eq("status","billed").order("created_at",{ascending:false})).data) || [];
+      var be = ((await sb.from("enduser_orders").select("id,pi_number,customer_name,grand,created_at,customer_phone,ship_to_addr").eq("supplier_party", mine).eq("status","billed").order("created_at",{ascending:false})).data) || [];
       // drop-shipped orders are dispatched by the UPSTREAM supplier, not me — keep them out of my list
       bd = bd.filter(function(o){ return !fwdSet['dealer:'+o.id]; });
       be = be.filter(function(o){ return !fwdSet['enduser:'+o.id]; });
       function dispCard(kind, o, who){
         var tag = kind+":"+o.id;
+        // date + destination make each card unmistakably ITS order — several billed orders
+        // for the same buyer otherwise look like duplicates of one another
+        var d = o.created_at ? new Date(o.created_at).toLocaleDateString("en-IN",{day:"2-digit",month:"short"}) : "";
+        var dest = kind === "dealer" ? (o.ship_to || "") : [o.customer_phone, o.ship_to_addr].filter(Boolean).join(" · ");
         return '<div class="req-card disp-wait">'+
           '<div><b>'+esc(who)+'</b> · '+esc(o.pi_number||"")+' · <b>'+inr(o.grand)+'</b> · <span class="badge-amber">To ship / भेजना है</span></div>'+
+          '<div style="font-size:12.5px;color:var(--muted);">'+(d ? 'Billed '+esc(d) : '')+(dest ? ' · 📍 '+esc(dest) : '')+'</div>'+
           '<label class="m-lbl">Courier / कूरियर</label><input class="m-input disp-carrier" placeholder="e.g. Delhivery, Bus, Post office" maxlength="60">'+
           '<label class="m-lbl">AWB / LR no. / नंबर</label><input class="m-input disp-track" placeholder="tracking / LR number" maxlength="80">'+
           '<div class="req-sub" style="margin-top:8px;"><button class="btn-soft" data-lr="'+tag+'">Attach LR copy / एलआर लगाएँ</button>'+
