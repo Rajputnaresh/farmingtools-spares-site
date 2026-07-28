@@ -190,6 +190,9 @@
     width:44px; height:44px; line-height:1; border-radius:8px;
   }
   .filter-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+  .filter-row .state-only{ display:none; } /* selects kept only as list-scope state */
+  .stock-chip{ background:#fff; border:1px solid var(--border); border-radius:20px; min-height:40px; padding:6px 14px; font-size:13px; font-weight:700; color:var(--muted); }
+  .stock-chip.on{ background:var(--green-light); border-color:var(--green); color:var(--green-dark); }
   .filter-row select{
     flex:1 1 140px; min-width:0; padding:12px 10px; border:1px solid var(--border);
     border-radius:10px; background:#fff; font-size:13px; min-height:48px;
@@ -430,9 +433,10 @@
   .m-btn{ width:100%; margin-top:12px; min-height:46px; border-radius:10px; font-weight:600; }
   .row2{ display:flex; gap:10px; }
   .row2 > div{ flex:1; min-width:0; }
-  .badge-green, .badge-amber{ display:inline-block; border-radius:8px; padding:2px 8px; font-size:11px; font-weight:700; margin-bottom:3px; }
+  .badge-green, .badge-amber, .badge-red{ display:inline-block; border-radius:8px; padding:2px 8px; font-size:11px; font-weight:700; margin-bottom:3px; }
   .badge-green{ background:var(--green-light); color:var(--green-dark); }
   .badge-amber{ background:var(--bg); color:var(--muted); border:1px solid var(--border); }
+  .badge-red{ background:var(--danger-tint,#fdeceb); color:var(--danger); border:1px solid var(--danger-border,#f0b4ac); }
 
   /* PI */
   .pi-box{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px; }
@@ -589,13 +593,11 @@
       <button class="search-clear hidden" id="search-clear" type="button" aria-label="Clear search / खोज साफ़ करें">&times;</button>
     </div>
     <div class="filter-row hidden" id="filter-row">
-      <select id="filter-group" aria-label="Filter by machine group / समूह"><option value="">All Groups</option></select>
-      <select id="filter-section" aria-label="Filter by section / अनुभाग"><option value="">All Sections</option></select>
-      <select id="filter-stock" aria-label="Filter by stock / स्टॉक">
-        <option value="">All stock / सभी</option>
-        <option value="in">In stock / स्टॉक में</option>
-        <option value="out">Out of stock / स्टॉक नहीं</option>
-      </select>
+      <!-- group/section selects stay as HIDDEN state stores — the browse tiles + breadcrumb write/read
+           them (renderList scopes off their values). Visually the tiles + search ARE the filter UI. -->
+      <select id="filter-group" class="state-only" aria-hidden="true" tabindex="-1"><option value="">All Groups</option></select>
+      <select id="filter-section" class="state-only" aria-hidden="true" tabindex="-1"><option value="">All Sections</option></select>
+      <button type="button" id="filter-stock" value="" class="stock-chip" aria-pressed="false">✓ In stock only / सिर्फ़ स्टॉक में</button>
     </div>
     <div id="catalog-body"></div>
   </section>
@@ -1318,7 +1320,7 @@
       var el = $(nid); if (el) el.classList.toggle("active", nid === id);
     });
   }
-  var ORDER_STATUS_LABEL = { placed: "Placed / दर्ज", billed: "Billed / बिल्ड", completed: "Completed / पूरा", rejected: "Declined / अस्वीकृत" };
+  var ORDER_STATUS_LABEL = { placed: "Placed / दर्ज", billed: "Billed / बिल बना", completed: "Completed / पूरा", rejected: "Declined / अस्वीकृत" };
   async function renderMyOrders(){
     var box = $("orders-list");
     if (!state.account){ box.innerHTML = ""; return; }
@@ -1344,7 +1346,7 @@
       return;
     }
     box.innerHTML = rows.map(function(o){
-      var badge = (o.status === "billed" || o.status === "completed") ? "badge-green" : "badge-amber";
+      var badge = (o.status === "billed" || o.status === "completed") ? "badge-green" : (o.status === "rejected" ? "badge-red" : "badge-amber");
       var d = o.created_at ? new Date(o.created_at).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }) : "";
       // amended = supplier adjusted quantities before billing; ship_to shows on forwarded
       // purchase requests (drop-ship); bill_url = the bill travels with the order.
@@ -2232,8 +2234,10 @@
       $("retry-load").onclick = function(){ loadData().then(function(){ populateFilters(); renderCatalogBody(); }); };
       return;
     }
-    // filter dropdowns belong to list mode only; in browse mode the tiles own the drill-down
+    // the stock chip belongs to list mode only; in browse mode the tiles own the drill-down
     $("filter-row").classList.toggle("hidden", state.mode !== "list");
+    var fs = $("filter-stock"); // chip visual follows value, so resets elsewhere stay in sync
+    fs.classList.toggle("on", fs.value === "in"); fs.setAttribute("aria-pressed", fs.value === "in" ? "true" : "false");
     if (state.mode === "list") renderList(body);
     else renderBrowse(body);
   }
@@ -2958,9 +2962,10 @@
       if (state.mode === "browse") state.browseGroup = null;
       renderCatalogBody();
     });
-    $("filter-stock").addEventListener("change", function(){
+    // one-tap chip: value "" ↔ "in" (the button's .value keeps every existing read/reset site working)
+    $("filter-stock").addEventListener("click", function(){
+      this.value = this.value === "in" ? "" : "in";
       state.renderLimit = RENDER_CHUNK;
-      // stock select only shows in list mode; a change just re-filters the current list
       renderCatalogBody();
     });
 
