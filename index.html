@@ -1442,7 +1442,7 @@
     var haveMap = {}; ((stkR && stkR.data) || []).forEach(function(x){ haveMap[x.sku] = x.qty; });
     // which incoming orders have I ALREADY forwarded upward? a forward creates one of MY orders
     // whose source_order_id points back at the request — so the Forward button can't double-fire.
-    var fwdR = await sb.from("orders").select("source_kind, source_order_id").eq("dealer_party", mine).not("source_order_id", "is", null);
+    var fwdR = await sb.from("orders").select("source_kind, source_order_id").eq("dealer_party", mine).not("source_order_id", "is", null).neq("status","rejected");
     var fwdSet = {}; ((fwdR && fwdR.data) || []).forEach(function(x){ fwdSet[x.source_kind + ":" + x.source_order_id] = true; });
     var lineIds = ords.map(function(o){ return o.id; });
     var euIds = eu.map(function(o){ return o.id; });
@@ -1474,17 +1474,20 @@
       var bill = o.bill_url ? ' · <a href="'+esc(o.bill_url)+'" target="_blank" rel="noopener">Bill / बिल</a>' : "";
       // Forward ↑ only makes sense if I have a supplier above me (importer has none) and I
       // haven't already forwarded this exact request.
-      var canFwd = !!state.account.parentId && !fwdSet['dealer:'+o.id];
+      var isFwded = !!fwdSet['dealer:'+o.id];
+      var canFwd = !!state.account.parentId && !isFwded;
       var fwdBtn = canFwd ? '<button class="btn-soft" data-forward="'+o.id+'">Forward ↑</button>'
-        : (state.account.parentId && fwdSet['dealer:'+o.id]) ? '<span class="req-gloss" style="align-self:center;">Forwarded ↑ / भेज दिया</span>' : '';
+        : (state.account.parentId && isFwded) ? '<span class="req-gloss" style="align-self:center;">Forwarded ↑ / भेज दिया</span>' : '';
       return '<div class="req-card">'+
         '<div><b>'+esc(pName[o.dealer_party]||"dealer")+'</b> · '+esc(o.pi_number||"")+(o.amended?' · <span style="color:var(--muted)">adjusted / बदला</span>':'')+bill+'</div>'+ship+
         '<div class="tscroll"><table><thead><tr><th></th><th>Part</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount</th><th></th></tr></thead><tbody>'+lineHtml+'</tbody></table></div>'+
         '<div style="text-align:right;font-weight:700;font-size:13px;margin-top:6px;">Total / कुल: <span class="rq-total">'+inr(o.grand)+'</span> <span class="req-gloss" style="display:inline;font-weight:400;">incl. GST</span></div>'+
         '<div class="req-gloss">Tap Qty or Rate to adjust before billing — the buyer sees the change. / बिल से पहले मात्रा या दर बदल सकते हैं।</div>'+
         '<div class="req-actions">'+
-          '<button class="btn-primary req-primary" data-fulfill="'+o.id+'">Bill &amp; ship / बिल करें</button>'+
-          '<div class="req-gloss">Moves stock to the buyer now — can’t be undone. / स्टॉक अभी जाएगा, वापस नहीं।</div>'+
+          '<button class="btn-primary req-primary" data-fulfill="'+o.id+'"'+(isFwded?' disabled':'')+'>Bill &amp; ship / बिल करें</button>'+
+          (isFwded
+            ? '<div class="req-gloss">Forwarded up — your supplier ships this directly. / ऊपर भेज दिया — सप्लायर सीधे भेजेगा।</div>'
+            : '<div class="req-gloss">Moves stock to the buyer now — can’t be undone. / स्टॉक अभी जाएगा, वापस नहीं।</div>')+
           '<div class="req-sub">'+
             fwdBtn+
             '<button class="btn-soft" data-billattach="'+o.id+'">Attach bill</button>'+
@@ -1506,8 +1509,9 @@
         '<div class="more-hint">You’re short — forward the whole order up. Your supplier ships it directly to the customer in your name; your own stock stays untouched. / पूरा ऑर्डर सप्लायर को भेजें — वे सीधे ग्राहक को आपके नाम से भेजेंगे, आपका स्टॉक वैसा ही रहेगा।</div>'+
         '<button class="btn-soft" data-forward-eu="'+o.id+'" style="margin-top:6px;">Forward whole order ↑ / पूरा ऑर्डर भेजें</button></div>'
         : (state.account.parentId && shortAny && alreadyFwdEu) ? '<div class="req-gloss" style="margin:4px 0;">Forwarded ↑ / भेज दिया</div>' : "";
-      // stock is here → let the dealer close the sale (moves stock out to the customer)
-      var canFulfill = !shortAny;
+      // stock is here → let the dealer close the sale (moves stock out to the customer);
+      // once forwarded, the supplier ships it — billing here again would double-fulfil
+      var canFulfill = !shortAny && !alreadyFwdEu;
       var addr = o.ship_to_addr ? '<div style="font-size:12.5px;color:var(--text);margin-top:2px;">📍 '+esc(o.ship_to_addr)+'</div>' : "";
       var euBill = o.bill_url ? '<a href="'+esc(o.bill_url)+'" target="_blank" rel="noopener" style="font-size:12.5px;font-weight:700;color:var(--green-dark);">View bill / बिल देखें</a>' : "";
       // customer counter-offer: show it and let the shop accept (agreed total becomes the order total)
@@ -1527,6 +1531,9 @@
     if (disp){
       var bd = ((await sb.from("orders").select("id,pi_number,dealer_party,grand").eq("importer_party", mine).eq("status","billed").order("created_at",{ascending:false})).data) || [];
       var be = ((await sb.from("enduser_orders").select("id,pi_number,customer_name,grand").eq("supplier_party", mine).eq("status","billed").order("created_at",{ascending:false})).data) || [];
+      // drop-shipped orders are dispatched by the UPSTREAM supplier, not me — keep them out of my list
+      bd = bd.filter(function(o){ return !fwdSet['dealer:'+o.id]; });
+      be = be.filter(function(o){ return !fwdSet['enduser:'+o.id]; });
       function dispCard(kind, o, who){
         var tag = kind+":"+o.id;
         return '<div class="req-card">'+
