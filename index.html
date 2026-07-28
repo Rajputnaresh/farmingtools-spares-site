@@ -279,11 +279,14 @@
     padding:3px 7px; border-radius:20px; white-space:nowrap;
   }
   .item-particular{ font-size:13.5px; margin:4px 0 8px; color:var(--text); line-height:1.35; }
-  /* availability from Supabase (importer_availability) — dealers see in/out only, never the quantity */
+  /* availability from Supabase (chain_availability) — three states: on my supplier's shelf,
+     reachable further up the chain, or nowhere. Who holds upstream stock is never revealed. */
   .stock-badge{ font-size:10.5px; font-weight:600; padding:3px 7px; border-radius:20px; white-space:nowrap; }
   .stock-in{ background:var(--green-light); color:var(--green-dark); }
   /* out-of-stock is a calm, muted state — not an alarm (most of the catalog may be unstocked) */
   .stock-out{ background:#eef0ee; color:var(--muted); }
+  /* held further up the chain: orderable, just not on the shelf today */
+  .stock-chain{ background:var(--warn-tint,#fff6e0); color:var(--warn-ink,#7a5b00); }
   .item-bottom{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
   .rate{ font-weight:700; font-size:14.5px; color:var(--text); }
   .rate.na{ color:var(--muted); font-weight:600; font-size:12.5px; }
@@ -705,7 +708,7 @@
            them (renderList scopes off their values). Visually the tiles + search ARE the filter UI. -->
       <select id="filter-group" class="state-only" aria-hidden="true" tabindex="-1"><option value="">All Groups</option></select>
       <select id="filter-section" class="state-only" aria-hidden="true" tabindex="-1"><option value="">All Sections</option></select>
-      <button type="button" id="filter-stock" value="" class="stock-chip" aria-pressed="false">✓ In stock only / सिर्फ़ स्टॉक में</button>
+      <button type="button" id="filter-stock" value="" class="stock-chip" aria-pressed="false">✓ Ready today / आज तैयार</button>
     </div>
     <div id="catalog-body"></div>
   </section>
@@ -1000,7 +1003,18 @@
   // Prices come from the my_prices RPC — the importer's landing cost never reaches the
   // client, only the dealer's own net rate. Availability is in/out only (quantity stays private).
   function netRate(idx){ var v = state.priceByIndex[idx]; return (v === undefined || v === null) ? null : v; }
-  function availOf(idx){ return state.availByIndex[idx]; } // true / false / undefined
+  function availOf(idx){ return state.availByIndex[idx]; }        // at my direct supplier
+  function upstreamOf(idx){ return !!state.upstreamByIndex[idx]; } // held further up the chain
+  // "here" ships immediately · "chain" is ordered in and drop-shipped · "none" can only be a
+  // demand record. Anything but "none" is orderable — that is the whole point of the network.
+  function stockClass(idx){
+    var av = availOf(idx);
+    var here = (av === undefined) ? null : ((typeof av === "boolean") ? av : av > 0);
+    if (here) return "here";
+    if (upstreamOf(idx)) return "chain";
+    return here === null ? "unknown" : "none";
+  }
+  function isOrderable(idx){ var s = stockClass(idx); return s !== "none"; }
 
   // ---------- offline order outbox (IndexedDB) ----------
   // Placing an order is the one write a dealer makes on patchy rural data. If the network is
@@ -1160,16 +1174,22 @@
     // customer never sees stock/quantity and can order any part in or out of stock.
     // dealers: own price + supplier stock.
     var priceP = state.enduser ? sb.rpc("enduser_prices", { p_supplier: state.enduser }) : (sb ? sb.rpc("my_prices") : Promise.resolve({ data: [] }));
-    var availP = state.enduser ? Promise.resolve({ data: [] })
-                               : (sb ? sb.rpc("importer_availability") : Promise.resolve({ data: [] }));
+    // Availability means "can this reach me", not "does my own supplier happen to hold it":
+    // anything sitting anywhere up the chain is orderable, because a short supplier forwards
+    // the whole order and the party above drop-ships it. Who holds it is never revealed.
+    var availP = state.enduser
+      ? (sb ? sb.rpc("enduser_chain_availability", { p_supplier: state.enduser }) : Promise.resolve({ data: [] }))
+      : (sb ? sb.rpc("chain_availability") : Promise.resolve({ data: [] }));
     return Promise.all([catP, priceP, availP]).then(function(res){
       state.loading = false;
       // offline / fetch failure: keep whatever we hydrated from cache rather than blanking it
       if (res[0] === null){ if (!state._hydrated) { state.loadError = true; state.catalog = []; } }
       else { state.catalog = Array.isArray(res[0]) ? res[0] : []; }
-      state.priceByIndex = []; state.availByIndex = [];
+      state.priceByIndex = []; state.availByIndex = []; state.upstreamByIndex = [];
       ((res[1] && res[1].data) || []).forEach(function(p){ var i = skuToIndex(p.sku); if (i >= 0) state.priceByIndex[i] = (p.net_rate != null ? p.net_rate : p.mrp); });
-      ((res[2] && res[2].data) || []).forEach(function(a){ var i = skuToIndex(a.sku); if (i >= 0) state.availByIndex[i] = (a.qty != null ? a.qty : a.in_stock); });
+      ((res[2] && res[2].data) || []).forEach(function(a){ var i = skuToIndex(a.sku); if (i < 0) return;
+        state.availByIndex[i] = (a.qty != null ? a.qty : a.in_stock);
+        state.upstreamByIndex[i] = !!a.upstream; });
       persistData();
     });
   }
@@ -1361,8 +1381,8 @@
     $("nav-orders").classList.toggle("hidden", !isBuyer || isRoot);
     $("nav-requests").classList.toggle("hidden", !supplier);
     $("nav-more").classList.toggle("hidden", !supplier);
-    // retail customers don't see stock, so the in/out-of-stock filter is meaningless to them
-    $("filter-stock").classList.toggle("hidden", isRetail);
+    // retail customers now get chain availability too, so the "ready today" chip is useful to them
+    $("filter-stock").classList.remove("hidden");
     if (supplier){ subscribeSellerAlerts(); updateRequestBadge();
       if (window._deepReq){ window._deepReq = false; setTimeout(showRequests, 0); } // notification landed us here
     }
@@ -2495,15 +2515,15 @@
 
   // true / false / null(unknown) — mirrors the badge logic so the filter and the badge agree
   function stockState(idx){
-    var av = availOf(idx);
-    return (av === undefined) ? null : ((typeof av === "boolean") ? av : av > 0);
+    var s = stockClass(idx);
+    return s === "unknown" ? null : (s !== "none");
   }
-  // stock filter drops rows that don't match; "unknown" stock never matches an explicit in/out pick
+  // the chip now means "ships from my supplier today", the one thing a buyer in a hurry wants
   function passesStock(idx){
     var sv = $("filter-stock").value;
     if (!sv) return true;
-    var s = stockState(idx);
-    return sv === "in" ? s === true : s === false;
+    var s = stockClass(idx);
+    return sv === "in" ? s === "here" : s === "none";
   }
   function filteredRows(){
     var q = ($("search-box").value || "").trim().toLowerCase();
@@ -2606,19 +2626,23 @@
       var net = netRate(idx);
       var qty = state.cart[idx] || 0;
       var canAdd = (net !== null);
-      var av = availOf(idx); // number = quantity available; boolean = in/out (retail view)
-      var inStock = (av === undefined) ? null : ((typeof av === "boolean") ? av : av > 0);
+      var av = availOf(idx); // number = quantity at my supplier; boolean = in/out (retail view)
+      var sClass = stockClass(idx);
 
       var rateHtml = canAdd ? '<span class="rate">' + inr(net) + '</span>' : '<span class="rate na">Rate on request</span>';
-      if (inStock !== null){
-        var label = inStock
-          ? (typeof av === "number" ? av + ' available / उपलब्ध ' + av : 'In stock / स्टॉक में')
-          : 'Out of stock / स्टॉक नहीं';
-        rateHtml += ' <span class="stock-badge ' + (inStock ? 'stock-in' : 'stock-out') + '">' + label + '</span>';
+      if (sClass !== "unknown"){
+        var label, cls;
+        if (sClass === "here"){
+          cls = "stock-in";
+          label = (typeof av === "number") ? av + ' ready / तैयार ' + av : 'In stock / स्टॉक में';
+        } else if (sClass === "chain"){
+          cls = "stock-chain"; label = 'Available to order / मंगाया जा सकता है';
+        } else { cls = "stock-out"; label = 'Out of stock / स्टॉक नहीं'; }
+        rateHtml += ' <span class="stock-badge ' + cls + '">' + label + '</span>';
       }
 
-      // out-of-stock parts are never billable — any role can only record demand for them
-      var outOfStock = inStock === false;
+      // only a part nobody in the chain holds is unorderable — then we record demand instead
+      var outOfStock = sClass === "none";
       var canOrder = canAdd && !outOfStock;
       var controlsHtml;
       if (outOfStock){
@@ -2711,9 +2735,9 @@
       grand += lineTotal;
       // no role can check out an out-of-stock line — stale carts (added before it went OOS) still get blocked
       var outHtml = "";
-      var av = availOf(k);
-      var inStock = (av === undefined) ? true : ((typeof av === "boolean") ? av : av > 0);
-      if (!inStock){ hasOOS = true; outHtml = '<div style="color:var(--danger);font-size:12px;font-weight:700;margin-top:4px;">Out of stock / स्टॉक नहीं</div>'; }
+      var kClass = stockClass(k);
+      if (kClass === "none"){ hasOOS = true; outHtml = '<div style="color:var(--danger);font-size:12px;font-weight:700;margin-top:4px;">Out of stock / स्टॉक नहीं</div>'; }
+      else if (kClass === "chain"){ outHtml = '<div style="color:var(--warn-ink,#7a5b00);font-size:12px;font-weight:600;margin-top:4px;">Ordered in for you — takes a little longer / मंगाया जाएगा, थोड़ा समय लगेगा</div>'; }
       return '<div class="cart-item">' +
         '<div class="cart-item-top"><div>' +
             '<div class="cart-item-name">' + esc(nice(r.particular)) + '</div>' +
