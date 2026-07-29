@@ -183,6 +183,11 @@
   textarea{ min-height:88px; line-height:1.45; resize:vertical; font-family:inherit; }
   /* Collecting from the shop is a real answer, not an excuse to skip the field — without it a
      walk-in customer types "shop" into the address box and the courier data is poisoned. */
+  /* The lookup is a courtesy, not a verdict — it confirms a real place or admits it could not
+     tell. It never turns red, because a PIN the API does not know is not necessarily wrong. */
+  .pin-note{ font-size:12.5px; font-weight:600; line-height:1.5; margin:6px 2px 0; min-height:1px; }
+  .pin-note.ok{ color:var(--green-dark); }
+  .pin-note.warn{ color:var(--warn-ink); }
   .eu-pickup{ display:flex; align-items:center; gap:10px; min-height:44px; margin-top:10px;
     font-size:13px; color:var(--text); cursor:pointer; }
   .eu-pickup input{ width:20px; height:20px; flex:none; margin:0; }
@@ -999,6 +1004,7 @@
         placeholder="House / village, landmark, town&#10;घर / गाँव, पहचान, कस्बा"></textarea>
       <label class="field-label" for="eu-pin">PIN code / पिन कोड</label>
       <input type="text" id="eu-pin" inputmode="numeric" autocomplete="postal-code" maxlength="6" placeholder="6 digits / 6 अंक">
+      <div id="eu-pin-note" class="pin-note" role="status" aria-live="polite"></div>
       <label class="eu-pickup" for="eu-pickup">
         <input type="checkbox" id="eu-pickup">
         <span>I'll collect it from the shop / मैं दुकान से ले लूँगा</span>
@@ -1359,6 +1365,65 @@
 
   // The cart survives a reload but the name and phone beside it did not — on a patchy
   // connection that is the difference between finishing an order and giving up.
+  // ---------- PIN -> district, state (India Post) ----------
+  // A PIN is six digits a farmer types with one thumb, and until now any six digits passed. This
+  // resolves it to a real place so both sides can see the parcel is headed somewhere that exists.
+  // Rules it must obey, because this runs on a 2G phone in a field:
+  //   never block typing, never block checkout, and never fail loudly — an unresolved PIN is a
+  //   soft warning, not a wall. The API could be down; the customer's address still is not wrong.
+  var PIN_CACHE_KEY = "kg_pin_v1";
+  var _pinMem = null;
+  function pinCache(){
+    if (_pinMem) return _pinMem;
+    try { _pinMem = JSON.parse(localStorage.getItem(PIN_CACHE_KEY) || "{}"); } catch(e){ _pinMem = {}; }
+    return _pinMem;
+  }
+  function pinCachePut(pin, val){
+    var c = pinCache(); c[pin] = val;
+    // a shop serves a district or two; this never needs to grow unbounded
+    var keys = Object.keys(c);
+    if (keys.length > 60) delete c[keys[0]];
+    try { localStorage.setItem(PIN_CACHE_KEY, JSON.stringify(c)); } catch(e){}
+  }
+  // resolves to {district, state} | "notfound" | null (could not tell — offline, timeout, error)
+  function lookupPin(pin){
+    if (!/^[0-9]{6}$/.test(pin)) return Promise.resolve(null);
+    var hit = pinCache()[pin];
+    if (hit !== undefined) return Promise.resolve(hit);        // cached, so repeat + offline are instant
+    if (navigator.onLine === false) return Promise.resolve(null);
+    var ctl = null, t = null;
+    try { ctl = new AbortController(); t = setTimeout(function(){ ctl.abort(); }, 6000); } catch(e){}
+    return fetch("https://api.postalpincode.in/pincode/" + pin, ctl ? { signal: ctl.signal } : undefined)
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(j){
+        if (t) clearTimeout(t);
+        var d = j && j[0];
+        if (!d) return null;
+        if (d.Status !== "Success" || !(d.PostOffice || []).length){ pinCachePut(pin, "notfound"); return "notfound"; }
+        // every office under one PIN shares a district and state; the office name is too granular to use
+        var o = d.PostOffice[0];
+        var val = { district: o.District || "", state: o.State || "" };
+        pinCachePut(pin, val);
+        return val;
+      })
+      .catch(function(){ if (t) clearTimeout(t); return null; });  // offline / slow / blocked: say nothing
+  }
+  // one renderer for both the retail and the dealer note
+  function renderPinNote(el, pin, val){
+    if (!el) return;
+    if (!/^[0-9]{6}$/.test(pin)){ el.textContent = ""; el.className = "pin-note"; return; }
+    if (val && val !== "notfound"){
+      el.textContent = "✓ " + [val.district, val.state].filter(Boolean).join(", ");
+      el.className = "pin-note ok";
+    } else if (val === "notfound"){
+      el.textContent = "⚠ We could not find this PIN — please check it / यह पिन नहीं मिला, जाँच लें";
+      el.className = "pin-note warn";
+    } else {
+      el.textContent = "";   // could not reach the lookup; stay quiet rather than blame the user
+      el.className = "pin-note";
+    }
+  }
+
   // What a courier actually needs before a parcel can move. The gate, the "!" badge and the
   // amber warning each used to test something different — address-only — which is how every
   // party in production ended up with an address and no PIN, passing every check and still
@@ -1396,6 +1461,12 @@
       if ($("eu-pin") && !$("eu-pin").value) $("eu-pin").value = d.pin || "";
       if ($("eu-pickup")) $("eu-pickup").checked = !!d.pickup;
       applyPickupState();
+      // a returning customer's saved PIN confirms itself straight from cache, no network call
+      var savedPin = (($("eu-pin")||{}).value || "");
+      if (savedPin.length === 6) lookupPin(savedPin).then(function(v){
+        _euPlace = (v && v !== "notfound") ? v : null;
+        renderPinNote($("eu-pin-note"), savedPin, v);
+      });
     } catch(e){}
   }
   // hide the shipping fields when the customer says they will collect, so an address is never
@@ -1404,13 +1475,23 @@
     var box = $("eu-contact"); if (!box) return;
     box.classList.toggle("eu-ship-off", !!(($("eu-pickup")||{}).checked));
   }
+  var _euPlace = null;   // {district,state} resolved from the PIN, for the courier slip
   // one place that decides what the shop will see as the destination
   function euShipTo(){
     if (($("eu-pickup")||{}).checked) return "Collecting from the shop / दुकान से लेंगे";
     var a = (($("eu-addr")||{}).value || "").trim().replace(/\s+/g, " ");
     var pin = (($("eu-pin")||{}).value || "").replace(/\D/g, "");
     if (!a) return "";
-    return pin ? a + " - " + pin : a;
+    // District and state resolved from the PIN — what a courier reads first and what a farmer is
+    // least likely to write himself. Skip any part he already typed, so a Bhiwani address does
+    // not come out as "..., Bhiwani - Bhiwani, Haryana".
+    var lower = a.toLowerCase(), bits = [];
+    if (_euPlace){
+      [_euPlace.district, _euPlace.state].forEach(function(x){
+        if (x && lower.indexOf(x.toLowerCase()) === -1) bits.push(x);
+      });
+    }
+    return [a, bits.join(", "), pin].filter(Boolean).join(" - ");
   }
 
   function saveCart(){ try { localStorage.setItem(cartKey(), JSON.stringify(state.cart)); } catch(e){} }
@@ -2490,6 +2571,7 @@
       '<label class="m-lbl">Address / पता</label><input type="text" id="m-ad-addr" class="m-input" maxlength="300" placeholder="Shop no., street, landmark" value="'+esc(a.address||"")+'">'+
       '<div class="row2"><div><label class="m-lbl">City / शहर</label><input type="text" id="m-ad-city" class="m-input" value="'+esc(a.city||"")+'"></div>'+
         '<div><label class="m-lbl">PIN / पिन</label><input type="text" id="m-ad-pin" class="m-input" inputmode="numeric" maxlength="6" value="'+esc(a.pin||"")+'"></div></div>'+
+      '<div id="m-ad-pin-note" class="pin-note" role="status" aria-live="polite"></div>'+
       '<label class="m-lbl">Phone / फ़ोन</label><input type="text" id="m-ad-phone" class="m-input" inputmode="tel" maxlength="20" value="'+esc(a.phone||"")+'">'+
       '<label class="m-lbl">GSTIN <span style="color:var(--muted);font-weight:400;">— printed on your bills / बिल पर</span></label>'+
       '<input type="text" id="m-ad-gstin" class="m-input" maxlength="15" autocapitalize="characters" placeholder="08ABCDE1234F1Z5" value="'+esc(a.gstin||"")+'">'+
@@ -2845,6 +2927,26 @@
     };
     if ($("m-pay-qr")) $("m-pay-qr").onclick = function(){ billTargetOrder = 0; billTargetKind = "qr"; $("bill-file").click(); };
     // my delivery address — what upstream prints on the parcel
+    // PIN -> District fills the City field, but only when it is empty: a dealer who typed
+    // "Bhiwani City" or their own locality has said something more precise than the district,
+    // and silently overwriting a user's own words is worse than leaving the field alone.
+    if ($("m-ad-pin")){
+      var pinRun = function(){
+        var el = $("m-ad-pin");
+        var pin = (el.value || "").replace(/\D/g, "").slice(0, 6);
+        if (el.value !== pin) el.value = pin;
+        renderPinNote($("m-ad-pin-note"), pin, undefined);
+        if (pin.length !== 6) return;
+        lookupPin(pin).then(function(v){
+          if ((($("m-ad-pin") || {}).value || "") !== pin) return;   // they kept typing
+          renderPinNote($("m-ad-pin-note"), pin, v);
+          var city = $("m-ad-city");
+          if (v && v !== "notfound" && city && !city.value.trim()) city.value = v.district || "";
+        });
+      };
+      $("m-ad-pin").addEventListener("input", pinRun);
+      if (($("m-ad-pin").value || "").length === 6) pinRun();   // confirm a PIN already on file
+    }
     if ($("m-ad-save")) $("m-ad-save").onclick = async function(){
       var m = $("m-ad-msg"); m.className="req-msg";
       var addr = ($("m-ad-addr").value||"").trim(), city = ($("m-ad-city").value||"").trim(),
@@ -4375,6 +4477,20 @@
     $("auth-btn").onclick = doSignOut; // attached once here; updateAuthButton() only toggles visibility
     ["eu-name","eu-phone","eu-offer","eu-addr","eu-pin"].forEach(function(id){
       var el = $(id); if (el) el.addEventListener("input", saveEuContact);
+    });
+    if ($("eu-pin")) $("eu-pin").addEventListener("input", function(){
+      var pin = (this.value || "").replace(/\D/g, "").slice(0, 6);
+      if (this.value !== pin) this.value = pin;     // digits only, so a stray space cannot fail the test
+      _euPlace = null;
+      renderPinNote($("eu-pin-note"), pin, undefined);
+      if (pin.length !== 6) return;
+      lookupPin(pin).then(function(v){
+        // the field may have moved on while the request was in flight
+        if ((($("eu-pin") || {}).value || "") !== pin) return;
+        _euPlace = (v && v !== "notfound") ? v : null;
+        renderPinNote($("eu-pin-note"), pin, v);
+        saveEuContact();
+      });
     });
     if ($("eu-pickup")) $("eu-pickup").addEventListener("change", function(){
       applyPickupState(); saveEuContact();
