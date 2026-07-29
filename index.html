@@ -339,8 +339,11 @@
   nav.bottom-nav button.active{ color:var(--green-dark); }
   /* live count of orders waiting to be billed — the reason to open Requests */
   .nav-badge{
-    position:absolute; top:4px; left:50%; margin-left:4px; min-width:16px; height:16px; padding:0 4px;
-    background:var(--danger); color:#fff; border-radius:9px; font-size:10.5px; font-weight:700; line-height:16px; text-align:center;
+    position:absolute; top:2px; right:6px; left:auto;
+    min-width:17px; height:17px; padding:0 5px;
+    background:var(--danger); color:#fff; border-radius:11px;
+    font-size:10.5px; font-weight:700; line-height:17px; text-align:center;
+    font-variant-numeric:tabular-nums;
   }
   /* nav labels: English over Hindi, uniformly two lines so nothing wraps raggedly */
   nav.bottom-nav button .nl{ display:block; line-height:1.15; }
