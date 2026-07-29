@@ -516,6 +516,25 @@
   .m-btn{ width:100%; margin-top:12px; min-height:46px; border-radius:10px; font-weight:600; }
   .row2{ display:flex; gap:10px; }
   .row2 > div{ flex:1; min-width:0; }
+  /* product master form: the six steps ARE a sequence (what it is → what it fits → price →
+     how it's sold → parcel → notes), so the numbers carry real order, not decoration. */
+  /* two classes deep on purpose: `.more-sec > *:not(summary)` flattens every child's margin
+     to `0 14px`, which would eat the breathing room between steps. */
+  .more-sec > .pp-step{ display:flex; align-items:center; gap:8px; margin:20px 14px 2px; padding-top:14px;
+    border-top:1px solid var(--border); font-weight:700; font-size:14px; }
+  .more-sec > .pp-meter{ margin:12px 14px 0; }
+  .pp-step b{ display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px;
+    border-radius:50%; background:var(--green); color:#fff; font-size:12px; flex:none; }
+  .pp-meter{ font-size:12px; color:var(--muted); }
+  .pp-bar{ height:6px; border-radius:99px; background:var(--border); overflow:hidden; margin-bottom:4px; }
+  .pp-bar > i{ display:block; height:100%; width:0; border-radius:99px; background:var(--danger);
+    transition:width .3s cubic-bezier(.2,.8,.25,1), background-color .3s ease; }
+  .pp-bar > i.part{ background:var(--warn-border,#f0c96b); }
+  .pp-bar > i.full{ background:var(--green-dark); }
+  /* one calm line of hard facts under the part name — fitment first, because that is the
+     question a shopkeeper is actually asking before anything else */
+  .item-spec{ font-size:11.5px; color:var(--muted); margin-top:2px; line-height:1.45; }
+  .item-spec b{ color:var(--text); font-weight:600; }
   .badge-green, .badge-amber, .badge-red{ display:inline-block; border-radius:8px; padding:2px 8px; font-size:11px; font-weight:700; margin-bottom:3px; }
   .badge-green{ background:var(--green-light); color:var(--green-dark); }
   /* waiting is a warm state, not an inactive one — placed orders read amber until billed */
@@ -766,6 +785,7 @@
 </main>
 
 <input type="file" id="bill-file" accept="application/pdf,image/*" class="hidden" aria-hidden="true">
+<input type="file" id="pp-file" accept="image/*" class="hidden" aria-hidden="true">
 
 <nav class="bottom-nav hidden" id="bottom-nav">
   <button id="nav-catalog" class="active" aria-label="Shop / दुकान"><span class="ico" data-ico="home" aria-hidden="true"></span><span class="nl">Shop</span><span class="nl-hi">दुकान</span></button>
@@ -1180,11 +1200,34 @@
     var availP = state.enduser
       ? (sb ? sb.rpc("enduser_chain_availability", { p_supplier: state.enduser }) : Promise.resolve({ data: [] }))
       : (sb ? sb.rpc("chain_availability") : Promise.resolve({ data: [] }));
-    return Promise.all([catP, priceP, availP]).then(function(res){
+    // the importer's product master: HSN, fitment, pack size, photo — everything the PDF scrape
+    // never had, plus any part added after the static catalogue was built. Public read, so a
+    // retail customer on a shop link sees the same details a dealer does.
+    var detP = sb ? sb.rpc("product_details") : Promise.resolve({ data: [] });
+    return Promise.all([catP, priceP, availP, detP]).then(function(res){
       state.loading = false;
       // offline / fetch failure: keep whatever we hydrated from cache rather than blanking it
       if (res[0] === null){ if (!state._hydrated) { state.loadError = true; state.catalog = []; } }
       else { state.catalog = Array.isArray(res[0]) ? res[0] : []; }
+      // catalog.json carries no sku (it is the row position), but skuOptionsHtml and the
+      // product form both read row.sku — without this stamp every part <select> in the More
+      // tab submits an empty sku and the RPC behind it fails.
+      state.catalog.forEach(function(r, i){ if (r && !r.sku) r.sku = skuOf(i); });
+      // Overlay by sku, which IS the array index — so every existing photo, price and saved
+      // cart entry keeps pointing at the same part. New parts get skus past the last static
+      // row, i.e. they append; they never renumber anything that came before.
+      ((res[3] && res[3].data) || []).forEach(function(p){
+        var i = skuToIndex(p.sku); if (!(i >= 0)) return;
+        var base = state.catalog[i] || {};
+        var merged = {}; var kk;
+        for (kk in base) merged[kk] = base[kk];
+        for (kk in p) if (p[kk] !== null && p[kk] !== undefined) merged[kk] = p[kk];
+        merged.active = p.active; // the one field where false must survive the null-skip above
+        state.catalog[i] = merged;
+      });
+      // a sparse array would hand `undefined` rows to every map/filter downstream
+      for (var fi = 0; fi < state.catalog.length; fi++)
+        if (!state.catalog[fi]) state.catalog[fi] = { group:0, section:"", product_code:"", particular:"", active:false };
       state.priceByIndex = []; state.availByIndex = []; state.upstreamByIndex = [];
       ((res[1] && res[1].data) || []).forEach(function(p){ var i = skuToIndex(p.sku); if (i >= 0) state.priceByIndex[i] = (p.net_rate != null ? p.net_rate : p.mrp); });
       ((res[2] && res[2].data) || []).forEach(function(a){ var i = skuToIndex(a.sku); if (i < 0) return;
@@ -1934,6 +1977,66 @@
       '<div class="row2"><button class="btn-primary m-btn" id="m-store-copy">Copy link / कॉपी</button>'+
         '<button class="btn-soft m-btn" id="m-store-wa">Share on WhatsApp</button></div></details>';
 
+    // ---- product master: one standard form, so every part is described the same way ----
+    var grpOpts = Array.from(new Set((state.catalog||[]).map(function(r){ return r.group; })))
+      .filter(function(g){ return g != null && g !== 0; }).sort(function(a,b){ return a-b; })
+      .map(function(g){ return '<option value="'+esc(g)+'">'+esc(g+" · "+(GROUP_LABELS[g] || ("Group "+g)))+'</option>'; }).join("");
+    var secDatalist = Array.from(new Set((state.catalog||[]).map(function(r){ return r.section; })))
+      .filter(Boolean).sort().map(function(s){ return '<option value="'+esc(s)+'"></option>'; }).join("");
+    var uomOpts = [["Piece","Piece / नग"],["Set","Set / सेट"],["Pair","Pair / जोड़ी"],["Metre","Metre / मीटर"],
+                   ["Kilogram","Kilogram / किलो"],["Litre","Litre / लीटर"],["Box","Box / डिब्बा"],["Packet","Packet / पैकेट"]]
+      .map(function(u){ return '<option value="'+u[0]+'">'+esc(u[1])+'</option>'; }).join("");
+    var gstOpts = [0,5,12,18,28].map(function(g){ return '<option value="'+g+'">'+g+'%</option>'; }).join("");
+
+    var secProduct = !isImporter ? '' : '<details class="more-sec" id="m-pp-sec"><summary>Parts catalogue — पुर्ज़ों की सूची'+
+      '<span class="ms-hint">Add a new part, or complete an old one / नया पुर्ज़ा जोड़ें</span></summary>'+
+      '<p class="more-hint">Whatever you write here is what every dealer, shopkeeper and farmer below you will see. Fill it once, properly, and nobody has to phone you to ask.</p>'+
+      '<label class="m-lbl">Which part? / कौन सा पुर्ज़ा</label>'+
+      '<input type="search" id="m-pp-find" class="m-input" placeholder="Type a code or name to open an old part…" autocomplete="off">'+
+      '<select id="m-pp-pick" class="m-input"><option value="">➕ Add a brand-new part / नया पुर्ज़ा</option>'+skuOpts+'</select>'+
+      '<div class="pp-meter"><div class="pp-bar"><i id="m-pp-fill"></i></div><span id="m-pp-count"></span></div>'+
+
+      '<div class="pp-step"><b>1</b> What is it? / यह क्या है</div>'+
+      '<div class="row2"><div><label class="m-lbl">Part code *</label><input type="text" id="m-pp-code" class="m-input" placeholder="SP-001" autocapitalize="characters" maxlength="40"></div>'+
+        '<div><label class="m-lbl">Brand / make</label><input type="text" id="m-pp-brand" class="m-input" placeholder="e.g. KrishiGears" maxlength="60"></div></div>'+
+      '<label class="m-lbl">Name in English *</label><input type="text" id="m-pp-name" class="m-input" placeholder="GEAR CASE 28MM 9T" maxlength="120">'+
+      '<label class="m-lbl">Name in Hindi / हिंदी नाम</label><input type="text" id="m-pp-hindi" class="m-input" placeholder="गियर केस 28 मिमी" maxlength="120">'+
+      '<div class="row2"><div><label class="m-lbl">Category *</label><select id="m-pp-group" class="m-input">'+grpOpts+'</select></div>'+
+        '<div><label class="m-lbl">Section *</label><input type="text" id="m-pp-section" class="m-input" list="m-pp-sections" placeholder="Brush Cutter Parts" maxlength="80"></div></div>'+
+      '<datalist id="m-pp-sections">'+secDatalist+'</datalist>'+
+      '<div class="row2" style="margin-top:10px;align-items:center;"><button type="button" class="btn-soft m-btn" id="m-pp-photo-btn" style="margin-top:0;">Add a photo / फ़ोटो लगाएँ</button>'+
+        '<div id="m-pp-photo-wrap"></div></div>'+
+
+      '<div class="pp-step"><b>2</b> What does it fit? / किस मशीन में लगेगा</div>'+
+      '<p class="more-hint">This is the first thing any shopkeeper asks. Write the machines in plain words.</p>'+
+      '<label class="m-lbl">Fits these machines</label><input type="text" id="m-pp-fits" class="m-input" placeholder="Brush cutter 28mm 9T, BC-520" maxlength="200">'+
+      '<label class="m-lbl">Old / OEM part numbers <span style="color:var(--muted);font-weight:400;">— so it is found by the number on the broken part</span></label>'+
+      '<input type="text" id="m-pp-oem" class="m-input" placeholder="4179-4152, GB-2214" maxlength="200">'+
+
+      '<div class="pp-step"><b>3</b> Price &amp; tax / क़ीमत और टैक्स</div>'+
+      '<div class="row2"><div><label class="m-lbl">Your base price ₹ *</label><input type="number" id="m-pp-base" class="m-input" min="1" step="0.01" inputmode="decimal"></div>'+
+        '<div><label class="m-lbl">Printed MRP ₹</label><input type="number" id="m-pp-mrp" class="m-input" min="0" step="0.01" inputmode="decimal"></div></div>'+
+      '<p class="more-hint">Base price is yours. Every tier below adds its own margin on top automatically — you never set their prices.</p>'+
+      '<div class="row2"><div><label class="m-lbl">HSN code</label><input type="text" id="m-pp-hsn" class="m-input" inputmode="numeric" maxlength="8" placeholder="84329010"></div>'+
+        '<div><label class="m-lbl">GST %</label><select id="m-pp-gst" class="m-input"><option value="">— not set —</option>'+gstOpts+'</select></div></div>'+
+
+      '<div class="pp-step"><b>4</b> How is it sold? / कैसे बिकता है</div>'+
+      '<div class="row2"><div><label class="m-lbl">Sold as</label><select id="m-pp-uom" class="m-input"><option value="">— not set —</option>'+uomOpts+'</select></div>'+
+        '<div><label class="m-lbl">Pieces in one pack</label><input type="number" id="m-pp-pack" class="m-input" min="1" inputmode="numeric" placeholder="1"></div></div>'+
+      '<label class="m-lbl">Smallest order allowed</label><input type="number" id="m-pp-moq" class="m-input" min="1" inputmode="numeric" placeholder="1">'+
+
+      '<div class="pp-step"><b>5</b> Parcel details / पार्सल</div>'+
+      '<p class="more-hint">Used to work out courier charges before anything is packed.</p>'+
+      '<div class="row2"><div><label class="m-lbl">Weight (grams)</label><input type="number" id="m-pp-weight" class="m-input" min="0" inputmode="numeric" placeholder="850"></div>'+
+        '<div><label class="m-lbl">Size L×W×H cm</label><input type="text" id="m-pp-dims" class="m-input" placeholder="12x8x8" maxlength="30"></div></div>'+
+      '<label class="m-lbl">Country of origin</label><input type="text" id="m-pp-origin" class="m-input" placeholder="China / India" maxlength="60">'+
+
+      '<div class="pp-step"><b>6</b> Anything else / और कुछ</div>'+
+      '<input type="text" id="m-pp-notes" class="m-input" placeholder="e.g. comes with bolts" maxlength="200">'+
+      '<label class="m-lbl" style="display:flex;align-items:center;gap:8px;margin:12px 14px 0;">'+
+        '<input type="checkbox" id="m-pp-active" checked style="width:18px;height:18px;flex:none;"> Show this part in the shop / दुकान में दिखाएँ</label>'+
+      '<button class="btn-primary m-btn" id="m-pp-save">Save part / सहेजें</button><div class="req-msg" id="m-pp-msg"></div></details>';
+
     var secApprovals = !isImporter ? '' : '<details class="more-sec"><summary>Pending registrations — पंजीकरण<span class="ms-badge hidden" id="m-badge-appr">0</span>'+
       '<span class="ms-hint">Approve new signups / नए पंजीकरण स्वीकृत करें</span></summary>'+
       '<div id="m-approvals-card"><div style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</div></div></details>';
@@ -1942,7 +2045,7 @@
     html += secTransfer + secCustOrder;
     html += '<div class="more-group">My shop / मेरी दुकान</div>' + secAddress + secLink + secPrice + secPay;
     if (secAddDealer || secApprovals) html += '<div class="more-group">My network / मेरा नेटवर्क</div>' + secAddDealer + secApprovals;
-    if (isImporter) html += '<div class="more-group">Importer tools / इम्पोर्टर</div>' + secExternal + secCorrect;
+    if (isImporter) html += '<div class="more-group">Importer tools / इम्पोर्टर</div>' + secProduct + secExternal + secCorrect;
 
     html += '<button class="more-link more-signout" id="more-signout">Sign out / साइन आउट</button>';
     $("more-body").innerHTML = html;
@@ -2140,6 +2243,137 @@
       window.open("https://wa.me/?text="+encodeURIComponent("Order farm spare parts here: "+storeLink()), "_blank");
     };
     if (isImporter){ renderMoreApprovals(); var ac = $("m-approvals-card"); if (ac) ac.addEventListener("click", onApprovalsClick); }
+    if (isImporter) wireProductForm();
+  }
+
+  // ---------- product master form (importer only) ----------
+  // Every field is one column of the standard. The meter counts them so "half-described" is
+  // visible instead of silent — an unfilled HSN only shows up as a problem at billing time.
+  var PP_TEXT = ["m-pp-code","m-pp-name","m-pp-hindi","m-pp-brand","m-pp-section","m-pp-fits","m-pp-oem",
+                 "m-pp-hsn","m-pp-dims","m-pp-origin"];
+  var PP_NUM  = ["m-pp-base","m-pp-mrp","m-pp-pack","m-pp-moq","m-pp-weight"];
+  var PP_SEL  = ["m-pp-group","m-pp-gst","m-pp-uom"];
+  var PP_ALL  = PP_TEXT.concat(PP_NUM, PP_SEL);
+  var _ppPhoto = null, _ppCost = null;
+
+  async function wireProductForm(){
+    var pick = $("m-pp-pick"); if (!pick) return;
+    _ppPhoto = null;
+    // The base price must be the raw dealer_rate, NOT netRate(): the importer's own prices are
+    // already marked up by their chain multiplier, so prefilling from netRate would re-inflate
+    // the stored base by that multiple on every single edit.
+    if (!_ppCost){
+      _ppCost = {};
+      var cr = await sb.from("catalog_cost").select("sku, dealer_rate").range(0, 99999);
+      ((cr && cr.data) || []).forEach(function(c){ _ppCost[c.sku] = c.dealer_rate; });
+    }
+
+    function drawPhoto(){
+      var w = $("m-pp-photo-wrap"); if (!w) return;
+      w.innerHTML = _ppPhoto
+        ? '<img src="'+esc(_ppPhoto)+'" alt="Photo of this part" style="height:46px;width:46px;object-fit:cover;border-radius:10px;border:1px solid var(--border);display:block;">'
+        : '<span style="color:var(--muted);font-size:12px;">No photo yet / फ़ोटो नहीं</span>';
+    }
+    function score(){
+      var n = PP_ALL.filter(function(id){ var e = $(id); return e && String(e.value||"").trim() !== ""; }).length + (_ppPhoto ? 1 : 0);
+      var tot = PP_ALL.length + 1;
+      var bar = $("m-pp-fill"), lbl = $("m-pp-count");
+      if (bar){ bar.style.width = Math.round(n*100/tot) + "%"; bar.className = n === tot ? "full" : (n >= Math.ceil(tot*0.6) ? "part" : ""); }
+      if (lbl) lbl.textContent = n + " of " + tot + " details filled / " + n + " भरे" + (n === tot ? " ✓" : "");
+    }
+    PP_ALL.forEach(function(id){ var e = $(id); if (e){ e.oninput = score; e.onchange = score; } });
+
+    function fill(sku){
+      var r = sku ? state.catalog[skuToIndex(sku)] : null;
+      var set = function(id, v){ var e = $(id); if (e) e.value = (v === null || v === undefined) ? "" : String(v); };
+      set("m-pp-code", r && r.product_code); set("m-pp-name", r && r.particular);
+      set("m-pp-hindi", r && r.hindi_name);  set("m-pp-brand", r && r.brand);
+      // a blank <select> would post group 0 and file the part where nobody browses — a brand-new
+      // part starts on the first real category instead, and the importer changes it if wrong
+      if (r && r.group) set("m-pp-group", r.group); else $("m-pp-group").selectedIndex = 0;
+      set("m-pp-section", r && r.section);
+      set("m-pp-fits", r && r.fits);         set("m-pp-oem", r && r.oem_refs);
+      set("m-pp-base", r ? _ppCost[sku] : "");
+      set("m-pp-mrp", r && r.mrp);           set("m-pp-hsn", r && r.hsn);
+      set("m-pp-gst", r && r.gst_pct);       set("m-pp-uom", r && r.uom);
+      set("m-pp-pack", r && r.pack_size);    set("m-pp-moq", r && r.moq);
+      set("m-pp-weight", r && r.weight_g);   set("m-pp-dims", r && r.dims_cm);
+      set("m-pp-origin", r && r.origin);     set("m-pp-notes", r && r.notes);
+      $("m-pp-active").checked = !r || r.active !== false;
+      _ppPhoto = (r && r.photo_url) || null;
+      drawPhoto(); score();
+      var m = $("m-pp-msg"); m.className = "req-msg"; m.textContent = "";
+    }
+    pick.onchange = function(){ fill(this.value); };
+
+    var find = $("m-pp-find");
+    if (find) find.oninput = function(){
+      var q = this.value.trim().toLowerCase();
+      var list = q ? (state.catalog||[]).filter(function(c){
+        return ((c.product_code||"")+" "+(c.particular||"")+" "+(c.hindi_name||"")).toLowerCase().indexOf(q) !== -1;
+      }).slice(0,200) : (state.catalog||[]);
+      var keep = pick.value;
+      pick.innerHTML = '<option value="">➕ Add a brand-new part / नया पुर्ज़ा</option>' + skuOptionsHtml(list);
+      pick.value = keep; if (pick.value !== keep) pick.value = "";
+    };
+
+    $("m-pp-photo-btn").onclick = function(){ $("pp-file").click(); };
+    $("pp-file").onchange = async function(){
+      var file = this.files && this.files[0]; this.value = "";
+      if (!file) return;
+      if (file.size > 5*1024*1024){ showToast("Photo too large (max 5MB) / फ़ोटो बहुत बड़ी"); return; }
+      showToast("Uploading photo… / फ़ोटो जा रही है");
+      var ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      // storage policy only lets you write inside your own uid folder — same rule as bills
+      var uid = (state.session && state.session.id) || "anon";
+      var path = uid + "/part-" + (crypto.randomUUID ? crypto.randomUUID() : Date.now()) + "." + ext;
+      var up = await sb.storage.from("bills").upload(path, file, { upsert:false });
+      if (up.error){ showToast(friendlyErr(up.error)); return; }
+      var pub = sb.storage.from("bills").getPublicUrl(path);
+      _ppPhoto = pub.data && pub.data.publicUrl;
+      drawPhoto(); score();
+      showToast("Photo added ✓ — now tap Save part / फ़ोटो लग गई");
+    };
+
+    $("m-pp-save").onclick = async function(){
+      var m = $("m-pp-msg"); m.className = "req-msg";
+      var val = function(id){ return (($(id)||{}).value || "").trim(); };
+      var num = function(id){ var v = val(id); return v === "" ? null : Number(v); };
+      var code = val("m-pp-code"), name = val("m-pp-name"), hsn = val("m-pp-hsn");
+      var fail = function(t){ m.className = "req-msg err"; m.textContent = t; };
+      if (!code) return fail("Part code is needed — it is what everyone orders by. / पार्ट कोड ज़रूरी है।");
+      if (!name) return fail("Give the part a name in English. / अंग्रेज़ी नाम भरें।");
+      if (!val("m-pp-section")) return fail("Pick or type a section. / सेक्शन भरें।");
+      if (!(num("m-pp-base") > 0)) return fail("Base price must be more than ₹0. / आधार मूल्य भरें।");
+      if (hsn && !/^[0-9]{4}([0-9]{2}([0-9]{2})?)?$/.test(hsn)) return fail("HSN must be 4, 6 or 8 digits. / HSN 4, 6 या 8 अंकों का।");
+
+      var isNew = !pick.value;
+      this.disabled = true; m.textContent = "Saving… / सहेजा जा रहा है…";
+      var r = await sb.rpc("save_product", {
+        p_sku: pick.value || null, p_code: code, p_name: name, p_hindi: val("m-pp-hindi") || null,
+        p_group: Number(val("m-pp-group")), p_section: val("m-pp-section"),
+        p_brand: val("m-pp-brand") || null, p_fits: val("m-pp-fits") || null, p_oem: val("m-pp-oem") || null,
+        p_base: num("m-pp-base"), p_mrp: num("m-pp-mrp"), p_hsn: hsn || null, p_gst: num("m-pp-gst"),
+        p_uom: val("m-pp-uom") || null, p_pack: num("m-pp-pack"), p_moq: num("m-pp-moq"),
+        p_weight: num("m-pp-weight"), p_dims: val("m-pp-dims") || null, p_origin: val("m-pp-origin") || null,
+        p_photo: _ppPhoto, p_notes: val("m-pp-notes") || null, p_active: $("m-pp-active").checked
+      });
+      this.disabled = false;
+      if (r.error) return fail(friendlyErr(r.error));
+
+      var sku = r.data;
+      _ppCost[sku] = num("m-pp-base");
+      // pull the master back so the shop, the search index and this form all agree immediately
+      await loadData(); populateFilters(); renderCatalogBody();
+      pick.innerHTML = '<option value="">➕ Add a brand-new part / नया पुर्ज़ा</option>' + skuOptionsHtml(state.catalog || []);
+      pick.value = sku; fill(sku);
+      m.className = "req-msg";
+      m.textContent = isNew ? "✓ " + code + " added — it is on the shelf now, at every tier. / जुड़ गया।"
+                            : "✓ " + code + " updated everywhere. / सब जगह अपडेट हो गया।";
+      showToast(isNew ? "Part added ✓ / पुर्ज़ा जुड़ा" : "Part updated ✓ / अपडेट हुआ");
+    };
+
+    fill("");
   }
 
   var _moreStock = [];
@@ -2493,9 +2727,12 @@
   }
 
   // ---------- filters ----------
+  // A part the importer has switched off stays in the array (skus are indexes) but disappears
+  // from every list — nobody downstream can browse, search or order it.
+  function listable(r){ return !!r && r.active !== false; }
   function populateFilters(){
     var groupSel = $("filter-group"), prevGroup = groupSel.value;
-    var groupsPresent = Array.from(new Set(state.catalog.map(function(r){ return r.group; }))).sort();
+    var groupsPresent = Array.from(new Set(state.catalog.filter(listable).map(function(r){ return r.group; }))).sort();
     groupSel.innerHTML = '<option value="">All Groups</option>' + groupsPresent.map(function(g){
       return '<option value="' + esc(g) + '">' + esc((g + " · ") + (GROUP_LABELS[g] || ("Group " + g))) + '</option>';
     }).join("");
@@ -2505,7 +2742,7 @@
   function refreshSectionOptions(){
     var sectionSel = $("filter-section"), prevSection = sectionSel.value;
     var groupVal = $("filter-group").value;
-    var rows = state.catalog.filter(function(r){ return !groupVal || String(r.group) === groupVal; });
+    var rows = state.catalog.filter(function(r){ return listable(r) && (!groupVal || String(r.group) === groupVal); });
     var sections = Array.from(new Set(rows.map(function(r){ return r.section; }))).sort();
     sectionSel.innerHTML = '<option value="">All Sections</option>' + sections.map(function(s){
       return '<option value="' + esc(s) + '">' + esc(s) + '</option>';
@@ -2514,6 +2751,21 @@
   }
 
   // true / false / null(unknown) — mirrors the badge logic so the filter and the badge agree
+  // What a buyer actually needs to decide, in the order they need it: does it fit my machine,
+  // how does it come, who made it. Everything else (HSN, weight, MRP) belongs on the bill and
+  // the parcel, not on a browsing tile — so it is captured but not shown here.
+  function specLine(r){
+    if (!r) return "";
+    var bits = [];
+    if (r.fits)  bits.push('Fits / लगेगा: <b>' + esc(r.fits) + '</b>');
+    if (r.uom && (r.pack_size > 1)) bits.push('<b>' + esc(r.uom) + ' of ' + r.pack_size + '</b>');
+    else if (r.uom && r.uom !== "Piece") bits.push('Sold as <b>' + esc(r.uom) + '</b>');
+    if (r.moq > 1) bits.push('Min <b>' + r.moq + '</b>');
+    if (r.brand) bits.push(esc(r.brand));
+    if (!bits.length) return "";
+    return '<div class="item-spec">' + bits.join(' &middot; ') + '</div>';
+  }
+
   function stockState(idx){
     var s = stockClass(idx);
     return s === "unknown" ? null : (s !== "none");
@@ -2534,7 +2786,12 @@
         .map(function(row, idx){ return {row: row, idx: idx}; })
         .filter(function(o){
           var r = o.row;
-          var hay = (String(r.product_code || "") + " " + String(r.particular || "") + " " + String(r.sr_no || "")).toLowerCase();
+          if (!listable(r)) return false;
+          // the importer's extra fields are searchable too: a shopkeeper who only knows the
+          // Hindi name, the machine it fits, or the OEM number off the old part still finds it
+          var hay = (String(r.product_code || "") + " " + String(r.particular || "") + " " + String(r.sr_no || "") + " " +
+                     String(r.hindi_name || "") + " " + String(r.fits || "") + " " + String(r.oem_refs || "") + " " +
+                     String(r.brand || "")).toLowerCase();
           return hay.indexOf(q) !== -1 && passesStock(o.idx);
         });
     }
@@ -2543,6 +2800,7 @@
       .map(function(row, idx){ return {row: row, idx: idx}; })
       .filter(function(o){
         var r = o.row;
+        if (!listable(r)) return false;
         if (groupVal && String(r.group) !== groupVal) return false;
         if (sectionVal && r.section !== sectionVal) return false;
         return passesStock(o.idx);
@@ -2670,6 +2928,8 @@
         '<div class="item-top"><span class="item-code">' + code + '</span>' +
           '<span class="badge">' + esc(r.section || "") + '</span></div>' +
         '<div class="item-particular">' + esc(nice(r.particular)) + '</div>' +
+        (r.hindi_name ? '<div class="item-particular" style="font-weight:500;">' + esc(r.hindi_name) + '</div>' : '') +
+        specLine(r) +
         '<div class="item-bottom">' + rateHtml +
           '<div class="item-controls">' +
             '<button class="diagram-btn" type="button" data-diagram="' + idx + '">' + svgIco("page") + 'Catalog page</button>' +
@@ -2765,7 +3025,11 @@
   // swaps the img for a calm group-icon placeholder — never a misleading page crop.
   // pageScan is the full catalogue page, still reachable via the "Catalog page" button.
   function pageScan(r){ return "pages/g" + r.group + "/p-" + pad2(r.pdf_page) + ".jpg"; }
-  function partPhoto(idx){ return "pages/parts/i" + idx + ".jpg"; }
+  // a photo the importer uploaded for this part wins over the crop extracted from the PDF page
+  function partPhoto(idx){
+    var r = state.catalog[idx];
+    return (r && r.photo_url) || ("pages/parts/i" + idx + ".jpg");
+  }
 
   function buildPI(){
     var now = new Date();
