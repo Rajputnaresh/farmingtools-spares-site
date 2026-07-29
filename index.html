@@ -1652,8 +1652,11 @@
     var r2 = await sb.from("enduser_orders").select("*").eq("supplier_party", mine).eq("status", "placed").order("created_at", { ascending:false });
     var eu = (r2.data) || [];
     // my current stock — used only to detect if I'm short (→ offer to forward the whole order up)
-    var stkR = await sb.from("current_stock").select("sku, qty").eq("party_id", mine);
-    var haveMap = {}; ((stkR && stkR.data) || []).forEach(function(x){ haveMap[x.sku] = x.qty; });
+    // Same 1000-row API cap as loadData: the importer holds ~1745 SKUs, so a direct select
+    // truncated this map and reported "you are short" on 745 parts that were actually on the
+    // shelf — offering to forward orders upward that could have been filled here.
+    var stkR = await sb.rpc("my_stock_json");
+    var haveMap = {}; ((stkR && stkR.data) || []).forEach(function(x){ if (x.party_id === mine) haveMap[x.sku] = x.qty; });
     // which incoming orders have I ALREADY forwarded upward? a forward creates one of MY orders
     // whose source_order_id points back at the request — so the Forward button can't double-fire.
     var fwdR = await sb.from("orders").select("source_kind, source_order_id").eq("dealer_party", mine).not("source_order_id", "is", null).neq("status","rejected");
@@ -2035,6 +2038,7 @@
       '<label class="m-lbl">Country of origin</label><input type="text" id="m-pp-origin" class="m-input" placeholder="China / India" maxlength="60">'+
 
       '<div class="pp-step"><b>6</b> Anything else / और कुछ</div>'+
+      '<p class="more-hint">A note for buyers — everyone down the chain can read it, so keep cost or supplier details out of here.</p>'+
       '<input type="text" id="m-pp-notes" class="m-input" placeholder="e.g. comes with bolts" maxlength="200">'+
       '<label class="m-lbl" style="display:flex;align-items:center;gap:8px;margin:12px 14px 0;">'+
         '<input type="checkbox" id="m-pp-active" checked style="width:18px;height:18px;flex:none;"> Show this part in the shop / दुकान में दिखाएँ</label>'+
@@ -2246,7 +2250,10 @@
       window.open("https://wa.me/?text="+encodeURIComponent("Order farm spare parts here: "+storeLink()), "_blank");
     };
     if (isImporter){ renderMoreApprovals(); var ac = $("m-approvals-card"); if (ac) ac.addEventListener("click", onApprovalsClick); }
-    if (isImporter) wireProductForm();
+    // async: a failed cost fetch must not take the rest of the More tab down with it
+    if (isImporter) wireProductForm().catch(function(e){
+      var m = $("m-pp-msg"); if (m){ m.className = "req-msg err"; m.textContent = friendlyErr(e); }
+    });
   }
 
   // ---------- product master form (importer only) ----------
@@ -2761,8 +2768,12 @@
     if (!r) return "";
     var bits = [];
     if (r.fits)  bits.push('Fits / लगेगा: <b>' + esc(r.fits) + '</b>');
-    if (r.uom && (r.pack_size > 1)) bits.push('<b>' + esc(r.uom) + ' of ' + r.pack_size + '</b>');
-    else if (r.uom && r.uom !== "Piece") bits.push('Sold as <b>' + esc(r.uom) + '</b>');
+    // "Set of 4" reads right; "Piece of 4" does not — a pack of loose pieces needs its own phrasing
+    if (r.pack_size > 1){
+      bits.push(r.uom && r.uom !== "Piece"
+        ? '<b>' + esc(r.uom) + ' of ' + r.pack_size + '</b>'
+        : '<b>Pack of ' + r.pack_size + '</b>');
+    } else if (r.uom && r.uom !== "Piece") bits.push('Sold as <b>' + esc(r.uom) + '</b>');
     if (r.moq > 1) bits.push('Min <b>' + r.moq + '</b>');
     if (r.brand) bits.push(esc(r.brand));
     if (!bits.length) return "";
