@@ -943,7 +943,32 @@
       upi: s.upi_id || "", qr: s.bank_qr_url || "" };
   }
   var PI_VALID_DAYS = 15;
-  var GST_PCT = 5;          // GST added on top of the subtotal at checkout (PI).
+  var GST_PCT = 5;          // fallback when a part has no HSN/GST captured yet
+  // GST is a property of the PART (its HSN), not of the order. Until the importer fills one
+  // in, gst_pct is null and the line keeps the old flat 5% — so this changes nothing for an
+  // undescribed catalogue and becomes correct the moment a rate is set.
+  // "GST @ 18%" when every line shares a rate; just "GST" when they differ — never "@ null%"
+  function gstHead(pi){ return pi && pi.gstPct != null ? "GST @ " + pi.gstPct + "%" : "GST"; }
+  function gstFoot(pi){ return pi && pi.gstPct != null ? "Total includes " + pi.gstPct + "% GST. "
+                                                      : "Total includes GST at each part's own rate. "; }
+  function gstFootHi(pi){ return pi && pi.gstPct != null ? "कुल में " + pi.gstPct + "% GST शामिल है।"
+                                                        : "कुल में हर पुर्ज़े की अपनी GST दर शामिल है।"; }
+  function gstPctOf(idx){
+    var r = state.catalog[idx];
+    var g = r && r.gst_pct;
+    return (g === null || g === undefined || isNaN(Number(g))) ? GST_PCT : Number(g);
+  }
+  // returns { gst, mixed } — mixed tells the UI whether one rate can be named on the bill
+  function gstOnCart(){
+    var total = 0, rates = {};
+    Object.keys(state.cart).forEach(function(k){
+      var q = state.cart[k] || 0; if (!q) return;
+      var rate = netRate(k) || 0, pct = gstPctOf(k);
+      total += rate * q * pct / 100; rates[pct] = true;
+    });
+    var keys = Object.keys(rates);
+    return { gst: Math.round(total), mixed: keys.length > 1, only: keys.length === 1 ? Number(keys[0]) : null };
+  }
   var FALLBACK_MARGIN_PCT = 20; // used only if roles/account data is somehow missing
   var RENDER_CHUNK = 150;   // cap DOM nodes; "Show more" appends another chunk
 
@@ -1189,6 +1214,27 @@
   window.thumbFail = thumbFail;
   function inr(n){ return "₹" + Number(n).toLocaleString("en-IN"); }
 
+  // The cart survives a reload but the name and phone beside it did not — on a patchy
+  // connection that is the difference between finishing an order and giving up.
+  function euContactKey(){ return "kg_eu_contact:" + (state.enduser || "guest"); }
+  function saveEuContact(){
+    if (!state.enduser) return;
+    try {
+      localStorage.setItem(euContactKey(), JSON.stringify({
+        name: (($("eu-name")||{}).value || ""), phone: (($("eu-phone")||{}).value || ""),
+        offer: (($("eu-offer")||{}).value || "")
+      }));
+    } catch(e){}
+  }
+  function loadEuContact(){
+    if (!state.enduser) return;
+    try {
+      var d = JSON.parse(localStorage.getItem(euContactKey()) || "null"); if (!d) return;
+      if ($("eu-name") && !$("eu-name").value) $("eu-name").value = d.name || "";
+      if ($("eu-phone") && !$("eu-phone").value) $("eu-phone").value = d.phone || "";
+      if ($("eu-offer") && !$("eu-offer").value) $("eu-offer").value = d.offer || "";
+    } catch(e){}
+  }
   function saveCart(){ try { localStorage.setItem(cartKey(), JSON.stringify(state.cart)); } catch(e){} }
   function loadCart(){
     try { var raw = localStorage.getItem(cartKey()); state.cart = raw ? JSON.parse(raw) : {}; }
@@ -1612,7 +1658,7 @@
     $("nav-requests").classList.toggle("hidden", !supplier);
     $("nav-more").classList.toggle("hidden", !supplier);
     // retail customers now get chain availability too, so the "ready today" chip is useful to them
-    $("filter-stock").classList.remove("hidden");
+    $("filter-stock").classList.remove("hidden"); // visibility is then decided per list, below
     if (supplier){ subscribeSellerAlerts(); updateRequestBadge();
       if (window._deepReq){ window._deepReq = false; setTimeout(showRequests, 0); } // notification landed us here
     }
@@ -1848,8 +1894,8 @@
     var fwdSet = {}; ((fwdR && fwdR.data) || []).forEach(function(x){ fwdSet[x.source_kind + ":" + x.source_order_id] = true; });
     var lineIds = ords.map(function(o){ return o.id; });
     var euIds = eu.map(function(o){ return o.id; });
-    var oLines = lineIds.length ? ((await sb.from("order_lines").select("order_id,sku,qty,rate,amount,list_rate").in("order_id", lineIds)).data || []) : [];
-    var eLines = euIds.length ? ((await sb.from("enduser_order_lines").select("order_id,sku,qty").in("order_id", euIds)).data || []) : [];
+    var oLines = lineIds.length ? (((await sb.rpc("order_lines_json", { p_ids: lineIds })).data) || []) : [];
+    var eLines = euIds.length ? (((await sb.rpc("enduser_order_lines_json", { p_ids: euIds })).data) || []) : [];
     var byO = {}; oLines.forEach(function(l){ (byO[l.order_id]=byO[l.order_id]||[]).push(l); });
     var byE = {}; eLines.forEach(function(l){ (byE[l.order_id]=byE[l.order_id]||[]).push(l); });
     // party names for "from <dealer>"
@@ -1942,8 +1988,8 @@
       var dispTotal = bd.length + be.length;
       // what actually goes in the box — the packer needs the parts, not just a total
       var dIds = bd.map(function(o){ return o.id; }), eIds = be.map(function(o){ return o.id; });
-      var dLines = dIds.length ? (((await sb.from("order_lines").select("order_id,sku,qty,rate,amount").in("order_id", dIds)).data) || []) : [];
-      var eLines = eIds.length ? (((await sb.from("enduser_order_lines").select("order_id,sku,qty,rate,amount").in("order_id", eIds)).data) || []) : [];
+      var dLines = dIds.length ? (((await sb.rpc("order_lines_json", { p_ids: dIds })).data) || []) : [];
+      var eLines = eIds.length ? (((await sb.rpc("enduser_order_lines_json", { p_ids: eIds })).data) || []) : [];
       var linesBy = {};
       dLines.forEach(function(l){ (linesBy["dealer:"+l.order_id] = linesBy["dealer:"+l.order_id] || []).push(l); });
       eLines.forEach(function(l){ (linesBy["enduser:"+l.order_id] = linesBy["enduser:"+l.order_id] || []).push(l); });
@@ -3215,6 +3261,18 @@
   }
 
   // ---------- catalog body: browse landing OR list ----------
+  // Show the "Ready today" chip only where it does something. With a well-stocked importer
+  // almost everything is orderable, so the chip was filtering out a single part of 1746 while
+  // occupying the most valuable row on the screen.
+  function syncStockChip(rows){
+    var chip = $("filter-stock"); if (!chip) return;
+    if (chip.value){ chip.classList.remove("hidden"); return; }   // never hide an active filter
+    var here = 0, n = rows.length;
+    for (var i = 0; i < n; i++) if (stockClass(rows[i].idx) === "here") here++;
+    var useful = n >= 8 && here >= 1 && (n - here) >= 3;
+    chip.classList.toggle("hidden", !useful);
+  }
+
   function renderCatalogBody(){
     paintHindi();
     var body = $("catalog-body");
@@ -3268,6 +3326,7 @@
   function renderList(body){
     var rows = filteredRows();
     var total = rows.length;
+    syncStockChip(rows);
     var shown = rows.slice(0, state.renderLimit);
 
     var q = ($("search-box").value || "").trim();
@@ -3314,8 +3373,9 @@
       if (outOfStock){
         controlsHtml = '<button class="add-btn demand-btn" type="button" data-demand="' + idx + '">Request part / माँग दर्ज करें</button>';
       } else if (!canOrder){
-        var why = "Price on request — contact us to order / मूल्य हेतु संपर्क करें";
-        controlsHtml = '<button class="add-btn" type="button" disabled aria-label="' + esc(why) + '" title="' + esc(why) + '">Add</button>';
+        // a disabled button with a tooltip is a dead end on a phone: tooltips never fire on
+        // touch. Give it the same escape hatch an out-of-stock part gets — ask for it.
+        controlsHtml = '<button class="add-btn demand-btn" type="button" data-demand="' + idx + '">Ask for price / दाम पूछें</button>';
       } else if (qty > 0){
         // once in the cart, the stepper IS the cart quantity (no separate Add)
         controlsHtml = '<div class="stepper" data-idx="' + idx + '">' +
@@ -3392,6 +3452,7 @@
   // ---------- cart view ----------
   function renderCart(){
     paintHindi();
+    loadEuContact();
     var wrap = $("cart-list");
     var keys = Object.keys(state.cart).filter(function(k){ return state.cart[k] > 0; });
     var grand = 0;
@@ -3436,7 +3497,10 @@
     $("generate-pi-btn").classList.remove("hidden");
     $("cart-grand-total").textContent = inr(grand);
     // the figure a farmer is actually agreeing to — never make them compute it
-    var cartGst = Math.round(grand * GST_PCT / 100);
+    var cartInfo = gstOnCart(), cartGst = cartInfo.gst;
+    var gstLabel = cartInfo.mixed ? "+ GST" : "+ " + (cartInfo.only != null ? cartInfo.only : GST_PCT) + "% GST";
+    var gstLabelEl = document.querySelector('#cart-totals .cart-sum-row:nth-child(2) span');
+    if (gstLabelEl) gstLabelEl.textContent = gstLabel;
     $("cart-gst").textContent = inr(cartGst);
     $("cart-payable").textContent = inr(grand + cartGst);
     $("generate-pi-btn").disabled = hasOOS;
@@ -3471,7 +3535,7 @@
       return { code: r.product_code || "—", sku: skuOf(Number(k)), particular: nice(r.particular), qty: qty, rate: rate, amount: rate * qty };
     }).filter(function(l){ return l !== null; });
     var subtotal = lines.reduce(function(s,l){ return s + l.amount; }, 0);
-    var gst = Math.round(subtotal * GST_PCT / 100);
+    var gstInfo = gstOnCart(), gst = gstInfo.gst;
     var grand = subtotal + gst;
     var dealerName = state.enduser ? ((($("eu-name") || {}).value || "").trim() || "Retail customer")
                    : (state.account ? (state.account.company || state.session.id) : "Retail customer");
@@ -3479,7 +3543,8 @@
     var dealerCodeDisplay = state.enduser ? "RETAIL" : "";
     var dealerGstin = (!state.enduser && state.account && state.account.gstin) ? state.account.gstin : "";
     var pi = { number: num, date: fmtDate(now), validTill: fmtDate(valid), dealerName: dealerName,
-             dealerCode: dealerCodeDisplay, dealerGstin: dealerGstin, lines: lines, subtotal: subtotal, gst: gst, gstPct: GST_PCT, grand: grand };
+             dealerCode: dealerCodeDisplay, dealerGstin: dealerGstin, lines: lines, subtotal: subtotal, gst: gst,
+             gstPct: (gstInfo.only != null ? gstInfo.only : null), grand: grand };
     return pi;
   }
 
@@ -3518,13 +3583,13 @@
       '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' +
       '<div class="pi-totals">' +
         '<div class="row"><span>Subtotal / उप-योग</span><span>' + inr(pi.subtotal) + '</span></div>' +
-        '<div class="row"><span>GST @ ' + esc(pi.gstPct) + '%</span><span>+ ' + inr(pi.gst) + '</span></div>' +
+        '<div class="row"><span>' + esc(gstHead(pi)) + '</span><span>+ ' + inr(pi.gst) + '</span></div>' +
         '<div class="pi-grand"><span>Grand Total / कुल</span><span>' + inr(pi.grand) + '</span></div></div>' +
       ((sel.upi || sel.qr) ? '<div class="pi-pay"><div class="pi-pay-t">Pay / भुगतान</div>' +
         (sel.upi ? '<div>UPI: <b>' + esc(sel.upi) + '</b> · <a href="upi://pay?pa=' + encodeURIComponent(sel.upi) + '&pn=' + encodeURIComponent(sel.name) + '&am=' + pi.grand + '&cu=INR">Pay via UPI / यूपीआई से भुगतान</a></div>' : '') +
         (sel.qr ? '<img src="' + esc(sel.qr) + '" alt="Payment QR" style="width:150px;height:150px;object-fit:contain;margin-top:6px;" loading="lazy">' : '') +
         '</div>' : '') +
-      '<div class="pi-footer">' + (isPI ? 'This is a Proforma Invoice from the seller. ' : 'This is a Purchase Order (buyer’s request). ') + 'Total includes ' + esc(pi.gstPct) + '% GST. Payment via UPI / bank transfer as agreed. Prices valid till ' + esc(pi.validTill) + '. | ' + (isPI ? 'यह प्रोफ़ॉर्मा इनवॉइस है (विक्रेता से)।' : 'यह परचेज़ ऑर्डर है (ख़रीदार का अनुरोध)।') + ' कुल में ' + esc(pi.gstPct) + '% GST शामिल है।</div>' +
+      '<div class="pi-footer">' + (isPI ? 'This is a Proforma Invoice from the seller. ' : 'This is a Purchase Order (buyer’s request). ') + esc(gstFoot(pi)) + 'Payment via UPI / bank transfer as agreed. Prices valid till ' + esc(pi.validTill) + '. | ' + (isPI ? 'यह प्रोफ़ॉर्मा इनवॉइस है (विक्रेता से)।' : 'यह परचेज़ ऑर्डर है (ख़रीदार का अनुरोध)।') + ' ' + esc(gstFootHi(pi)) + '</div>' +
       '<div class="pi-actions">' +
         '<button class="btn btn-outline btn-ico" id="pi-print-btn" style="margin-top:0;">' + svgIco("print") + 'Print</button>' +
         '<button class="btn wa-btn btn-ico" id="pi-wa-btn" style="margin-top:0;">' + svgIco("whatsapp") + 'Share PDF on WhatsApp</button>' +
@@ -3621,9 +3686,9 @@
     });
     y -= 3; line(M, y, W - M, y); y -= 15;
     txt(cols.rate - 60, y, 9, false, "Subtotal:"); txt(cols.amt, y, 9, false, "Rs." + pi.subtotal); y -= 13;
-    txt(cols.rate - 60, y, 9, false, "GST @ " + pi.gstPct + "%:"); txt(cols.amt, y, 9, false, "+ Rs." + pi.gst); y -= 15;
+    txt(cols.rate - 60, y, 9, false, gstHead(pi) + ":"); txt(cols.amt, y, 9, false, "+ Rs." + pi.gst); y -= 15;
     txt(cols.rate - 60, y, 12, true, "Grand Total:"); txt(cols.amt, y, 12, true, "Rs." + pi.grand); y -= 24;
-    wrapText((pi.docType === "PI" ? "This is a Proforma Invoice from the seller. " : "This is a Purchase Order (buyer's request). ") + "Total includes " + pi.gstPct + "% GST. Payment via UPI / bank transfer as agreed. Prices valid till " + pi.validTill + ".", 95)
+    wrapText((pi.docType === "PI" ? "This is a Proforma Invoice from the seller. " : "This is a Purchase Order (buyer's request). ") + gstFoot(pi) + "Payment via UPI / bank transfer as agreed. Prices valid till " + pi.validTill + ".", 95)
       .forEach(function(w){ txt(M, y, 8, false, w); y -= 10; });
     pages.push(s);
 
@@ -3940,6 +4005,9 @@
       };
     });
     $("auth-btn").onclick = doSignOut; // attached once here; updateAuthButton() only toggles visibility
+    ["eu-name","eu-phone","eu-offer"].forEach(function(id){
+      var el = $(id); if (el) el.addEventListener("input", saveEuContact);
+    });
     $("home-brand").onclick = function(){
       if (state.session && state.session.role !== "admin"){ showCatalog(); resetToBrowse(); }
     };
