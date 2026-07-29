@@ -1,9 +1,13 @@
 // Shell precache now includes the vendored Supabase lib + catalog so the app boots
 // fully offline. Catalog images (pages/**) are cached on first view (cache-first runtime),
 // not precached — 1800 files / 37MB is far too much to push on install.
-const CACHE = 'kg-spares-v100';
+const CACHE = 'kg-spares-v101';
 const IMG_CACHE = 'kg-img-v1';
-const SHELL = ['./', './index.html', './manifest.json', './vendor/supabase.js', './supabase/config.js', './catalog.json'];
+// Brand assets belong in the shell rather than the runtime image cache: the header mark and the
+// login logo are chrome, and a logo that only shows up once you are online is worse than none.
+// They are NOT added to SHELL_PATHS below — these stay cache-first, not network-first.
+const SHELL = ['./', './index.html', './manifest.json', './vendor/supabase.js', './supabase/config.js', './catalog.json',
+  './brand/mark.svg', './brand/logo-64.png', './brand/logo-256.png'];
 // Exact-path match for the shell network-first branch below. Resolve each entry against this
 // worker's OWN location: the app is served from /farmingtools-spares-site/, not the domain root,
 // so hard-coded '/index.html' never matched and the precached shell was never read — offline was
