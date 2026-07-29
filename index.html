@@ -538,6 +538,20 @@
   .pp-bar > i{ display:block; height:100%; width:100%; border-radius:99px; background:var(--green);
     transform:scaleX(0); transform-origin:left;
     transition:transform .3s cubic-bezier(.2,.8,.25,1); }
+  .wk-prog{ margin:0 14px 10px; font-size:12.5px; color:var(--muted); }
+  .wk-prog b{ color:var(--text); }
+  .wk-bar{ height:6px; border-radius:99px; background:var(--border); overflow:hidden; margin:5px 0 6px; }
+  .wk-bar > i{ display:block; height:100%; width:100%; border-radius:99px; background:var(--green);
+    transform:scaleX(0); transform-origin:left; transition:transform .3s cubic-bezier(.2,.8,.25,1); }
+  @media (prefers-reduced-motion: reduce){ .wk-bar > i{ transition:none; } }
+  .wk-row{ display:flex; align-items:center; gap:10px; width:calc(100% - 28px); margin:0 14px 6px;
+    padding:10px 12px; min-height:52px; text-align:left; background:#fff; border:1px solid var(--border);
+    border-radius:10px; font:inherit; cursor:pointer; }
+  .wk-row:hover{ background:var(--green-light); }
+  .wk-row .wk-code{ font-weight:700; font-size:13px; color:var(--green-dark); }
+  .wk-row .wk-name{ font-size:12.5px; color:var(--text); }
+  .wk-row .wk-why{ font-size:11.5px; color:var(--muted); }
+  .wk-row .wk-go{ margin-left:auto; font-size:18px; color:var(--muted); flex:none; }
   .cart-sum{ margin:10px 2px 0; }
   .cart-sum-row{ display:flex; justify-content:space-between; align-items:baseline;
     font-size:13px; color:var(--muted); padding:3px 0; }
@@ -2071,7 +2085,36 @@
       .map(function(u){ return '<option value="'+u[0]+'">'+esc(u[1])+'</option>'; }).join("");
     var gstOpts = [0,5,12,18,28].map(function(g){ return '<option value="'+g+'">'+g+'%</option>'; }).join("");
 
-    var secProduct = !isImporter ? '' : '<details class="more-sec" id="m-pp-sec"><summary>Parts catalogue — पुर्ज़ों की सूची'+
+    // The catalogue is 1746 parts but only 20 sections, and only a handful of parts are ever
+    // actually asked for. So describing the shelf is three different jobs, not one long form:
+    // start with what people want, fill the shared commercial fields a whole section at a time,
+    // and only then describe an individual part in full.
+    var bkSecs = {};
+    (state.catalog || []).forEach(function(r){ if (r && r.section) bkSecs[r.section] = (bkSecs[r.section]||0) + 1; });
+    var bkOpts = Object.keys(bkSecs).sort().map(function(k){
+      return '<option value="'+esc(k)+'">'+esc(k)+' ('+bkSecs[k]+' parts)</option>'; }).join("");
+
+    var secWork = !isImporter ? '' : '<details class="more-sec" id="m-wk-sec"><summary>Describe parts — start here / पहले ये भरें'+
+      '<span class="ms-hint">The parts people actually ask for / जो लोग माँगते हैं</span></summary>'+
+      '<div id="m-wk-prog" class="wk-prog"></div>'+
+      '<p class="more-hint">You do not have to describe all '+(state.catalog||[]).length+' parts. Start with the ones people have already ordered or asked you for — the rest can wait.</p>'+
+      '<div id="m-wk-list"><div style="color:var(--muted);font-size:13px;margin:0 14px;">Loading… / लोड हो रहा है…</div></div></details>';
+
+    var secBulk = !isImporter ? '' : '<details class="more-sec"><summary>Fill a whole section at once / पूरा सेक्शन एक साथ'+
+      '<span class="ms-hint">Same brand, HSN and GST for every part in it</span></summary>'+
+      '<p class="more-hint">Every part in one section normally shares the same brand, HSN code, GST and unit. Fill them once here instead of hundreds of times. <b>Prices, part codes and names are never touched.</b></p>'+
+      '<label class="m-lbl">Which section</label><select id="m-bk-sec" class="m-input">'+bkOpts+'</select>'+
+      '<div class="row2"><div><label class="m-lbl">Brand / make</label><input type="text" id="m-bk-brand" class="m-input" maxlength="60" placeholder="leave blank to skip"></div>'+
+        '<div><label class="m-lbl">HSN code</label><input type="text" id="m-bk-hsn" class="m-input" inputmode="numeric" maxlength="8" placeholder="84329010"></div></div>'+
+      '<div class="row2"><div><label class="m-lbl">GST %</label><select id="m-bk-gst" class="m-input"><option value="">— leave as is —</option>'+gstOpts+'</select></div>'+
+        '<div><label class="m-lbl">Sold as</label><select id="m-bk-uom" class="m-input"><option value="">— leave as is —</option>'+uomOpts+'</select></div></div>'+
+      '<div class="row2"><div><label class="m-lbl">Country of origin</label><input type="text" id="m-bk-origin" class="m-input" maxlength="60" placeholder="China / India"></div>'+
+        '<div><label class="m-lbl">Smallest order</label><input type="number" id="m-bk-moq" class="m-input" min="1" max="9999" inputmode="numeric"></div></div>'+
+      '<label class="m-lbl" style="display:flex;align-items:center;gap:8px;margin:12px 14px 0;">'+
+        '<input type="checkbox" id="m-bk-blanks" checked style="width:18px;height:18px;flex:none;"> Only fill blanks — never change what I set by hand</label>'+
+      '<button class="btn-primary m-btn" id="m-bk-apply">Apply to this section / लागू करें</button><div class="req-msg" id="m-bk-msg" role="status"></div></details>';
+
+    var secProduct = !isImporter ? '' : '<details class="more-sec" id="m-pp-sec"><summary>One part, in full / एक पुर्ज़ा पूरा'+
       '<span class="ms-hint">Add a new part, or complete an old one / नया पुर्ज़ा जोड़ें</span></summary>'+
       '<p class="more-hint">Whatever you write here is what every dealer, shopkeeper and farmer below you will see. Fill it once, properly, and nobody has to phone you to ask.</p>'+
       '<label class="m-lbl">Which part? / कौन सा पुर्ज़ा</label>'+
@@ -2131,7 +2174,7 @@
     html += secTransfer + secCustOrder;
     html += '<div class="more-group">My shop / मेरी दुकान</div>' + secAddress + secLink + secPrice + secPay;
     if (secAddDealer || secApprovals) html += '<div class="more-group">My network / मेरा नेटवर्क</div>' + secAddDealer + secApprovals;
-    if (isImporter) html += '<div class="more-group">Importer tools / इम्पोर्टर</div>' + secProduct + secExternal + secCorrect;
+    if (isImporter) html += '<div class="more-group">Importer tools / इम्पोर्टर</div>' + secWork + secBulk + secProduct + secExternal + secCorrect;
 
     html += '<button class="more-link more-signout" id="more-signout">Sign out / साइन आउट</button>';
     $("more-body").innerHTML = html;
@@ -2332,9 +2375,84 @@
     };
     if (isImporter){ renderMoreApprovals(); var ac = $("m-approvals-card"); if (ac) ac.addEventListener("click", onApprovalsClick); }
     // async: a failed cost fetch must not take the rest of the More tab down with it
+    if (isImporter){ renderWorklist(); wireBulkDescribe(); }
     if (isImporter) wireProductForm().catch(function(e){
       var m = $("m-pp-msg"); if (m){ m.className = "req-msg err"; m.textContent = friendlyErr(e); }
     });
+  }
+
+  // ---------- worklist: what to describe first ----------
+  // 1746 parts is a number nobody acts on. The parts people have actually ordered or asked for
+  // is a list you can finish this afternoon, and it is the only part of the shelf that is
+  // currently costing money by being undescribed.
+  async function renderWorklist(){
+    var list = $("m-wk-list"), prog = $("m-wk-prog");
+    if (!list || !sb) return;
+    var res = await Promise.all([sb.rpc("describe_progress"), sb.rpc("parts_worklist", { p_limit: 20 })]);
+    var p = (res[0] && res[0].data) || {}, rows = (res[1] && res[1].data) || [];
+    if (prog && p.total){
+      var pct = Math.round((p.started || 0) * 100 / p.total);
+      prog.innerHTML = '<b>' + (p.started||0) + ' of ' + p.total + '</b> parts described &middot; <b>' +
+        (p.sellable||0) + '</b> ready to bill' +
+        (p.nocode ? ' &middot; <b>' + p.nocode + '</b> still have no part code' : '') +
+        '<div class="wk-bar"><i style="transform:scaleX(' + (pct/100).toFixed(3) + ')"></i></div>';
+    }
+    if (!rows.length){
+      list.innerHTML = '<div class="empty-state" style="margin:0 14px;">Nothing waiting — every part anyone has asked for is described. ✓<br>सब पुर्ज़े भर दिए गए।</div>';
+      return;
+    }
+    list.innerHTML = rows.map(function(r){
+      return '<button type="button" class="wk-row" data-wk="' + esc(r.sku) + '">' +
+        '<span>' +
+          '<span class="wk-code">' + esc(r.product_code || r.sku) + '</span> ' +
+          '<span class="wk-name">' + esc(nice(r.particular || "")) + '</span>' +
+          '<br><span class="wk-why">' + esc(r.reason) + '</span>' +
+        '</span><span class="wk-go" aria-hidden="true">&rsaquo;</span></button>';
+    }).join("");
+    markHindi(list);
+    list.onclick = function(e){
+      var b = e.target.closest("[data-wk]"); if (!b) return;
+      var sku = b.getAttribute("data-wk");
+      var sec = $("m-pp-sec"); if (!sec) return;
+      sec.open = true;
+      var pick = $("m-pp-pick"); if (pick) pick.value = sku;
+      if (_ppFill) _ppFill(sku);
+      sec.scrollIntoView({ block: "start", behavior: "smooth" });
+    };
+  }
+
+  // ---------- fill a whole section at once ----------
+  function wireBulkDescribe(){
+    var btn = $("m-bk-apply"); if (!btn) return;
+    btn.onclick = async function(){
+      var m = $("m-bk-msg"); m.className = "req-msg";
+      var v = function(id){ return (($(id)||{}).value || "").trim(); };
+      var sec = v("m-bk-sec"), hsn = v("m-bk-hsn");
+      if (!sec){ m.className = "req-msg err"; m.textContent = "Pick a section first. / सेक्शन चुनें।"; return; }
+      if (hsn && !/^[0-9]{4}([0-9]{2}([0-9]{2})?)?$/.test(hsn)){
+        m.className = "req-msg err"; m.textContent = "HSN must be 4, 6 or 8 digits. / HSN 4, 6 या 8 अंकों का।"; return; }
+      var args = { p_section: sec, p_brand: v("m-bk-brand") || null, p_hsn: hsn || null,
+        p_gst: v("m-bk-gst") !== "" ? Number(v("m-bk-gst")) : null, p_uom: v("m-bk-uom") || null,
+        p_origin: v("m-bk-origin") || null, p_pack: null,
+        p_moq: v("m-bk-moq") !== "" ? Number(v("m-bk-moq")) : null,
+        p_only_blanks: $("m-bk-blanks").checked };
+      if (!args.p_brand && !args.p_hsn && args.p_gst === null && !args.p_uom && !args.p_origin && args.p_moq === null){
+        m.className = "req-msg err"; m.textContent = "Fill at least one detail to apply. / कम से कम एक जानकारी भरें।"; return; }
+      // this touches every part in the section at once — say how many before doing it
+      var n = (state.catalog || []).filter(function(r){ return r && r.section === sec; }).length;
+      if (!(await askConfirm("Apply these details to all " + n + " parts in “" + sec + "”?\n\n" +
+            ($("m-bk-blanks").checked ? "Only empty fields will be filled — nothing you set by hand changes."
+                                      : "This WILL overwrite details you set by hand on these parts.") +
+            "\n\nPrices, part codes and names are never touched.",
+            { danger: !$("m-bk-blanks").checked, okLabel: "Apply / लागू करें" }))) return;
+      this.disabled = true; m.textContent = "Applying… / लागू हो रहा है…";
+      var r = await sb.rpc("bulk_describe", args);
+      this.disabled = false;
+      if (r.error){ m.className = "req-msg err"; m.textContent = friendlyErr(r.error); return; }
+      m.textContent = "✓ " + r.data + " parts updated in “" + sec + "”. / " + r.data + " पुर्ज़े अपडेट हुए।";
+      showToast(r.data + " parts described ✓ / अपडेट हुए");
+      await loadData(); populateFilters(); renderCatalogBody(); renderWorklist();
+    };
   }
 
   // ---------- product master form (importer only) ----------
@@ -2345,7 +2463,7 @@
   var PP_NUM  = ["m-pp-base","m-pp-mrp","m-pp-pack","m-pp-moq","m-pp-weight"];
   var PP_SEL  = ["m-pp-group","m-pp-gst","m-pp-uom"];
   var PP_ALL  = PP_TEXT.concat(PP_NUM, PP_SEL);
-  var _ppPhoto = null, _ppCost = null;
+  var _ppPhoto = null, _ppCost = null, _ppFill = null;
 
   async function wireProductForm(){
     var pick = $("m-pp-pick"); if (!pick) return;
@@ -2414,6 +2532,7 @@
       var m = $("m-pp-msg"); m.className = "req-msg"; m.textContent = "";
     }
     pick.onchange = function(){ fill(this.value); };
+    _ppFill = fill;   // the worklist hands a part straight into this form
 
     var find = $("m-pp-find");
     if (find) find.oninput = function(){
