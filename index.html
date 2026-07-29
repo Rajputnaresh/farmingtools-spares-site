@@ -18,9 +18,34 @@
 <meta name="color-scheme" content="light">
 <style>
   :root{
-    --green:#1e7d34; --green-dark:#155924; --green-light:#eaf7ee;
-    --border:#d7e6da; --text:#1b2b20; --muted:#5b6b60; --danger:#c0392b; --bg:#f6faf7;
+    /* Brand. Unchanged — this green is the identity and nothing below re-derives it. */
+    --green:#1e7d34; --green-dark:#155924; --green-light:#eaf7ee; --green-mid:#bfe9cb;
+    --border:#d7e6da; --text:#1b2b20; --muted:#5b6b60; --bg:#f6faf7;
     --focus:#2b6cff;
+
+    /* Semantic roles: three states, one triplet each — tint (fill) / border (edge) / ink (text).
+       26 rules in this file already read these names. None of them were ever declared, so every
+       use fell through to an inline hex, the hexes drifted into two different ambers, and the
+       one use written without a fallback (the missing-address warning) rendered in body colour
+       instead of amber. Declaring them here is what makes the vocabulary real.
+
+       Meaning is fixed and does not vary by screen:
+         danger — money or stock is wrong, or the action cannot proceed
+         warn   — action is needed from you, or the thing is slower than normal
+         calm   — nothing is available and nothing is wrong; grey on purpose, because an
+                  out-of-stock part is not an error and must not shout like one */
+    --danger:#c0392b;   --danger-tint:#fdeceb; --danger-border:#f0b4ac;
+    --warn-ink:#7a5b00; --warn-tint:#fff6e0;   --warn-border:#f0c96b; --warn-tint-faint:#fffdf4;
+    --calm-tint:#eef0ee;
+
+    /* Hover washes. Never a state — only the response to a pointer, and pointers are the
+       minority here. Kept separate from the semantic ramp so the two can never be confused. */
+    --hover:#dcefe1; --hover-faint:#f4f9f5; --hover-faintest:#f7fbf8;
+    --scrim:#f0f0f0;    /* neutral mat behind a zoomed photo — not a surface, not a state */
+    /* The one place alpha is right rather than lazy: a modal backdrop has to show the page
+       it is covering, or it reads as a navigation rather than an interruption. */
+    --scrim-modal:rgba(0,0,0,.75);
+
     --z-nav:20; --z-modal:50;
   }
   *{box-sizing:border-box;}
@@ -44,7 +69,7 @@
      timer — it has to be as easy to hit as anything else in the app. The rule used to end in
      `min-height:auto`, which is what kept it at 28px. */
   .toast-undo{ display:inline-flex; align-items:center; justify-content:center;
-    margin-left:10px; background:none; border:0; color:#bfe9cb; font-weight:700;
+    margin-left:10px; background:none; border:0; color:var(--green-mid); font-weight:700;
     font-size:13.5px; text-decoration:underline; cursor:pointer;
     padding:0 12px; min-height:44px; }
   @media (prefers-reduced-motion: reduce){ .toast{ transition:none; } }
@@ -132,7 +157,7 @@
     color:var(--green-dark); font-size:13px; font-weight:700; min-width:56px; min-height:44px; }
   .login-info{ background:var(--green-light); border:1px solid var(--border); color:var(--green-dark);
     padding:8px 10px; border-radius:8px; font-size:12.5px; margin-top:12px; font-weight:600; text-align:center; }
-  .login-error{ background:#fdeceb; border:1px solid #f0b4ac; color:var(--danger); padding:8px 10px; border-radius:8px; font-size:13px; margin-top:12px; font-weight:600; text-align:center; }
+  .login-error{ background:var(--danger-tint); border:1px solid var(--danger-border); color:var(--danger); padding:8px 10px; border-radius:8px; font-size:13px; margin-top:12px; font-weight:600; text-align:center; }
   .login-divider{ text-align:center; color:var(--muted); font-size:12px; margin:18px 0 6px; }
 
   /* admin panel */
@@ -149,8 +174,8 @@
   .acct-phone{ font-size:12.5px; color:var(--muted); margin-top:2px; display:flex; align-items:center; gap:5px; }
   .acct-actions{ display:flex; gap:8px; margin-top:10px; }
   .acct-actions button{ flex:1; min-height:44px; border-radius:8px; font-size:13.5px; font-weight:700; border:1px solid var(--border); background:#fff; color:var(--green-dark); }
-  .acct-actions .del{ color:var(--danger); border-color:#f0b4ac; }
-  @media (hover:hover){ .acct-actions button:hover{ background:var(--green-light); } .acct-actions .del:hover{ background:#fdeceb; } }
+  .acct-actions .del{ color:var(--danger); border-color:var(--danger-border); }
+  @media (hover:hover){ .acct-actions button:hover{ background:var(--green-light); } .acct-actions .del:hover{ background:var(--danger-tint); } }
   .admin-form{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:14px; }
   .admin-form h3{ margin:0 0 10px; font-size:15px; color:var(--green-dark); }
   .admin-form .field-label{ margin:10px 0 4px; }
@@ -189,7 +214,7 @@
   .stk-cap{ color:var(--muted); font-size:12.5px; margin-top:8px; }
 
   .notice{
-    background:#fff6e0; border:1px solid #f0c96b; color:#7a5b00;
+    background:var(--warn-tint); border:1px solid var(--warn-border); color:var(--warn-ink);
     padding:8px 10px; border-radius:8px; font-size:12.5px; margin:10px 0;
   }
   .dealer-strip{
@@ -200,7 +225,7 @@
   .dealer-strip .name{ font-weight:700; color:var(--green-dark); text-transform:capitalize; }
   /* amber, not red: the prices on screen are real, just not freshly confirmed */
   .stale-note{
-    background:#fff6e0; border:1px solid #f0c96b; color:#7a5b00;
+    background:var(--warn-tint); border:1px solid var(--warn-border); color:var(--warn-ink);
     padding:8px 10px; border-radius:8px; font-size:12.5px; margin-bottom:10px; font-weight:600;
   }
 
@@ -278,7 +303,7 @@
     border-radius:8px; object-fit:cover; object-position:top center;
     background:var(--bg); cursor:zoom-in;
   }
-  .item-thumb:focus-visible{ outline:3px solid var(--focus, #2b6cff); outline-offset:2px; }
+  .item-thumb:focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
   /* while the lazy JPEG loads, show a quiet wrench glyph so slow-3G lists don't read as "no photos";
      the loaded image (object-fit:cover) fully covers it */
   img.item-thumb[data-g]{
@@ -292,13 +317,18 @@
   /* the meta tag alone leaves computed color-scheme at "normal"; this is what actually pins it */
   :root{ color-scheme:light; }
   .item-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
-  .item-code{ font-weight:700; font-size:14px; color:var(--green-dark); }
+  /* The part code is the one string a farmer matches against the number stamped on the broken
+     part in his other hand — it must never break across lines. It wins the row; the section
+     name gives way, because he already knows the section from how he navigated here. */
+  .item-code{ font-weight:700; font-size:14px; color:var(--green-dark); white-space:nowrap; flex:none; }
   /* Contrast on these was never the problem — size was. A 55-year-old shopkeeper reading a
      Devanagari conjunct in direct sunlight cannot resolve a 10px glyph at any contrast ratio,
-     so the whole small-text band moves up. Costs a little vertical space; worth it. */
+     so the whole small-text band moves up. That bump pushed this nowrap pill 204px wide in a
+     334px row, which is what put seven badges past the viewport edge — hence min-width:0. */
   .badge{
     background:var(--green-light); color:var(--green-dark); font-size:12px; font-weight:600;
-    padding:3px 7px; border-radius:20px; white-space:nowrap;
+    padding:3px 7px; border-radius:20px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; flex:0 1 auto;
   }
   .item-particular{ font-size:13.5px; margin:4px 0 8px; color:var(--text); line-height:1.35; }
   /* availability from Supabase (chain_availability) — three states: on my supplier's shelf,
@@ -306,9 +336,9 @@
   .stock-badge{ font-size:12px; font-weight:600; padding:3px 7px; border-radius:20px; white-space:nowrap; }
   .stock-in{ background:var(--green-light); color:var(--green-dark); }
   /* out-of-stock is a calm, muted state — not an alarm (most of the catalog may be unstocked) */
-  .stock-out{ background:#eef0ee; color:var(--muted); }
+  .stock-out{ background:var(--calm-tint); color:var(--muted); }
   /* held further up the chain: orderable, just not on the shelf today */
-  .stock-chain{ background:var(--warn-tint,#fff6e0); color:var(--warn-ink,#7a5b00); }
+  .stock-chain{ background:var(--warn-tint); color:var(--warn-ink); }
   .item-bottom{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
   .rate{ font-weight:700; font-size:14.5px; color:var(--text); }
   .rate.na{ color:var(--muted); font-weight:600; font-size:12.5px; }
@@ -316,7 +346,7 @@
   td.ln-thumb{ width:1%; padding:2px 4px; vertical-align:middle; }
   .line-x{ background:#fff; border:1px solid var(--border); color:var(--danger); font-weight:700;
     width:32px; height:32px; border-radius:8px; line-height:1; cursor:pointer; }
-  .line-x:hover{ background:#fdeceb; }
+  .line-x:hover{ background:var(--danger-tint); }
   /* wrap, not nowrap: at 360px (the commonest cheap-Android width) an active stepper pushed
      .item-controls to 264px inside a 236px column and clipped the "+" button off-screen */
   .item-controls{ display:flex; align-items:center; gap:6px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; }
@@ -333,7 +363,7 @@
     font-size:13px; font-weight:700; min-height:44px;
   }
   .add-btn[disabled], .stepper[disabled]{ opacity:.5; }
-  .demand-btn{ background:#fff; color:#a15c00; border:1px solid #e0a83a; }
+  .demand-btn{ background:#fff; color:var(--warn-ink); border:1px solid var(--warn-border); }
   .show-more{ background:#fff; border:1px solid var(--green); color:var(--green-dark); border-radius:10px; width:100%; min-height:48px; font-weight:700; font-size:14px; margin:4px 0 8px; }
   .empty-state{ text-align:center; color:var(--muted); padding:40px 10px; font-size:13.5px; line-height:1.6; }
   .empty-state .retry-btn{ display:inline-block; margin-top:12px; background:var(--green); color:#fff; border:none; border-radius:10px; min-height:44px; padding:0 18px; font-weight:700; }
@@ -433,13 +463,13 @@
   /* packing list + courier label inside a dispatch card */
   .disp-sec .tscroll{ overflow-x:auto; }
   .disp-sec table{ width:100%; border-collapse:collapse; font-size:13px; margin-top:6px; }
-  .disp-sec th, .disp-sec td{ text-align:left; padding:4px 6px; border-bottom:1px solid var(--warn-border,#f0c96b); }
+  .disp-sec th, .disp-sec td{ text-align:left; padding:4px 6px; border-bottom:1px solid var(--warn-border); }
   .disp-sec th.num, .disp-sec td.num{ text-align:right; }
   .ship-label{
-    white-space:pre-line; background:#fff; border:1px dashed var(--warn-border,#f0c96b);
+    white-space:pre-line; background:#fff; border:1px dashed var(--warn-border);
     border-radius:10px; padding:10px 12px; font-size:14px; line-height:1.5; font-weight:600; color:var(--text);
   }
-  .ship-warn{ background:var(--danger-tint,#fdeceb); border:1px solid var(--danger-border,#f0b4ac); color:var(--danger);
+  .ship-warn{ background:var(--danger-tint); border:1px solid var(--danger-border); color:var(--danger);
     border-radius:10px; padding:10px 12px; font-size:13px; font-weight:600; }
 
   /* money: the two numbers a trader checks every morning */
@@ -448,14 +478,14 @@
   .money-tile{ flex:1; min-width:0; border-radius:12px; padding:10px 12px; border:1px solid var(--border); background:#fff;
     display:flex; flex-direction:column; }
   .money-tile .mt-val{ margin-top:auto; }
-  .money-tile.in{ background:var(--green-light); border-color:#bfe9cb; }
-  .money-tile.out{ background:var(--warn-tint,#fff6e0); border-color:var(--warn-border,#f0c96b); }
+  .money-tile.in{ background:var(--green-light); border-color:var(--green-mid); }
+  .money-tile.out{ background:var(--warn-tint); border-color:var(--warn-border); }
   .mt-lbl{ font-size:11.5px; font-weight:600; color:var(--muted); line-height:1.25; }
   .money-tile.in .mt-lbl{ color:var(--green-dark); }
-  .money-tile.out .mt-lbl{ color:var(--warn-ink,#7a5b00); }
+  .money-tile.out .mt-lbl{ color:var(--warn-ink); }
   .mt-val{ font-size:20px; font-weight:800; margin-top:2px; font-variant-numeric:tabular-nums; }
   .money-tile.in .mt-val{ color:var(--green-dark); }
-  .money-tile.out .mt-val{ color:var(--warn-ink,#7a5b00); }
+  .money-tile.out .mt-val{ color:var(--warn-ink); }
   .pay-row{ display:flex; justify-content:space-between; align-items:center; gap:10px;
     padding:9px 0; border-bottom:1px solid var(--border); font-size:13.5px; }
   .pay-row:last-of-type{ border-bottom:none; }
@@ -464,11 +494,11 @@
   .pay-clear{ font-weight:700; color:var(--muted); font-size:12.5px; white-space:nowrap; }
 
   /* first-run setup checklist — states the consequence, not just the missing field */
-  .setup-card{ background:var(--warn-tint,#fff6e0); border:1px solid var(--warn-border,#f0c96b);
+  .setup-card{ background:var(--warn-tint); border:1px solid var(--warn-border);
     border-radius:12px; padding:12px 14px; margin-bottom:8px; }
-  .setup-h{ font-weight:800; font-size:14px; color:var(--warn-ink,#7a5b00); }
+  .setup-h{ font-weight:800; font-size:14px; color:var(--warn-ink); }
   .setup-list{ margin:6px 0 0; padding-left:18px; font-size:13px; color:var(--text); line-height:1.55; }
-  .setup-foot{ margin-top:6px; font-size:12px; color:var(--warn-ink,#7a5b00); }
+  .setup-foot{ margin-top:6px; font-size:12px; color:var(--warn-ink); }
 
   /* ---- finish: quiet depth + typographic tightening. Cards get one soft shadow so they read
      as objects on a surface rather than outlines; headings tighten slightly; numbers stay
@@ -487,7 +517,7 @@
     #home-brand:hover{ opacity:.85; }
     #list-reset:hover, .browse-back:hover{ background:var(--green-light); }
     .item-thumb:hover{ filter:brightness(.94); }
-    .remove-btn:hover{ background:var(--danger-tint,#fdeceb); }
+    .remove-btn:hover{ background:var(--danger-tint); }
   }
   @media (prefers-reduced-motion: reduce){ .tile{ transition:none; } .tile:active{ transform:none; } }
   .ship-to{ background:var(--green-light); border:1px solid var(--border); border-radius:8px; padding:8px 10px; margin:8px 0 2px; font-weight:600; font-size:13px; }
@@ -498,7 +528,7 @@
   .req-sub{ display:flex; gap:8px; margin-top:10px; }
   .req-sub button{ flex:1; min-height:44px; border-radius:10px; font-size:12.5px; font-weight:600; }
   .btn-soft{ background:var(--green-light); color:var(--green-dark); border:1px solid var(--border); }
-  .btn-danger{ background:#fdeceb; color:var(--danger); border:1px solid #f0b4ac; }
+  .btn-danger{ background:var(--danger-tint); color:var(--danger); border:1px solid var(--danger-border); }
   .req-card .btn-primary{ width:auto; margin-top:0; }
   /* branded in-app confirm sheet — replaces native confirm() for stock-moving actions */
   .cf-box{ max-width:340px; width:calc(100% - 32px); padding:18px; }
@@ -550,11 +580,11 @@
   .ms-share .ico svg{ width:15px; height:15px; }
   /* awaiting dispatch: one collapsed row per parcel (amber = you owe a physical action).
      Defined after .more-sec so the warm colours win over the shared accordion shell. */
-  .disp-sec{ border-color:var(--warn-border,#f0c96b); background:#fffdf4; }
-  .disp-sec[open] > summary{ border-bottom-color:var(--warn-border,#f0c96b); }
+  .disp-sec{ border-color:var(--warn-border); background:var(--warn-tint-faint); }
+  .disp-sec[open] > summary{ border-bottom-color:var(--warn-border); }
   .disp-n{
     display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px;
-    margin-right:8px; border-radius:50%; background:var(--warn-ink,#7a5b00); color:#fff;
+    margin-right:8px; border-radius:50%; background:var(--warn-ink); color:#fff;
     font-size:12px; font-weight:700; vertical-align:2px;
   }
   .disp-sec .ms-hint{ margin-left:30px; } /* align the sub-line under the name, clear of the number */
@@ -562,7 +592,7 @@
   .m-lbl{ display:block; font-size:12.5px; font-weight:600; margin:8px 0 4px; }
   .m-input{ width:100%; box-sizing:border-box; padding:11px; min-height:46px; font-size:16px; border:1px solid var(--border); border-radius:10px; background:#fff; }
   .m-btn{ width:100%; margin-top:12px; min-height:46px; border-radius:10px; font-weight:600; }
-  .m-input.err{ border-color:var(--danger); background:var(--danger-tint,#fdeceb); }
+  .m-input.err{ border-color:var(--danger); background:var(--danger-tint); }
   /* every checkbox in the app rendered OS-blue against a green brand */
   input[type=checkbox], input[type=radio]{ accent-color:var(--green); }
   .row2{ display:flex; gap:10px; }
@@ -613,8 +643,8 @@
   .badge-green, .badge-amber, .badge-red{ display:inline-block; border-radius:8px; padding:2px 8px; font-size:11px; font-weight:700; margin-bottom:3px; }
   .badge-green{ background:var(--green-light); color:var(--green-dark); }
   /* waiting is a warm state, not an inactive one — placed orders read amber until billed */
-  .badge-amber{ background:var(--warn-tint,#fff6e0); color:var(--warn-ink,#7a5b00); border:1px solid var(--warn-border,#f0c96b); }
-  .badge-red{ background:var(--danger-tint,#fdeceb); color:var(--danger); border:1px solid var(--danger-border,#f0b4ac); }
+  .badge-amber{ background:var(--warn-tint); color:var(--warn-ink); border:1px solid var(--warn-border); }
+  .badge-red{ background:var(--danger-tint); color:var(--danger); border:1px solid var(--danger-border); }
 
   /* PI */
   .pi-box{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px; }
@@ -651,7 +681,7 @@
   .skip-link:focus{ transform:none; }
   @media (prefers-reduced-motion: reduce){ .skip-link{ transition:none; } }
   .modal-overlay{
-    position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:var(--z-modal);
+    position:fixed; inset:0; background:var(--scrim-modal); z-index:var(--z-modal);
     display:flex; align-items:center; justify-content:center; padding:10px;
   }
   .modal-box{ background:#fff; border-radius:12px; width:100%; max-width:520px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; }
@@ -670,23 +700,23 @@
   .modal-note{ font-size:11.5px; color:var(--muted); padding:8px 12px; border-bottom:1px solid var(--border); line-height:1.5; background:var(--green-light); }
   .modal-zoom-row{ display:flex; gap:8px; padding:8px 12px; border-bottom:1px solid var(--border); }
   .modal-zoom-row button{ flex:1; background:var(--green-light); border:1px solid var(--border); border-radius:8px; min-height:44px; padding:8px; font-size:13px; font-weight:700; color:var(--green-dark); }
-  .modal-img-wrap{ overflow:auto; flex:1; background:#f0f0f0; touch-action:pan-x pan-y pinch-zoom; }
+  .modal-img-wrap{ overflow:auto; flex:1; background:var(--scrim); touch-action:pan-x pan-y pinch-zoom; }
   .modal-img-wrap img{ display:block; width:100%; height:auto; }
 
   @media (hover:hover){
     .btn-primary:hover{ background:var(--green-dark); }
     .add-btn:hover{ background:var(--green-dark); }
-    .diagram-btn:hover{ background:#dcefe1; }
-    .stepper button:hover{ background:#dcefe1; }
+    .diagram-btn:hover{ background:var(--hover); }
+    .stepper button:hover{ background:var(--hover); }
     .tile:hover{ border-color:var(--green); }
     .generate-btn:hover{ background:var(--green-dark); }
     .show-more:hover{ background:var(--green-light); }
-    nav.bottom-nav button:hover{ color:var(--green-dark); background:#f4f9f5; }
-    .btn-soft:hover{ background:#dcefe1; }
+    nav.bottom-nav button:hover{ color:var(--green-dark); background:var(--hover-faint); }
+    .btn-soft:hover{ background:var(--hover); }
     .btn-danger:hover{ filter:brightness(.92); }
     .stock-chip:hover{ border-color:var(--green); }
     .ms-share:hover{ background:var(--green-dark); }
-    .more-sec > summary:hover{ background:#f7fbf8; }
+    .more-sec > summary:hover{ background:var(--hover-faintest); }
     .retry-btn:hover{ background:var(--green-dark); }
   }
 
@@ -3595,7 +3625,7 @@
       var outHtml = "";
       var kClass = stockClass(k);
       if (kClass === "none"){ hasOOS = true; outHtml = '<div style="color:var(--danger);font-size:12px;font-weight:700;margin-top:4px;">Out of stock / स्टॉक नहीं</div>'; }
-      else if (kClass === "chain"){ outHtml = '<div style="color:var(--warn-ink,#7a5b00);font-size:12px;font-weight:600;margin-top:4px;">Ordered in for you — takes a little longer / मंगाया जाएगा, थोड़ा समय लगेगा</div>'; }
+      else if (kClass === "chain"){ outHtml = '<div style="color:var(--warn-ink);font-size:12px;font-weight:600;margin-top:4px;">Ordered in for you — takes a little longer / मंगाया जाएगा, थोड़ा समय लगेगा</div>'; }
       if (priced === null) outHtml += '<div style="color:var(--danger);font-size:12px;font-weight:700;margin-top:4px;">No price yet — ask the shop / अभी दाम तय नहीं, दुकान से पूछें</div>';
       return '<div class="cart-item">' +
         '<div class="cart-item-top"><div>' +
