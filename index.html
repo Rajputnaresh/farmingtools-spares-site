@@ -1193,17 +1193,20 @@
     // retail link: MRP (3×) from enduser_prices, and NO availability at all — a retail
     // customer never sees stock/quantity and can order any part in or out of stock.
     // dealers: own price + supplier stock.
-    var priceP = state.enduser ? sb.rpc("enduser_prices", { p_supplier: state.enduser }) : (sb ? sb.rpc("my_prices") : Promise.resolve({ data: [] }));
+    // *_json variants return ONE row holding a json array. The plain set-returning versions are
+    // silently truncated at 1000 rows by the API, which left 746 of the 1746 parts with no price
+    // and no stock badge for everyone — unsellable, with nothing on screen to say why.
+    var priceP = state.enduser ? sb.rpc("enduser_prices_json", { p_supplier: state.enduser }) : (sb ? sb.rpc("my_prices_json") : Promise.resolve({ data: [] }));
     // Availability means "can this reach me", not "does my own supplier happen to hold it":
     // anything sitting anywhere up the chain is orderable, because a short supplier forwards
     // the whole order and the party above drop-ships it. Who holds it is never revealed.
     var availP = state.enduser
-      ? (sb ? sb.rpc("enduser_chain_availability", { p_supplier: state.enduser }) : Promise.resolve({ data: [] }))
-      : (sb ? sb.rpc("chain_availability") : Promise.resolve({ data: [] }));
+      ? (sb ? sb.rpc("enduser_chain_availability_json", { p_supplier: state.enduser }) : Promise.resolve({ data: [] }))
+      : (sb ? sb.rpc("chain_availability_json") : Promise.resolve({ data: [] }));
     // the importer's product master: HSN, fitment, pack size, photo — everything the PDF scrape
     // never had, plus any part added after the static catalogue was built. Public read, so a
     // retail customer on a shop link sees the same details a dealer does.
-    var detP = sb ? sb.rpc("product_details") : Promise.resolve({ data: [] });
+    var detP = sb ? sb.rpc("product_details_json") : Promise.resolve({ data: [] });
     return Promise.all([catP, priceP, availP, detP]).then(function(res){
       state.loading = false;
       // offline / fetch failure: keep whatever we hydrated from cache rather than blanking it
@@ -2264,7 +2267,7 @@
     // the stored base by that multiple on every single edit.
     if (!_ppCost){
       _ppCost = {};
-      var cr = await sb.from("catalog_cost").select("sku, dealer_rate").range(0, 99999);
+      var cr = await sb.rpc("my_costs_json"); // .range() cannot beat the API row cap — see loadData
       ((cr && cr.data) || []).forEach(function(c){ _ppCost[c.sku] = c.dealer_rate; });
     }
 
@@ -2380,7 +2383,7 @@
   async function renderMoreStock(){
     var card = $("m-stock-card"); if (!card) return;
     _stockStack = []; // fresh data → start at the party overview
-    var r = await sb.from("current_stock").select("party_id, sku, qty").range(0, 99999);
+    var r = await sb.rpc("my_stock_json"); // 1758 rows: .range() is capped at 1000, json is not
     if (r.error){ card.innerHTML = '<div class="req-msg err">'+esc(friendlyErr(r.error))+'</div>'; return; }
     var pName = {}; (state.parties||[]).forEach(function(p){ pName[p.id]=p.name; });
     // keep sku (the stable key) alongside the display name — two SKUs can share a name
