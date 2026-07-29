@@ -46,6 +46,15 @@
        it is covering, or it reads as a navigation rather than an interruption. */
     --scrim-modal:rgba(0,0,0,.75);
 
+    /* Radius scale. Nine distinct values were in use — 6/8/10/11/12/13/20/99 — which is
+       drift, not intent: 11px and 13px and 20px were all reaching for a pill or a
+       squircle that already existed one line away. Four steps, by role:
+         sm  controls — buttons, steppers, chips inside a row
+         md  fields and notes — inputs, callouts, the things you type into or read
+         lg  surfaces — cards, modals, tiles
+         pill anything whose height defines its shape — badges, counts, filter chips */
+    --r-sm:8px; --r-md:10px; --r-lg:12px; --r-pill:99px;
+
     --z-nav:20; --z-modal:50;
   }
   *{box-sizing:border-box;}
@@ -61,7 +70,7 @@
   .toast{
     position:fixed; left:50%; bottom:70px; transform:translateX(-50%);
     background:var(--green-dark); color:#fff; font-size:13.5px; font-weight:700;
-    padding:10px 16px; border-radius:10px; z-index:var(--z-modal); max-width:90vw; text-align:center;
+    padding:10px 16px; border-radius:var(--r-md); z-index:var(--z-modal); max-width:90vw; text-align:center;
     opacity:1; transition:opacity .25s ease-out;
   }
   .toast.fade{ opacity:0; }
@@ -77,7 +86,7 @@
   /* keyboard focus visible everywhere (mouse clicks stay clean) */
   button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible,
   a:focus-visible, [tabindex]:focus-visible{
-    outline:3px solid var(--focus); outline-offset:2px; border-radius:8px;
+    outline:3px solid var(--focus); outline-offset:2px; border-radius:var(--r-sm);
   }
 
   /* header */
@@ -94,10 +103,10 @@
   .brand-btn{ background:none; border:none; padding:0; margin:0; text-align:left; color:#fff; min-height:44px; min-width:0; overflow:hidden; }
   .brand-btn h1{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .header-actions{ display:flex; align-items:center; gap:6px; flex-shrink:0; }
-  .icon-btn{ background:rgba(255,255,255,.15); border:none; color:#fff; border-radius:10px; min-height:44px; min-width:44px; display:inline-flex; align-items:center; justify-content:center; }
+  .icon-btn{ background:rgba(255,255,255,.15); border:none; color:#fff; border-radius:var(--r-md); min-height:44px; min-width:44px; display:inline-flex; align-items:center; justify-content:center; }
   .cart-btn{
     position:relative; background:rgba(255,255,255,.15); border:none; color:#fff;
-    border-radius:10px; padding:8px 12px; min-height:44px; min-width:44px;
+    border-radius:var(--r-md); padding:8px 12px; min-height:44px; min-width:44px;
     display:inline-flex; align-items:center; justify-content:center;
   }
   /* one consistent line-icon set; SVGs inherit button colour via currentColor */
@@ -114,7 +123,7 @@
   }
   /* the icon alone read as a mystery glyph — it carries a visible bilingual label, stacked
      English-over-Hindi exactly like the bottom-nav buttons so the vocabulary matches */
-  .logout-link{ background:rgba(255,255,255,.15); border:none; color:#fff; border-radius:10px; min-height:44px; min-width:44px; padding:4px 10px; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+  .logout-link{ background:rgba(255,255,255,.15); border:none; color:#fff; border-radius:var(--r-md); min-height:44px; min-width:44px; padding:4px 10px; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
   .logout-link .lo-label{ display:flex; flex-direction:column; align-items:flex-start; line-height:1.15; }
   .logout-link .lo-label .nl{ font-size:12px; font-weight:700; }
   .logout-link .lo-label .nl-hi{ font-size:10px; font-weight:600; opacity:.9; }
@@ -130,8 +139,10 @@
   .login-wrap h2{ color:var(--green-dark); text-align:center; margin-bottom:4px; }
   .login-wrap p.tag{ text-align:center; color:var(--muted); margin-top:0; font-size:13px; }
   .field-label{ display:block; font-size:13px; font-weight:600; margin:14px 0 4px; color:var(--text); }
-  input[type=text], input[type=number], input[type=password], input[type=email], input[type=search]{
-    width:100%; padding:12px; border:1px solid var(--border); border-radius:10px;
+  /* `tel` was missing, so the one phone field in the request modal rendered UA-black on a page
+     where every other input is --text, and skipped the 48px min-height with it. */
+  input[type=text], input[type=number], input[type=password], input[type=email], input[type=search], input[type=tel]{
+    width:100%; padding:12px; border:1px solid var(--border); border-radius:var(--r-md);
     font-size:16px; background:#fff; min-height:48px; -webkit-appearance:none; appearance:none;
     color:var(--text);
   }
@@ -140,7 +151,7 @@
      so every hint clears 4.5:1 instead of the browser-default light gray */
   input::placeholder, textarea::placeholder{ color:var(--muted); opacity:1; }
   .btn{
-    display:inline-block; border:none; border-radius:10px; padding:12px 16px;
+    display:inline-block; border:none; border-radius:var(--r-md); padding:12px 16px;
     font-size:15px; font-weight:700; min-height:48px;
   }
   .btn-primary{ background:var(--green); color:#fff; width:100%; margin-top:14px; }
@@ -150,14 +161,14 @@
   .login-note{ text-align:center; font-size:12px; color:var(--muted); margin-top:16px; }
   /* retail customers reach the shop via a supplier's ?s= link, never a login — say so, so a bare-URL visitor isn't stuck at the gate */
   .login-retail{ text-align:center; font-size:12.5px; color:var(--text); background:var(--green-light);
-    border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-top:14px; line-height:1.45; }
+    border:1px solid var(--border); border-radius:var(--r-sm); padding:10px 12px; margin-top:14px; line-height:1.45; }
   .pw-wrap{ position:relative; }
   .pw-wrap input{ padding-right:64px; }
   .pw-toggle{ position:absolute; right:4px; top:50%; transform:translateY(-50%); background:none; border:none;
     color:var(--green-dark); font-size:13px; font-weight:700; min-width:56px; min-height:44px; }
   .login-info{ background:var(--green-light); border:1px solid var(--border); color:var(--green-dark);
-    padding:8px 10px; border-radius:8px; font-size:12.5px; margin-top:12px; font-weight:600; text-align:center; }
-  .login-error{ background:var(--danger-tint); border:1px solid var(--danger-border); color:var(--danger); padding:8px 10px; border-radius:8px; font-size:13px; margin-top:12px; font-weight:600; text-align:center; }
+    padding:8px 10px; border-radius:var(--r-sm); font-size:12.5px; margin-top:12px; font-weight:600; text-align:center; }
+  .login-error{ background:var(--danger-tint); border:1px solid var(--danger-border); color:var(--danger); padding:8px 10px; border-radius:var(--r-sm); font-size:13px; margin-top:12px; font-weight:600; text-align:center; }
   .login-divider{ text-align:center; color:var(--muted); font-size:12px; margin:18px 0 6px; }
 
   /* admin panel */
@@ -167,25 +178,25 @@
   .admin-legend{ font-size:12px; color:var(--muted); margin:2px 0 12px; }
   .admin-toolbar{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
   .admin-toolbar .btn{ width:auto; margin-top:0; padding:10px 14px; font-size:13px; }
-  .acct-card{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; }
+  .acct-card{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:12px; margin-bottom:8px; }
   .acct-top{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
   .acct-id{ font-weight:700; font-size:15px; color:var(--green-dark); }
   .acct-company{ font-size:13.5px; color:var(--text); margin-top:3px; }
   .acct-phone{ font-size:12.5px; color:var(--muted); margin-top:2px; display:flex; align-items:center; gap:5px; }
   .acct-actions{ display:flex; gap:8px; margin-top:10px; }
-  .acct-actions button{ flex:1; min-height:44px; border-radius:8px; font-size:13.5px; font-weight:700; border:1px solid var(--border); background:#fff; color:var(--green-dark); }
+  .acct-actions button{ flex:1; min-height:44px; border-radius:var(--r-sm); font-size:13.5px; font-weight:700; border:1px solid var(--border); background:#fff; color:var(--green-dark); }
   .acct-actions .del{ color:var(--danger); border-color:var(--danger-border); }
   @media (hover:hover){ .acct-actions button:hover{ background:var(--green-light); } .acct-actions .del:hover{ background:var(--danger-tint); } }
-  .admin-form{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:14px; }
+  .admin-form{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:14px; margin-bottom:14px; }
   .admin-form h3{ margin:0 0 10px; font-size:15px; color:var(--green-dark); }
   .admin-form .field-label{ margin:10px 0 4px; }
-  .admin-form select{ width:100%; padding:12px; border:1px solid var(--border); border-radius:10px; font-size:15px; min-height:48px; background:#fff; }
+  .admin-form select{ width:100%; padding:12px; border:1px solid var(--border); border-radius:var(--r-md); font-size:15px; min-height:48px; background:#fff; }
   .admin-form-actions{ display:flex; gap:8px; margin-top:14px; }
   .admin-form-actions .btn{ flex:1; margin-top:0; }
   /* admin stock editor */
   .stock-tools{ margin-top:24px; border-top:1px solid var(--border); padding-top:14px; }
   .stock-tools h3{ margin:0 0 8px; font-size:15px; color:var(--green-dark); }
-  .stock-row{ display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--border); border-radius:10px; padding:8px 10px; margin-bottom:6px; }
+  .stock-row{ display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--border); border-radius:var(--r-md); padding:8px 10px; margin-bottom:6px; }
   .stock-row .s-code{ font-weight:700; font-size:13.5px; color:var(--green-dark); flex-shrink:0; }
   .stock-row .s-name{ font-size:12.5px; color:var(--muted); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .stock-row input{ width:84px; min-height:44px; padding:8px; text-align:right; }
@@ -195,7 +206,7 @@
      so touch/keyboard/screen-reader all work. */
   .stk-list{ display:flex; flex-direction:column; gap:6px; margin-top:8px; }
   .stk-row{ display:flex; align-items:center; gap:10px; width:100%; text-align:left;
-    background:#fff; border:1px solid var(--border); border-radius:10px; padding:10px 12px;
+    background:#fff; border:1px solid var(--border); border-radius:var(--r-md); padding:10px 12px;
     min-height:52px; font:inherit; color:var(--text); cursor:pointer; -webkit-tap-highlight-color:transparent; }
   .stk-row:active{ background:var(--green-light); }
   .stk-main{ flex:1; min-width:0; display:flex; flex-direction:column; }
@@ -206,7 +217,7 @@
   .stk-chev{ color:var(--muted); flex-shrink:0; font-size:18px; line-height:1; }
   .stk-crumbs{ display:flex; flex-wrap:wrap; align-items:center; gap:4px; font-size:12.5px; color:var(--muted); margin-bottom:2px; }
   .stk-crumb{ background:none; border:none; padding:0; font:inherit; color:var(--green-dark); font-weight:600; cursor:pointer; }
-  .stk-back{ background:none; border:1px solid var(--border); border-radius:8px; color:var(--green-dark);
+  .stk-back{ background:none; border:1px solid var(--border); border-radius:var(--r-sm); color:var(--green-dark);
     font-weight:600; font-size:13px; min-height:44px; padding:6px 14px; margin-bottom:8px; cursor:pointer; }
   .stk-back:active{ background:var(--green-light); }
   .stk-title{ font-weight:700; margin-bottom:2px; }
@@ -215,18 +226,18 @@
 
   .notice{
     background:var(--warn-tint); border:1px solid var(--warn-border); color:var(--warn-ink);
-    padding:8px 10px; border-radius:8px; font-size:12.5px; margin:10px 0;
+    padding:8px 10px; border-radius:var(--r-sm); font-size:12.5px; margin:10px 0;
   }
   .dealer-strip{
     display:flex; justify-content:space-between; align-items:center; gap:8px;
-    background:var(--green-light); border:1px solid var(--border); border-radius:10px;
+    background:var(--green-light); border:1px solid var(--border); border-radius:var(--r-md);
     padding:8px 10px; margin-bottom:10px; font-size:13px;
   }
   .dealer-strip .name{ font-weight:700; color:var(--green-dark); text-transform:capitalize; }
   /* amber, not red: the prices on screen are real, just not freshly confirmed */
   .stale-note{
     background:var(--warn-tint); border:1px solid var(--warn-border); color:var(--warn-ink);
-    padding:8px 10px; border-radius:8px; font-size:12.5px; margin-bottom:10px; font-weight:600;
+    padding:8px 10px; border-radius:var(--r-sm); font-size:12.5px; margin-bottom:10px; font-weight:600;
   }
 
   /* search & filters */
@@ -239,15 +250,15 @@
   .search-clear{
     position:absolute; right:6px; top:50%; transform:translateY(-50%);
     background:none; border:none; font-size:20px; color:var(--muted);
-    width:44px; height:44px; line-height:1; border-radius:8px;
+    width:44px; height:44px; line-height:1; border-radius:var(--r-sm);
   }
   .filter-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
   .filter-row .state-only{ display:none; } /* selects kept only as list-scope state */
-  .stock-chip{ background:#fff; border:1px solid var(--border); border-radius:20px; min-height:44px; padding:6px 14px; font-size:13px; font-weight:700; color:var(--muted); }
+  .stock-chip{ background:#fff; border:1px solid var(--border); border-radius:var(--r-pill); min-height:44px; padding:6px 14px; font-size:13px; font-weight:700; color:var(--muted); }
   .stock-chip.on{ background:var(--green-light); border-color:var(--green); color:var(--green-dark); }
   .filter-row select{
     flex:1 1 140px; min-width:0; padding:12px 10px; border:1px solid var(--border);
-    border-radius:10px; background:#fff; font-size:13px; min-height:48px;
+    border-radius:var(--r-md); background:#fff; font-size:13px; min-height:48px;
   }
   .result-count{ font-size:13px; color:var(--muted); margin:2px 0 8px; }
   .list-reset{ background:none; border:none; color:var(--green-dark); font-weight:600; font-size:13px; min-height:44px; padding:6px 2px; margin-bottom:2px; }
@@ -257,7 +268,7 @@
   .browse-back{ background:none; border:none; color:var(--green-dark); font-weight:600; font-size:13px; min-height:44px; padding:6px 2px; margin-bottom:4px; }
   .tiles{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .tile{
-    background:#fff; border:1px solid var(--border); border-radius:12px;
+    background:#fff; border:1px solid var(--border); border-radius:var(--r-lg);
     padding:14px 12px; text-align:left; min-height:72px;
     display:flex; flex-direction:column; justify-content:center; gap:4px;
   }
@@ -265,7 +276,7 @@
   .tile .t-icon{ width:26px; height:26px; color:var(--green); }
   /* categorical wayfinding: each machine group gets a muted, on-brand hue so a
      dealer recognizes a group by colour on return. Icon + soft chip only; text stays ink. */
-  .tile .t-chip{ display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:13px; margin-bottom:4px; background:var(--green-light); }
+  .tile .t-chip{ display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:var(--r-lg); margin-bottom:4px; background:var(--green-light); }
   .tile .t-name{ font-weight:700; font-size:13.5px; color:var(--text); line-height:1.3; }
   .tile .t-count{ font-size:12px; color:var(--muted); }
   /* group category hues (muted, chroma ~0.09–0.12) + matching high-lightness chip tints */
@@ -293,14 +304,14 @@
 
   /* list */
   .item{
-    background:#fff; border:1px solid var(--border); border-radius:12px;
+    background:#fff; border:1px solid var(--border); border-radius:var(--r-lg);
     padding:10px 12px; margin-bottom:8px;
     display:flex; gap:12px; align-items:flex-start;
   }
   /* real per-part photo — tap to enlarge. Rows with no extracted photo swap to .thumb-ph (group icon). */
   .item-thumb{
     flex:0 0 66px; width:66px; height:66px; border:1px solid var(--border);
-    border-radius:8px; object-fit:cover; object-position:top center;
+    border-radius:var(--r-sm); object-fit:cover; object-position:top center;
     background:var(--bg); cursor:zoom-in;
   }
   .item-thumb:focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
@@ -327,13 +338,13 @@
      334px row, which is what put seven badges past the viewport edge — hence min-width:0. */
   .badge{
     background:var(--green-light); color:var(--green-dark); font-size:12px; font-weight:600;
-    padding:3px 7px; border-radius:20px;
+    padding:3px 7px; border-radius:var(--r-pill);
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; flex:0 1 auto;
   }
   .item-particular{ font-size:13.5px; margin:4px 0 8px; color:var(--text); line-height:1.35; }
   /* availability from Supabase (chain_availability) — three states: on my supplier's shelf,
      reachable further up the chain, or nowhere. Who holds upstream stock is never revealed. */
-  .stock-badge{ font-size:12px; font-weight:600; padding:3px 7px; border-radius:20px; white-space:nowrap; }
+  .stock-badge{ font-size:12px; font-weight:600; padding:3px 7px; border-radius:var(--r-pill); white-space:nowrap; }
   .stock-in{ background:var(--green-light); color:var(--green-dark); }
   /* out-of-stock is a calm, muted state — not an alarm (most of the catalog may be unstocked) */
   .stock-out{ background:var(--calm-tint); color:var(--muted); }
@@ -345,28 +356,32 @@
   /* per-line photo cell + decline button on request / PI tables */
   td.ln-thumb{ width:1%; padding:2px 4px; vertical-align:middle; }
   .line-x{ background:#fff; border:1px solid var(--border); color:var(--danger); font-weight:700;
-    width:32px; height:32px; border-radius:8px; line-height:1; cursor:pointer; }
+    width:32px; height:32px; border-radius:var(--r-sm); line-height:1; cursor:pointer; }
   .line-x:hover{ background:var(--danger-tint); }
   /* wrap, not nowrap: at 360px (the commonest cheap-Android width) an active stepper pushed
      .item-controls to 264px inside a 236px column and clipped the "+" button off-screen */
   .item-controls{ display:flex; align-items:center; gap:6px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; }
+  /* Secondary by construction. This opens a scan of the printed catalogue page — genuinely
+     useful, never the reason anyone came to the row. As a filled green pill sitting above the
+     ordering action it made the reference material louder than the purchase, on all 1,746 rows.
+     Still a full 44px target; it just stops shouting. */
   .diagram-btn{
-    background:var(--green-light); color:var(--green-dark); border:1px solid var(--border); border-radius:8px;
-    padding:8px 10px; font-size:12px; font-weight:600; min-height:44px;
+    background:none; color:var(--muted); border:1px solid transparent; border-radius:var(--r-sm);
+    padding:8px 6px; font-size:12px; font-weight:600; min-height:44px;
     display:inline-flex; align-items:center; justify-content:center; gap:6px;
   }
-  .stepper{ display:flex; align-items:center; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .stepper{ display:flex; align-items:center; border:1px solid var(--border); border-radius:var(--r-sm); overflow:hidden; }
   .stepper button{ background:var(--green-light); border:none; width:44px; height:44px; font-size:18px; color:var(--green-dark); font-weight:700; }
   .stepper input{ width:46px; text-align:center; border:none; padding:0; height:44px; min-height:44px; -moz-appearance:textfield; font-size:15px; }
   .add-btn{
-    background:var(--green); color:#fff; border:none; border-radius:8px; padding:8px 14px;
+    background:var(--green); color:#fff; border:none; border-radius:var(--r-sm); padding:8px 14px;
     font-size:13px; font-weight:700; min-height:44px;
   }
   .add-btn[disabled], .stepper[disabled]{ opacity:.5; }
   .demand-btn{ background:#fff; color:var(--warn-ink); border:1px solid var(--warn-border); }
-  .show-more{ background:#fff; border:1px solid var(--green); color:var(--green-dark); border-radius:10px; width:100%; min-height:48px; font-weight:700; font-size:14px; margin:4px 0 8px; }
+  .show-more{ background:#fff; border:1px solid var(--green); color:var(--green-dark); border-radius:var(--r-md); width:100%; min-height:48px; font-weight:700; font-size:14px; margin:4px 0 8px; }
   .empty-state{ text-align:center; color:var(--muted); padding:40px 10px; font-size:13.5px; line-height:1.6; }
-  .empty-state .retry-btn{ display:inline-block; margin-top:12px; background:var(--green); color:#fff; border:none; border-radius:10px; min-height:44px; padding:0 18px; font-weight:700; }
+  .empty-state .retry-btn{ display:inline-block; margin-top:12px; background:var(--green); color:#fff; border:none; border-radius:var(--r-md); min-height:44px; padding:0 18px; font-weight:700; }
   .spinner{ width:26px; height:26px; border:3px solid var(--border); border-top-color:var(--green); border-radius:50%; margin:0 auto 12px; animation:spin .8s linear infinite; }
   @keyframes spin{ to{ transform:rotate(360deg); } }
   @media (prefers-reduced-motion: reduce){ .spinner{ animation:none; } }
@@ -387,7 +402,7 @@
   .nav-badge{
     position:absolute; top:2px; right:6px; left:auto;
     min-width:17px; height:17px; padding:0 5px;
-    background:var(--danger); color:#fff; border-radius:11px;
+    background:var(--danger); color:#fff; border-radius:var(--r-pill);
     font-size:10.5px; font-weight:700; line-height:17px; text-align:center;
     font-variant-numeric:tabular-nums;
   }
@@ -438,7 +453,7 @@
   @media (prefers-reduced-motion: reduce){ main#main > section:not(.hidden){ animation:none; } }
 
   /* cart */
-  .cart-item{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:8px; }
+  .cart-item{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:10px 12px; margin-bottom:8px; }
   .cart-item-top{ display:flex; justify-content:space-between; gap:8px; }
   .cart-item-name{ font-size:13.5px; font-weight:600; }
   .cart-item-code{ font-size:13px; color:var(--muted); }
@@ -446,16 +461,16 @@
   .remove-btn{ background:none; border:none; color:var(--danger); font-size:12px; font-weight:700; min-height:44px; padding:6px 8px; }
   .line-total{ font-weight:700; font-size:13.5px; }
   .grand-total-bar{
-    background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px; margin-top:10px;
+    background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:12px; margin-top:10px;
     display:flex; justify-content:space-between; align-items:center; font-size:15px; font-weight:700;
   }
-  .generate-btn{ background:var(--green); color:#fff; border:none; border-radius:10px; padding:14px; width:100%; margin-top:12px; font-size:15px; font-weight:700; min-height:48px; }
+  .generate-btn{ background:var(--green); color:#fff; border:none; border-radius:var(--r-md); padding:14px; width:100%; margin-top:12px; font-size:15px; font-weight:700; min-height:48px; }
   .generate-btn[disabled]{ opacity:.5; }
 
   /* orders */
-  .order-row{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; gap:8px; font-size:13.5px; }
+  .order-row{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; gap:8px; font-size:13.5px; }
   /* Requests (supplier) cards */
-  .req-card{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:10px; font-size:13.5px; }
+  .req-card{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:12px; margin-bottom:10px; font-size:13.5px; }
   .req-card table{ width:100%; border-collapse:collapse; font-size:13px; margin-top:6px; }
   .req-card th, .req-card td{ text-align:left; padding:4px 6px; border-bottom:1px solid var(--border); }
   .req-card th.num, .req-card td.num{ text-align:right; }
@@ -467,15 +482,15 @@
   .disp-sec th.num, .disp-sec td.num{ text-align:right; }
   .ship-label{
     white-space:pre-line; background:#fff; border:1px dashed var(--warn-border);
-    border-radius:10px; padding:10px 12px; font-size:14px; line-height:1.5; font-weight:600; color:var(--text);
+    border-radius:var(--r-md); padding:10px 12px; font-size:14px; line-height:1.5; font-weight:600; color:var(--text);
   }
   .ship-warn{ background:var(--danger-tint); border:1px solid var(--danger-border); color:var(--danger);
-    border-radius:10px; padding:10px 12px; font-size:13px; font-weight:600; }
+    border-radius:var(--r-md); padding:10px 12px; font-size:13px; font-weight:600; }
 
   /* money: the two numbers a trader checks every morning */
   .money-row{ display:flex; gap:10px; margin-top:12px; }
   /* column + auto margin keeps both amounts on the same baseline when one label wraps */
-  .money-tile{ flex:1; min-width:0; border-radius:12px; padding:10px 12px; border:1px solid var(--border); background:#fff;
+  .money-tile{ flex:1; min-width:0; border-radius:var(--r-lg); padding:10px 12px; border:1px solid var(--border); background:#fff;
     display:flex; flex-direction:column; }
   .money-tile .mt-val{ margin-top:auto; }
   .money-tile.in{ background:var(--green-light); border-color:var(--green-mid); }
@@ -495,7 +510,7 @@
 
   /* first-run setup checklist — states the consequence, not just the missing field */
   .setup-card{ background:var(--warn-tint); border:1px solid var(--warn-border);
-    border-radius:12px; padding:12px 14px; margin-bottom:8px; }
+    border-radius:var(--r-lg); padding:12px 14px; margin-bottom:8px; }
   .setup-h{ font-weight:800; font-size:14px; color:var(--warn-ink); }
   .setup-list{ margin:6px 0 0; padding-left:18px; font-size:13px; color:var(--text); line-height:1.55; }
   .setup-foot{ margin-top:6px; font-size:12px; color:var(--warn-ink); }
@@ -520,13 +535,13 @@
     .remove-btn:hover{ background:var(--danger-tint); }
   }
   @media (prefers-reduced-motion: reduce){ .tile{ transition:none; } .tile:active{ transform:none; } }
-  .ship-to{ background:var(--green-light); border:1px solid var(--border); border-radius:8px; padding:8px 10px; margin:8px 0 2px; font-weight:600; font-size:13px; }
+  .ship-to{ background:var(--green-light); border:1px solid var(--border); border-radius:var(--r-sm); padding:8px 10px; margin:8px 0 2px; font-weight:600; font-size:13px; }
   /* one clear primary (irreversible stock move), the rest demoted below it */
   .req-actions{ margin-top:10px; }
-  .req-primary{ width:100%; margin-top:0; min-height:48px; border-radius:10px; font-weight:700; }
+  .req-primary{ width:100%; margin-top:0; min-height:48px; border-radius:var(--r-md); font-weight:700; }
   .req-gloss{ font-size:11.5px; color:var(--muted); margin-top:6px; }
   .req-sub{ display:flex; gap:8px; margin-top:10px; }
-  .req-sub button{ flex:1; min-height:44px; border-radius:10px; font-size:12.5px; font-weight:600; }
+  .req-sub button{ flex:1; min-height:44px; border-radius:var(--r-md); font-size:12.5px; font-weight:600; }
   .btn-soft{ background:var(--green-light); color:var(--green-dark); border:1px solid var(--border); }
   .btn-danger{ background:var(--danger-tint); color:var(--danger); border:1px solid var(--danger-border); }
   .req-card .btn-primary{ width:auto; margin-top:0; }
@@ -534,15 +549,15 @@
   .cf-box{ max-width:340px; width:calc(100% - 32px); padding:18px; }
   .cf-msg{ font-size:14.5px; line-height:1.5; white-space:pre-line; color:var(--text); margin-bottom:16px; }
   .cf-row{ display:flex; gap:10px; }
-  .cf-row button{ flex:1; min-height:46px; border-radius:10px; font-weight:600; font-size:14px; }
+  .cf-row button{ flex:1; min-height:46px; border-radius:var(--r-md); font-weight:600; font-size:14px; }
   .req-msg{ font-size:12.5px; margin-top:6px; color:var(--muted); }
   .req-msg.err{ color:var(--danger); }
   .fwd-eu{ margin-top:8px; border-top:1px dashed var(--border); padding-top:8px; }
   /* More hub */
-  .more-card{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:10px; }
-  .more-link{ display:block; width:100%; text-align:left; background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:8px; font-size:14px; font-weight:600; color:var(--green-dark); text-decoration:none; }
+  .more-card{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:12px; margin-bottom:10px; }
+  .more-link{ display:block; width:100%; text-align:left; background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:14px; margin-bottom:8px; font-size:14px; font-weight:600; color:var(--green-dark); text-decoration:none; }
   .more-signout{ color:var(--danger); }
-  .more-sec{ background:#fff; border:1px solid var(--border); border-radius:12px; margin-bottom:8px; overflow:hidden; }
+  .more-sec{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); margin-bottom:8px; overflow:hidden; }
   .more-sec > summary{ position:relative; padding:14px 34px 14px 14px; font-size:14px; font-weight:600; color:var(--green-dark); cursor:pointer; list-style:none; }
   .more-sec > summary::-webkit-details-marker{ display:none; }
   .more-sec > summary::after{ content:"⌄"; position:absolute; top:13px; right:14px; color:var(--muted); transition:transform .2s var(--ease-quint); transform-origin:center; }
@@ -563,7 +578,7 @@
   .more-tabs::-webkit-scrollbar{ display:none; }
   .more-tab{ position:relative; flex:0 0 auto; display:flex; flex-direction:column; align-items:center;
     justify-content:center; gap:1px; min-width:76px; min-height:60px; padding:8px 12px;
-    border:1px solid var(--border); border-radius:12px; background:#fff; color:var(--muted);
+    border:1px solid var(--border); border-radius:var(--r-lg); background:#fff; color:var(--muted);
     font:inherit; font-weight:700; cursor:pointer; transition:background-color .15s ease, color .15s ease; }
   .more-tab .ico{ width:20px; height:20px; }
   .mt-en{ font-size:12.5px; line-height:1.1; }
@@ -571,12 +586,12 @@
   .more-tab[aria-selected="true"]{ background:var(--green); border-color:var(--green); color:#fff; }
   .more-tab[aria-selected="true"] .mt-hi{ opacity:.9; }
   .mt-dot{ position:absolute; top:4px; right:6px; min-width:16px; height:16px; padding:0 4px;
-    border-radius:99px; background:var(--danger); color:#fff; font-size:10px; font-weight:700;
+    border-radius:var(--r-pill); background:var(--danger); color:#fff; font-size:10px; font-weight:700;
     display:flex; align-items:center; justify-content:center; }
   @media (prefers-reduced-motion: reduce){ .more-tab{ transition:none; } }
   .ms-hint{ display:block; font-size:12px; font-weight:400; color:var(--muted); margin-top:2px; }
-  .ms-badge{ display:inline-block; min-width:20px; text-align:center; background:var(--danger); color:#fff; border-radius:10px; font-size:11.5px; font-weight:700; padding:1px 6px; margin-left:8px; }
-  .ms-share{ float:right; display:inline-flex; align-items:center; gap:5px; background:var(--green); color:#fff; border:none; border-radius:8px; font-size:12.5px; font-weight:700; padding:6px 10px; margin:-4px 0 4px 8px; min-height:32px; }
+  .ms-badge{ display:inline-block; min-width:20px; text-align:center; background:var(--danger); color:#fff; border-radius:var(--r-md); font-size:11.5px; font-weight:700; padding:1px 6px; margin-left:8px; }
+  .ms-share{ float:right; display:inline-flex; align-items:center; gap:5px; background:var(--green); color:#fff; border:none; border-radius:var(--r-sm); font-size:12.5px; font-weight:700; padding:6px 10px; margin:-4px 0 4px 8px; min-height:32px; }
   .ms-share .ico svg{ width:15px; height:15px; }
   /* awaiting dispatch: one collapsed row per parcel (amber = you owe a physical action).
      Defined after .more-sec so the warm colours win over the shared accordion shell. */
@@ -590,8 +605,8 @@
   .disp-sec .ms-hint{ margin-left:30px; } /* align the sub-line under the name, clear of the number */
   .more-hint{ color:var(--muted); font-size:12.5px; }
   .m-lbl{ display:block; font-size:12.5px; font-weight:600; margin:8px 0 4px; }
-  .m-input{ width:100%; box-sizing:border-box; padding:11px; min-height:46px; font-size:16px; border:1px solid var(--border); border-radius:10px; background:#fff; }
-  .m-btn{ width:100%; margin-top:12px; min-height:46px; border-radius:10px; font-weight:600; }
+  .m-input{ width:100%; box-sizing:border-box; padding:11px; min-height:46px; font-size:16px; border:1px solid var(--border); border-radius:var(--r-md); background:#fff; }
+  .m-btn{ width:100%; margin-top:12px; min-height:46px; border-radius:var(--r-md); font-weight:600; }
   .m-input.err{ border-color:var(--danger); background:var(--danger-tint); }
   /* every checkbox in the app rendered OS-blue against a green brand */
   input[type=checkbox], input[type=radio]{ accent-color:var(--green); }
@@ -610,20 +625,20 @@
      preview to zero width — the confirmation of the upload sat off the edge of the phone. */
   #m-pp-photo-btn{ flex:1 1 auto; width:auto; min-width:0; }
   #m-pp-photo-wrap{ flex:0 0 auto; }
-  .pp-bar{ height:6px; border-radius:99px; background:var(--border); overflow:hidden; margin-bottom:4px; }
+  .pp-bar{ height:6px; border-radius:var(--r-pill); background:var(--border); overflow:hidden; margin-bottom:4px; }
   /* scaleX, not width: animating width invalidates layout every frame on a cheap phone */
-  .pp-bar > i{ display:block; height:100%; width:100%; border-radius:99px; background:var(--green);
+  .pp-bar > i{ display:block; height:100%; width:100%; border-radius:var(--r-pill); background:var(--green);
     transform:scaleX(0); transform-origin:left;
     transition:transform .3s cubic-bezier(.2,.8,.25,1); }
   .wk-prog{ margin:0 14px 10px; font-size:12.5px; color:var(--muted); }
   .wk-prog b{ color:var(--text); }
-  .wk-bar{ height:6px; border-radius:99px; background:var(--border); overflow:hidden; margin:5px 0 6px; }
-  .wk-bar > i{ display:block; height:100%; width:100%; border-radius:99px; background:var(--green);
+  .wk-bar{ height:6px; border-radius:var(--r-pill); background:var(--border); overflow:hidden; margin:5px 0 6px; }
+  .wk-bar > i{ display:block; height:100%; width:100%; border-radius:var(--r-pill); background:var(--green);
     transform:scaleX(0); transform-origin:left; transition:transform .3s cubic-bezier(.2,.8,.25,1); }
   @media (prefers-reduced-motion: reduce){ .wk-bar > i{ transition:none; } }
   .wk-row{ display:flex; align-items:center; gap:10px; width:calc(100% - 28px); margin:0 14px 6px;
     padding:10px 12px; min-height:52px; text-align:left; background:#fff; border:1px solid var(--border);
-    border-radius:10px; font:inherit; cursor:pointer; }
+    border-radius:var(--r-md); font:inherit; cursor:pointer; }
   .wk-row:hover{ background:var(--green-light); }
   .wk-row .wk-code{ font-weight:700; font-size:13px; color:var(--green-dark); }
   .wk-row .wk-name{ font-size:12.5px; color:var(--text); }
@@ -640,14 +655,14 @@
      question a shopkeeper is actually asking before anything else */
   .item-spec{ font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.45; }
   .item-spec b{ color:var(--text); font-weight:600; }
-  .badge-green, .badge-amber, .badge-red{ display:inline-block; border-radius:8px; padding:2px 8px; font-size:11px; font-weight:700; margin-bottom:3px; }
+  .badge-green, .badge-amber, .badge-red{ display:inline-block; border-radius:var(--r-sm); padding:2px 8px; font-size:11px; font-weight:700; margin-bottom:3px; }
   .badge-green{ background:var(--green-light); color:var(--green-dark); }
   /* waiting is a warm state, not an inactive one — placed orders read amber until billed */
   .badge-amber{ background:var(--warn-tint); color:var(--warn-ink); border:1px solid var(--warn-border); }
   .badge-red{ background:var(--danger-tint); color:var(--danger); border:1px solid var(--danger-border); }
 
   /* PI */
-  .pi-box{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px; }
+  .pi-box{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:14px; }
   .pi-seller{ text-align:center; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:10px; }
   .pi-seller .biz{ font-size:18px; font-weight:800; color:var(--green-dark); letter-spacing:-0.01em; }
   .pi-seller .biz-line{ font-size:11.5px; color:var(--muted); margin-top:3px; line-height:1.5; }
@@ -659,7 +674,7 @@
   table.pi-table th, table.pi-table td{ border:1px solid var(--border); padding:6px 5px; text-align:left; word-break:break-word; overflow-wrap:anywhere; }
   table.pi-table th{ background:var(--green-light); color:var(--green-dark); }
   table.pi-table td.num, table.pi-table th.num{ text-align:right; white-space:nowrap; }
-  .pi-pay{ margin-top:12px; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:var(--green-light); font-size:13px; }
+  .pi-pay{ margin-top:12px; padding:10px 12px; border:1px solid var(--border); border-radius:var(--r-sm); background:var(--green-light); font-size:13px; }
   .pi-pay-t{ font-weight:700; color:var(--green-dark); margin-bottom:4px; }
   .pi-totals{ margin-top:10px; font-size:13px; }
   .pi-totals .row{ display:flex; justify-content:space-between; padding:3px 0; font-size:13px; }
@@ -669,7 +684,7 @@
   .pi-actions .btn{ flex:1; margin-top:0; }
   .wa-btn{ background:var(--green-dark); color:#fff; }
   .back-link{ display:inline-block; margin-bottom:10px; font-size:13px; color:var(--green-dark); font-weight:600; background:none; border:none; min-height:44px; padding:6px 0; }
-  .pi-success{ background:var(--green-light); border:1px solid var(--border); color:var(--green-dark); border-radius:8px; padding:8px 10px; font-size:12.5px; margin-bottom:10px; font-weight:600; }
+  .pi-success{ background:var(--green-light); border:1px solid var(--border); color:var(--green-dark); border-radius:var(--r-sm); padding:8px 10px; font-size:12.5px; margin-bottom:10px; font-weight:600; }
 
   /* modal */
   html.modal-open{ overflow:hidden; }
@@ -677,14 +692,14 @@
   .skip-link{ position:fixed; left:0; top:0; z-index:calc(var(--z-nav) + 1);
     transform:translateY(-200%); background:#fff; color:var(--green-dark); font-weight:700;
     padding:12px 16px; min-height:44px; display:inline-flex; align-items:center;
-    border:2px solid var(--focus); border-radius:0 0 10px 0; }
+    border:2px solid var(--focus); border-radius:0 0 var(--r-md) 0; }
   .skip-link:focus{ transform:none; }
   @media (prefers-reduced-motion: reduce){ .skip-link{ transition:none; } }
   .modal-overlay{
     position:fixed; inset:0; background:var(--scrim-modal); z-index:var(--z-modal);
     display:flex; align-items:center; justify-content:center; padding:10px;
   }
-  .modal-box{ background:#fff; border-radius:12px; width:100%; max-width:520px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; }
+  .modal-box{ background:#fff; border-radius:var(--r-lg); width:100%; max-width:520px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; }
   .modal-box.modal-wide{ max-width:min(94vw, 980px); max-height:94vh; }
   @media (orientation: landscape) and (max-height: 500px){
     .modal-box{ max-height:96vh; max-width:96vw; }
@@ -699,14 +714,14 @@
   .modal-close{ background:none; border:none; font-size:24px; line-height:1; min-height:44px; min-width:44px; color:var(--muted); }
   .modal-note{ font-size:11.5px; color:var(--muted); padding:8px 12px; border-bottom:1px solid var(--border); line-height:1.5; background:var(--green-light); }
   .modal-zoom-row{ display:flex; gap:8px; padding:8px 12px; border-bottom:1px solid var(--border); }
-  .modal-zoom-row button{ flex:1; background:var(--green-light); border:1px solid var(--border); border-radius:8px; min-height:44px; padding:8px; font-size:13px; font-weight:700; color:var(--green-dark); }
+  .modal-zoom-row button{ flex:1; background:var(--green-light); border:1px solid var(--border); border-radius:var(--r-sm); min-height:44px; padding:8px; font-size:13px; font-weight:700; color:var(--green-dark); }
   .modal-img-wrap{ overflow:auto; flex:1; background:var(--scrim); touch-action:pan-x pan-y pinch-zoom; }
   .modal-img-wrap img{ display:block; width:100%; height:auto; }
 
   @media (hover:hover){
     .btn-primary:hover{ background:var(--green-dark); }
     .add-btn:hover{ background:var(--green-dark); }
-    .diagram-btn:hover{ background:var(--hover); }
+    .diagram-btn:hover{ background:var(--hover-faint); color:var(--green-dark); }
     .stepper button:hover{ background:var(--hover); }
     .tile:hover{ border-color:var(--green); }
     .generate-btn:hover{ background:var(--green-dark); }
@@ -758,7 +773,7 @@
       border-top:none; border-right:1px solid var(--border);
       padding:10px 6px;
     }
-    nav.bottom-nav button{ flex:0 0 auto; width:100%; min-height:60px; border-radius:10px; }
+    nav.bottom-nav button{ flex:0 0 auto; width:100%; min-height:60px; border-radius:var(--r-md); }
     nav.bottom-nav button.active{ background:var(--green-light); }
     main{ max-width:1040px; padding-bottom:32px; }
     header.app-header{ padding-inline:max(16px, calc(50% - 520px)); }
@@ -1936,7 +1951,7 @@
     if (!r) return "";
     var s = px || 34;
     return '<img class="line-thumb" src="' + esc(partPhoto(i)) +
-      '" alt="" loading="lazy" style="width:' + s + 'px;height:' + s + 'px;object-fit:cover;border-radius:6px;background:var(--green-light);flex:none;" ' +
+      '" alt="" loading="lazy" style="width:' + s + 'px;height:' + s + 'px;object-fit:cover;border-radius:var(--r-sm);background:var(--green-light);flex:none;" ' +
       'onerror="this.style.display=\'none\'">';
   }
 
@@ -2797,7 +2812,7 @@
     function drawPhoto(){
       var w = $("m-pp-photo-wrap"); if (!w) return;
       w.innerHTML = _ppPhoto
-        ? '<img src="'+esc(_ppPhoto)+'" alt="Photo of this part" style="height:46px;width:46px;object-fit:cover;border-radius:10px;border:1px solid var(--border);display:block;">'
+        ? '<img src="'+esc(_ppPhoto)+'" alt="Photo of this part" style="height:46px;width:46px;object-fit:cover;border-radius:var(--r-md);border:1px solid var(--border);display:block;">'
         : '<span style="color:var(--muted);font-size:12px;">No photo yet / फ़ोटो नहीं</span>';
     }
     var PP_REQUIRED = ["m-pp-code","m-pp-name","m-pp-section","m-pp-base"];
@@ -3530,7 +3545,7 @@
         specLine(r) +
         '<div class="item-bottom">' + rateHtml +
           '<div class="item-controls">' +
-            '<button class="diagram-btn" type="button" data-diagram="' + idx + '">' + svgIco("page") + 'Catalog page</button>' +
+            '<button class="diagram-btn" type="button" data-diagram="' + idx + '">' + svgIco("page") + 'Catalog page / सूची पन्ना</button>' +
             controlsHtml +
           '</div></div></div></div>';
     }).join("");
@@ -4051,22 +4066,32 @@
             '<button class="modal-close" id="modal-close" type="button" aria-label="Close">&times;</button></div>' +
           '<div style="padding:12px;">' +
             '<div style="font-size:13.5px;font-weight:600;margin-bottom:10px;">' + esc(r.product_code || "—") + ' — ' + esc(nice(r.particular)) + '</div>' +
-            '<label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:4px;">Quantity / मात्रा</label>' +
-            '<div class="stepper" id="demand-qty-stepper" style="margin-bottom:12px;">' +
+            // .m-lbl / .m-input are the app's shared field components. This modal used to
+            // reimplement both with inline styles, which is how it ended up with 44px inputs on
+            // a 46px system and two labels that were never tied to their field at all.
+            '<label class="m-lbl" for="demand-qty">Quantity / मात्रा</label>' +
+            // width:max-content because .stepper is a flex CONTAINER, not a flex item, here —
+            // as a block child it stretched the full dialog and left an empty white gutter to
+            // the right of the +, which reads as a broken field rather than a stepper.
+            '<div class="stepper" id="demand-qty-stepper" style="margin-bottom:12px;width:max-content;">' +
               '<button class="qty-minus" type="button" aria-label="Decrease quantity">−</button>' +
-              '<input type="number" class="qty-input" id="demand-qty" min="1" max="500" value="1" inputmode="numeric" aria-label="Quantity">' +
+              '<input type="number" class="qty-input" id="demand-qty" min="1" max="500" value="1" inputmode="numeric">' +
               '<button class="qty-plus" type="button" aria-label="Increase quantity">+</button>' +
             '</div>' +
             (state.enduser ?
-              '<label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:4px;">Your name / आपका नाम</label>' +
-              '<input type="text" id="demand-name" value="' + esc(prefillName) + '" style="width:100%;min-height:44px;border:1px solid var(--border);border-radius:8px;padding:0 10px;font-size:14px;margin-bottom:10px;">' +
-              '<label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:4px;">Phone / फ़ोन</label>' +
-              '<input type="tel" id="demand-phone" style="width:100%;min-height:44px;border:1px solid var(--border);border-radius:8px;padding:0 10px;font-size:14px;margin-bottom:10px;">'
+              '<label class="m-lbl" for="demand-name">Your name / आपका नाम</label>' +
+              '<input class="m-input" type="text" id="demand-name" autocomplete="name" value="' + esc(prefillName) + '">' +
+              '<label class="m-lbl" for="demand-phone">Phone / फ़ोन</label>' +
+              '<input class="m-input" type="tel" id="demand-phone" autocomplete="tel" inputmode="numeric">'
               : '') +
-            '<div id="demand-error" class="hidden" style="color:var(--danger);font-size:12.5px;font-weight:600;margin-bottom:10px;"></div>' +
-            '<div style="display:flex;gap:8px;">' +
+            // role=alert so the failure is spoken, not just coloured
+            '<div id="demand-error" class="hidden" role="alert" style="color:var(--danger);font-size:12.5px;font-weight:600;margin:10px 0;"></div>' +
+            '<div style="display:flex;gap:8px;margin-top:14px;">' +
               '<button class="btn btn-outline" id="demand-cancel" type="button" style="flex:1;margin-top:0;">Cancel / रद्द करें</button>' +
-              '<button class="btn" id="demand-send" type="button" style="flex:1;margin-top:0;">Send request / भेजें</button>' +
+              // was a bare `btn`, which declares no background and no colour — so the one action
+              // this whole modal exists for rendered UA-grey and read as disabled, next to a
+              // fully branded Cancel. Every unpriced row in the catalogue funnels here.
+              '<button class="btn btn-primary" id="demand-send" type="button" style="flex:1;margin-top:0;">Send request / भेजें</button>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -4084,7 +4109,10 @@
     $("modal-overlay").addEventListener("click", function(e){ if (e.target.id === "modal-overlay") closeDiagram(); });
     document.addEventListener("keydown", modalKeydown);
     $("demand-send").onclick = function(){ sendDemand(idx); };
-    $("modal-close").focus();
+    // Focus used to land on the × close button, so a screen-reader user's first Enter after the
+    // dialog opened dismissed it. Land on the first field that still needs an answer instead.
+    var first = (state.enduser && $("demand-name") && !$("demand-name").value.trim()) ? $("demand-name") : $("demand-qty");
+    if (first) first.focus();
   }
 
   async function sendDemand(idx){
