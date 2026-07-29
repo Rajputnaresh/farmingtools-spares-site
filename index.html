@@ -1359,6 +1359,19 @@
 
   // The cart survives a reload but the name and phone beside it did not — on a patchy
   // connection that is the difference between finishing an order and giving up.
+  // What a courier actually needs before a parcel can move. The gate, the "!" badge and the
+  // amber warning each used to test something different — address-only — which is how every
+  // party in production ended up with an address and no PIN, passing every check and still
+  // being unshippable. Retail now demands address + 6-digit PIN; the dealer path asked less.
+  function shipGaps(a){
+    a = a || {};
+    var gaps = [];
+    if (!String(a.address || "").trim()) gaps.push("Address / पता");
+    if (!/^[0-9]{6}$/.test(String(a.pin || "").trim())) gaps.push("6-digit PIN / पिन कोड");
+    if (!String(a.phone || "").trim()) gaps.push("Phone / फ़ोन");
+    return gaps;
+  }
+
   function euContactKey(){ return "kg_eu_contact:" + (state.enduser || "guest"); }
   function saveEuContact(){
     if (!state.enduser) return;
@@ -2467,12 +2480,13 @@
       '<div class="req-msg" id="m-pay-msg"></div></details>';
 
     // a party with no street address cannot be shipped to — open the section and flag it until filled
-    var addrMissing = !String(a.address || "").trim();
-    var detailsMissing = addrMissing || !String(a.phone||"").trim() || !String(a.gstin||"").trim();
+    var addrGaps = shipGaps(a);
+    var addrMissing = addrGaps.length > 0;
+    var detailsMissing = addrMissing || !String(a.gstin||"").trim();
     var secAddress = '<details class="more-sec"'+(detailsMissing ? ' open' : '')+'><summary>My business details — मेरी जानकारी'+
       (detailsMissing ? '<span class="ms-badge">!</span>' : '')+
       '<span class="ms-hint">Address for your parcels, GSTIN for your bills / पता और GSTIN</span></summary>'+
-      (addrMissing ? '<p class="more-hint" style="color:var(--warn-ink);font-weight:600;">Please fill this in — without it your supplier cannot courier anything to you. / यह भरें, वरना सप्लायर पार्सल नहीं भेज सकता।</p>' : '')+
+      (addrMissing ? '<p class="more-hint" style="color:var(--warn-ink);font-weight:600;">Still needed before your supplier can courier to you: <b>'+esc(addrGaps.join(", "))+'</b><br><span lang="hi">इनके बिना सप्लायर पार्सल नहीं भेज सकता।</span></p>' : '')+
       '<label class="m-lbl">Address / पता</label><input type="text" id="m-ad-addr" class="m-input" maxlength="300" placeholder="Shop no., street, landmark" value="'+esc(a.address||"")+'">'+
       '<div class="row2"><div><label class="m-lbl">City / शहर</label><input type="text" id="m-ad-city" class="m-input" value="'+esc(a.city||"")+'"></div>'+
         '<div><label class="m-lbl">PIN / पिन</label><input type="text" id="m-ad-pin" class="m-input" inputmode="numeric" maxlength="6" value="'+esc(a.pin||"")+'"></div></div>'+
@@ -2836,7 +2850,10 @@
       var addr = ($("m-ad-addr").value||"").trim(), city = ($("m-ad-city").value||"").trim(),
           pin = ($("m-ad-pin").value||"").trim(), ph = ($("m-ad-phone").value||"").trim();
       if (!addr){ m.className="req-msg err"; m.textContent = "Address is required. / पता ज़रूरी है।"; return; }
-      if (pin && !/^[0-9]{6}$/.test(pin)){ m.className="req-msg err"; m.textContent = "PIN must be 6 digits. / पिन 6 अंकों का हो।"; return; }
+      // PIN and phone were optional here, which is exactly how a record gets saved, clears the
+      // "!" badge, and still cannot be shipped to. A courier needs both.
+      if (!/^[0-9]{6}$/.test(pin)){ m.className="req-msg err"; m.textContent = "PIN must be 6 digits — the courier needs it. / पिन 6 अंकों का हो।"; $("m-ad-pin").focus(); return; }
+      if (!ph){ m.className="req-msg err"; m.textContent = "Phone is required — the courier calls before delivery. / फ़ोन ज़रूरी है।"; $("m-ad-phone").focus(); return; }
       var gst = (($("m-ad-gstin")||{}).value||"").trim().toUpperCase();
       if (gst && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(gst)){
         m.className="req-msg err"; m.textContent = "GSTIN must be 15 characters like 08ABCDE1234F1Z5. / GSTIN 15 अक्षर का हो।"; return; }
@@ -4423,9 +4440,11 @@
       }
       // a signed-in buyer with no delivery address cannot be shipped to — ask for it at the
       // exact moment it matters instead of letting a parcel become undeliverable later
-      if (!state.enduser && state.account && !String(state.account.address || "").trim()){
-        askConfirm("Your supplier needs a delivery address before they can send this order.\n\nAdd it now?\n\nपार्सल भेजने के लिए आपका पता चाहिए। अभी जोड़ें?",
-          { okLabel:"Add address / पता जोड़ें" }).then(function(go){ if (go) showMore(); });
+      var gaps = (!state.enduser && state.account) ? shipGaps(state.account) : [];
+      if (gaps.length){
+        askConfirm("Your supplier cannot courier this order yet.\n\nStill needed:\n• " + gaps.join("\n• ") +
+                   "\n\nAdd them now?\n\nपार्सल भेजने के लिए यह जानकारी चाहिए। अभी जोड़ें?",
+          { okLabel:"Add details / जानकारी जोड़ें" }).then(function(go){ if (go) showMore(); });
         return;
       }
       var btn = this;
