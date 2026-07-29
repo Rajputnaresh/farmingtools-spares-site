@@ -39,7 +39,8 @@
   @media (prefers-reduced-motion: reduce){ .toast{ transition:none; } }
 
   /* keyboard focus visible everywhere (mouse clicks stay clean) */
-  button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible{
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible,
+  a:focus-visible, [tabindex]:focus-visible{
     outline:3px solid var(--focus); outline-offset:2px; border-radius:8px;
   }
 
@@ -201,7 +202,7 @@
   }
   .filter-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
   .filter-row .state-only{ display:none; } /* selects kept only as list-scope state */
-  .stock-chip{ background:#fff; border:1px solid var(--border); border-radius:20px; min-height:40px; padding:6px 14px; font-size:13px; font-weight:700; color:var(--muted); }
+  .stock-chip{ background:#fff; border:1px solid var(--border); border-radius:20px; min-height:44px; padding:6px 14px; font-size:13px; font-weight:700; color:var(--muted); }
   .stock-chip.on{ background:var(--green-light); border-color:var(--green); color:var(--green-dark); }
   .filter-row select{
     flex:1 1 140px; min-width:0; padding:12px 10px; border:1px solid var(--border);
@@ -514,23 +515,36 @@
   .m-lbl{ display:block; font-size:12.5px; font-weight:600; margin:8px 0 4px; }
   .m-input{ width:100%; box-sizing:border-box; padding:11px; min-height:46px; font-size:16px; border:1px solid var(--border); border-radius:10px; background:#fff; }
   .m-btn{ width:100%; margin-top:12px; min-height:46px; border-radius:10px; font-weight:600; }
+  .m-input.err{ border-color:var(--danger); background:var(--danger-tint,#fdeceb); }
+  /* every checkbox in the app rendered OS-blue against a green brand */
+  input[type=checkbox], input[type=radio]{ accent-color:var(--green); }
   .row2{ display:flex; gap:10px; }
   .row2 > div{ flex:1; min-width:0; }
   /* product master form: the six steps ARE a sequence (what it is → what it fits → price →
      how it's sold → parcel → notes), so the numbers carry real order, not decoration. */
   /* two classes deep on purpose: `.more-sec > *:not(summary)` flattens every child's margin
      to `0 14px`, which would eat the breathing room between steps. */
-  .more-sec > .pp-step{ display:flex; align-items:center; gap:8px; margin:20px 14px 2px; padding-top:14px;
-    border-top:1px solid var(--border); font-weight:700; font-size:14px; }
+  .more-sec > .pp-step{ margin:20px 14px 2px; padding-top:14px; border-top:1px solid var(--border);
+    font-weight:700; font-size:14px; line-height:1.3; }
+  .more-sec > .pp-step:first-of-type{ border-top:0; padding-top:0; margin-top:14px; }
   .more-sec > .pp-meter{ margin:12px 14px 0; }
-  .pp-step b{ display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px;
-    border-radius:50%; background:var(--green); color:#fff; font-size:12px; flex:none; }
   .pp-meter{ font-size:12px; color:var(--muted); }
+  /* .m-btn is width:100%, so inside a .row2 it claimed the whole row and squeezed the photo
+     preview to zero width — the confirmation of the upload sat off the edge of the phone. */
+  #m-pp-photo-btn{ flex:1 1 auto; width:auto; min-width:0; }
+  #m-pp-photo-wrap{ flex:0 0 auto; }
   .pp-bar{ height:6px; border-radius:99px; background:var(--border); overflow:hidden; margin-bottom:4px; }
-  .pp-bar > i{ display:block; height:100%; width:0; border-radius:99px; background:var(--danger);
-    transition:width .3s cubic-bezier(.2,.8,.25,1), background-color .3s ease; }
-  .pp-bar > i.part{ background:var(--warn-border,#f0c96b); }
-  .pp-bar > i.full{ background:var(--green-dark); }
+  /* scaleX, not width: animating width invalidates layout every frame on a cheap phone */
+  .pp-bar > i{ display:block; height:100%; width:100%; border-radius:99px; background:var(--green);
+    transform:scaleX(0); transform-origin:left;
+    transition:transform .3s cubic-bezier(.2,.8,.25,1); }
+  .cart-sum{ margin:10px 2px 0; }
+  .cart-sum-row{ display:flex; justify-content:space-between; align-items:baseline;
+    font-size:13px; color:var(--muted); padding:3px 0; }
+  .pp-ready{ display:flex; align-items:center; gap:6px; font-weight:700; font-size:12.5px; margin-bottom:5px; }
+  .pp-ready.no{ color:var(--muted); }
+  .pp-ready.yes{ color:var(--green-dark); }
+  @media (prefers-reduced-motion: reduce){ .pp-bar > i{ transition:none; } }
   /* one calm line of hard facts under the part name — fitment first, because that is the
      question a shopkeeper is actually asking before anything else */
   .item-spec{ font-size:11.5px; color:var(--muted); margin-top:2px; line-height:1.45; }
@@ -736,11 +750,14 @@
   <section id="view-cart" class="hidden">
     <h2 class="view-title">Cart / कार्ट</h2>
     <div id="cart-list"></div>
-    <div class="grand-total-bar">
-      <span>Subtotal / उप-योग</span>
-      <span id="cart-grand-total">₹0</span>
+    <div class="cart-sum">
+      <div class="cart-sum-row"><span>Subtotal / उप-योग</span><span id="cart-grand-total">₹0</span></div>
+      <div class="cart-sum-row"><span>+ 5% GST</span><span id="cart-gst">₹0</span></div>
     </div>
-    <p style="font-size:12px;color:var(--muted);margin:6px 2px 0;">+ 5% GST added at checkout / चेकआउट पर 5% GST जुड़ेगा</p>
+    <div class="grand-total-bar">
+      <span>Total to pay / कुल देना है</span>
+      <span id="cart-payable">₹0</span>
+    </div>
     <div id="eu-contact" class="hidden">
       <label class="field-label" for="eu-name">Your name / आपका नाम</label>
       <input type="text" id="eu-name" autocomplete="name" placeholder="Full name">
@@ -784,8 +801,8 @@
 
 </main>
 
-<input type="file" id="bill-file" accept="application/pdf,image/*" class="hidden" aria-hidden="true">
-<input type="file" id="pp-file" accept="image/*" class="hidden" aria-hidden="true">
+<input type="file" id="bill-file" accept="application/pdf,image/*" class="hidden" aria-hidden="true" aria-label="Choose a bill or LR file to upload" tabindex="-1">
+<input type="file" id="pp-file" accept="image/*" class="hidden" aria-hidden="true" aria-label="Choose a photo of this part" tabindex="-1">
 
 <nav class="bottom-nav hidden" id="bottom-nav">
   <button id="nav-catalog" class="active" aria-label="Shop / दुकान"><span class="ico" data-ico="home" aria-hidden="true"></span><span class="nl">Shop</span><span class="nl-hi">दुकान</span></button>
@@ -950,6 +967,65 @@
   }
   // branded, bilingual in-app confirm — replaces native confirm() so a stock-moving
   // action is gated by the app's own surface, not un-styled OS chrome. Promise<boolean>.
+  // Every .m-lbl in this app is a bare <label> sitting BEFORE its control, so nothing was
+  // programmatically labelled — 55 labels, zero `for=`. Pairing them at render time fixes the
+  // whole More console at once, and keeps working for any label added later. It also restores
+  // tap-the-label-to-focus, which matters most for the users least likely to hit a small target.
+  function wireLabels(root){
+    if (!root) return;
+    var n = 0;
+    Array.prototype.forEach.call(root.querySelectorAll("label.m-lbl"), function(lbl){
+      if (lbl.getAttribute("for") || lbl.querySelector("input,select,textarea")) return;
+      var el = lbl.nextElementSibling;
+      while (el && !/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) el = el.nextElementSibling;
+      if (!el || el.type === "hidden") return;
+      if (!el.id) el.id = "auto-lbl-" + (++n);
+      lbl.setAttribute("for", el.id);
+    });
+  }
+
+  // The whole app is bilingual but <html lang="en">, so a screen reader reads every Devanagari
+  // string with an English voice. Tagging the runs at render time is one pass instead of
+  // hand-wrapping several hundred literals, and it catches strings added later.
+  var DEVANAGARI = /[ऀ-ॿ]/;
+  function markHindi(root){
+    if (!root) return;
+    var walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function(t){
+        if (!DEVANAGARI.test(t.nodeValue)) return NodeFilter.FILTER_REJECT;
+        var p = t.parentNode;
+        if (!p || /^(SCRIPT|STYLE|TEXTAREA|OPTION)$/.test(p.tagName)) return NodeFilter.FILTER_REJECT;
+        if (p.getAttribute && p.getAttribute("lang") === "hi") return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var hits = [], t;
+    while ((t = walk.nextNode())) hits.push(t);
+    hits.forEach(function(node){
+      // split into alternating non-Devanagari / Devanagari runs, wrapping only the latter
+      var parts = node.nodeValue.split(/([ऀ-ॿ][ऀ-ॿ\s।॥.,/()-]*)/);
+      if (parts.length < 2) return;
+      var frag = document.createDocumentFragment();
+      parts.forEach(function(p){
+        if (!p) return;
+        if (DEVANAGARI.test(p)){
+          var s = document.createElement("span");
+          s.setAttribute("lang", "hi"); s.textContent = p;
+          frag.appendChild(s);
+        } else frag.appendChild(document.createTextNode(p));
+      });
+      node.parentNode.replaceChild(frag, node);
+    });
+  }
+
+  // Debounced so a render that runs several passes only tags once. Called at the START of a
+  // render — the timer fires after the synchronous DOM write, so there is nothing to sequence.
+  var _hiTimer = null;
+  function paintHindi(){
+    clearTimeout(_hiTimer);
+    _hiTimer = setTimeout(function(){ try { markHindi(document.body); } catch(e){} }, 60);
+  }
+
   function askConfirm(msg, opts){
     opts = opts || {};
     return new Promise(function(resolve){
@@ -1628,6 +1704,7 @@
   }
 
   async function renderRequests(){
+    paintHindi();
     if (!isSupplier()) return;
     var dbox = $("req-dealer-list"), rbox = $("req-retail-list");
     // live re-total as the fulfiller edits Qty/Rate (bound once; dbox persists across renders)
@@ -1999,10 +2076,12 @@
       '<p class="more-hint">Whatever you write here is what every dealer, shopkeeper and farmer below you will see. Fill it once, properly, and nobody has to phone you to ask.</p>'+
       '<label class="m-lbl">Which part? / कौन सा पुर्ज़ा</label>'+
       '<input type="search" id="m-pp-find" class="m-input" placeholder="Type a code or name to open an old part…" autocomplete="off">'+
-      '<select id="m-pp-pick" class="m-input"><option value="">➕ Add a brand-new part / नया पुर्ज़ा</option>'+skuOpts+'</select>'+
-      '<div class="pp-meter"><div class="pp-bar"><i id="m-pp-fill"></i></div><span id="m-pp-count"></span></div>'+
+      '<select id="m-pp-pick" class="m-input" aria-label="Choose an existing part to edit, or add a new one"><option value="">➕ Add a brand-new part / नया पुर्ज़ा</option>'+skuOpts+'</select>'+
+      '<div class="pp-meter"><div class="pp-ready no" id="m-pp-ready"></div>'+
+        '<div class="pp-bar" aria-hidden="true"><i id="m-pp-fill"></i></div>'+
+        '<span id="m-pp-count" aria-live="polite"></span></div>'+
 
-      '<div class="pp-step"><b>1</b> What is it? / यह क्या है</div>'+
+      '<h4 class="pp-step">What is it? / यह क्या है</h4>'+
       '<div class="row2"><div><label class="m-lbl">Part code *</label><input type="text" id="m-pp-code" class="m-input" placeholder="SP-001" autocapitalize="characters" maxlength="40"></div>'+
         '<div><label class="m-lbl">Brand / make</label><input type="text" id="m-pp-brand" class="m-input" placeholder="e.g. KrishiGears" maxlength="60"></div></div>'+
       '<label class="m-lbl">Name in English *</label><input type="text" id="m-pp-name" class="m-input" placeholder="GEAR CASE 28MM 9T" maxlength="120">'+
@@ -2013,36 +2092,36 @@
       '<div class="row2" style="margin-top:10px;align-items:center;"><button type="button" class="btn-soft m-btn" id="m-pp-photo-btn" style="margin-top:0;">Add a photo / फ़ोटो लगाएँ</button>'+
         '<div id="m-pp-photo-wrap"></div></div>'+
 
-      '<div class="pp-step"><b>2</b> What does it fit? / किस मशीन में लगेगा</div>'+
+      '<h4 class="pp-step">What does it fit? / किस मशीन में लगेगा</h4>'+
       '<p class="more-hint">This is the first thing any shopkeeper asks. Write the machines in plain words.</p>'+
       '<label class="m-lbl">Fits these machines</label><input type="text" id="m-pp-fits" class="m-input" placeholder="Brush cutter 28mm 9T, BC-520" maxlength="200">'+
       '<label class="m-lbl">Old / OEM part numbers <span style="color:var(--muted);font-weight:400;">— so it is found by the number on the broken part</span></label>'+
       '<input type="text" id="m-pp-oem" class="m-input" placeholder="4179-4152, GB-2214" maxlength="200">'+
 
-      '<div class="pp-step"><b>3</b> Price &amp; tax / क़ीमत और टैक्स</div>'+
-      '<div class="row2"><div><label class="m-lbl">Your base price ₹ *</label><input type="number" id="m-pp-base" class="m-input" min="1" step="0.01" inputmode="decimal"></div>'+
-        '<div><label class="m-lbl">Printed MRP ₹</label><input type="number" id="m-pp-mrp" class="m-input" min="0" step="0.01" inputmode="decimal"></div></div>'+
+      '<h4 class="pp-step">Price &amp; tax / क़ीमत और टैक्स</h4>'+
+      '<div class="row2"><div><label class="m-lbl">Your base price ₹ *</label><input type="number" id="m-pp-base" class="m-input" min="1" max="1000000" step="0.01" inputmode="decimal"></div>'+
+        '<div><label class="m-lbl">Printed MRP ₹</label><input type="number" id="m-pp-mrp" class="m-input" min="0" max="1000000" step="0.01" inputmode="decimal"></div></div>'+
       '<p class="more-hint">Base price is yours. Every tier below adds its own margin on top automatically — you never set their prices.</p>'+
       '<div class="row2"><div><label class="m-lbl">HSN code</label><input type="text" id="m-pp-hsn" class="m-input" inputmode="numeric" maxlength="8" placeholder="84329010"></div>'+
         '<div><label class="m-lbl">GST %</label><select id="m-pp-gst" class="m-input"><option value="">— not set —</option>'+gstOpts+'</select></div></div>'+
 
-      '<div class="pp-step"><b>4</b> How is it sold? / कैसे बिकता है</div>'+
+      '<h4 class="pp-step">How is it sold? / कैसे बिकता है</h4>'+
       '<div class="row2"><div><label class="m-lbl">Sold as</label><select id="m-pp-uom" class="m-input"><option value="">— not set —</option>'+uomOpts+'</select></div>'+
-        '<div><label class="m-lbl">Pieces in one pack</label><input type="number" id="m-pp-pack" class="m-input" min="1" inputmode="numeric" placeholder="1"></div></div>'+
-      '<label class="m-lbl">Smallest order allowed</label><input type="number" id="m-pp-moq" class="m-input" min="1" inputmode="numeric" placeholder="1">'+
+        '<div><label class="m-lbl">Pieces in one pack</label><input type="number" id="m-pp-pack" class="m-input" min="1" max="9999" inputmode="numeric" placeholder="1"></div></div>'+
+      '<label class="m-lbl">Smallest order allowed</label><input type="number" id="m-pp-moq" class="m-input" min="1" max="9999" inputmode="numeric" placeholder="1">'+
 
-      '<div class="pp-step"><b>5</b> Parcel details / पार्सल</div>'+
+      '<h4 class="pp-step">Parcel details / पार्सल</h4>'+
       '<p class="more-hint">Used to work out courier charges before anything is packed.</p>'+
-      '<div class="row2"><div><label class="m-lbl">Weight (grams)</label><input type="number" id="m-pp-weight" class="m-input" min="0" inputmode="numeric" placeholder="850"></div>'+
+      '<div class="row2"><div><label class="m-lbl">Weight (grams)</label><input type="number" id="m-pp-weight" class="m-input" min="0" max="500000" inputmode="numeric" placeholder="850"></div>'+
         '<div><label class="m-lbl">Size L×W×H cm</label><input type="text" id="m-pp-dims" class="m-input" placeholder="12x8x8" maxlength="30"></div></div>'+
       '<label class="m-lbl">Country of origin</label><input type="text" id="m-pp-origin" class="m-input" placeholder="China / India" maxlength="60">'+
 
-      '<div class="pp-step"><b>6</b> Anything else / और कुछ</div>'+
+      '<h4 class="pp-step">Anything else / और कुछ</h4>'+
       '<p class="more-hint">A note for buyers — everyone down the chain can read it, so keep cost or supplier details out of here.</p>'+
-      '<input type="text" id="m-pp-notes" class="m-input" placeholder="e.g. comes with bolts" maxlength="200">'+
+      '<label class="m-lbl" for="m-pp-notes">Note for buyers / ख़रीदार के लिए नोट</label>'+'<input type="text" id="m-pp-notes" class="m-input" placeholder="e.g. comes with bolts" maxlength="200">'+
       '<label class="m-lbl" style="display:flex;align-items:center;gap:8px;margin:12px 14px 0;">'+
         '<input type="checkbox" id="m-pp-active" checked style="width:18px;height:18px;flex:none;"> Show this part in the shop / दुकान में दिखाएँ</label>'+
-      '<button class="btn-primary m-btn" id="m-pp-save">Save part / सहेजें</button><div class="req-msg" id="m-pp-msg"></div></details>';
+      '<button class="btn-primary m-btn" id="m-pp-save">Save part / सहेजें</button><div class="req-msg" id="m-pp-msg" role="status"></div></details>';
 
     var secApprovals = !isImporter ? '' : '<details class="more-sec"><summary>Pending registrations — पंजीकरण<span class="ms-badge hidden" id="m-badge-appr">0</span>'+
       '<span class="ms-hint">Approve new signups / नए पंजीकरण स्वीकृत करें</span></summary>'+
@@ -2056,6 +2135,8 @@
 
     html += '<button class="more-link more-signout" id="more-signout">Sign out / साइन आउट</button>';
     $("more-body").innerHTML = html;
+    wireLabels($("more-body"));
+    markHindi($("more-body"));
     wireMore(isImporter);
   }
 
@@ -2284,12 +2365,30 @@
         ? '<img src="'+esc(_ppPhoto)+'" alt="Photo of this part" style="height:46px;width:46px;object-fit:cover;border-radius:10px;border:1px solid var(--border);display:block;">'
         : '<span style="color:var(--muted);font-size:12px;">No photo yet / फ़ोटो नहीं</span>';
     }
+    var PP_REQUIRED = ["m-pp-code","m-pp-name","m-pp-section","m-pp-base"];
+    // name the missing field rather than making the importer hunt for it
+    var PP_LABEL = { "m-pp-code":"part code", "m-pp-name":"name in English",
+                     "m-pp-section":"section", "m-pp-base":"base price" };
+    function firstEmpty(){
+      var miss = PP_REQUIRED.filter(function(id){ var e = $(id); return !e || !String(e.value||"").trim(); });
+      return miss.length ? miss[0] : null;
+    }
     function score(){
-      var n = PP_ALL.filter(function(id){ var e = $(id); return e && String(e.value||"").trim() !== ""; }).length + (_ppPhoto ? 1 : 0);
-      var tot = PP_ALL.length + 1;
-      var bar = $("m-pp-fill"), lbl = $("m-pp-count");
-      if (bar){ bar.style.width = Math.round(n*100/tot) + "%"; bar.className = n === tot ? "full" : (n >= Math.ceil(tot*0.6) ? "part" : ""); }
-      if (lbl) lbl.textContent = n + " of " + tot + " details filled / " + n + " भरे" + (n === tot ? " ✓" : "");
+      var filled = function(id){ var e = $(id); return !!(e && String(e.value||"").trim() !== ""); };
+      var need = firstEmpty();
+      var extras = PP_ALL.filter(function(id){ return PP_REQUIRED.indexOf(id) === -1; });
+      var n = extras.filter(filled).length + (_ppPhoto ? 1 : 0), tot = extras.length + 1;
+      var rdy = $("m-pp-ready"), bar = $("m-pp-fill"), lbl = $("m-pp-count");
+      if (rdy){
+        rdy.className = "pp-ready " + (need ? "no" : "yes");
+        rdy.textContent = need
+          ? "Not ready to sell yet — " + PP_LABEL[need] + " still needed / अभी बिक्री के लिए तैयार नहीं"
+          : "✓ Ready to sell / बिक्री के लिए तैयार";
+      }
+      // the bar tracks the OPTIONAL extras only, and is green throughout — an unfilled country
+      // of origin is not an error, and must never borrow the colour the app uses for money errors
+      if (bar) bar.style.transform = "scaleX(" + (n/tot).toFixed(3) + ")";
+      if (lbl) lbl.textContent = "Extra detail: " + n + " of " + tot + " filled / " + n + " भरे" + (n === tot ? " ✓" : "");
     }
     PP_ALL.forEach(function(id){ var e = $(id); if (e){ e.oninput = score; e.onchange = score; } });
 
@@ -2350,14 +2449,35 @@
       var val = function(id){ return (($(id)||{}).value || "").trim(); };
       var num = function(id){ var v = val(id); return v === "" ? null : Number(v); };
       var code = val("m-pp-code"), name = val("m-pp-name"), hsn = val("m-pp-hsn");
-      var fail = function(t){ m.className = "req-msg err"; m.textContent = t; };
-      if (!code) return fail("Part code is needed — it is what everyone orders by. / पार्ट कोड ज़रूरी है।");
-      if (!name) return fail("Give the part a name in English. / अंग्रेज़ी नाम भरें।");
-      if (!val("m-pp-section")) return fail("Pick or type a section. / सेक्शन भरें।");
-      if (!(num("m-pp-base") > 0)) return fail("Base price must be more than ₹0. / आधार मूल्य भरें।");
-      if (hsn && !/^[0-9]{4}([0-9]{2}([0-9]{2})?)?$/.test(hsn)) return fail("HSN must be 4, 6 or 8 digits. / HSN 4, 6 या 8 अंकों का।");
+      // Take the field with the message: this form is ~1800px tall, so a message at the bottom
+      // is invisible from step 1 and the importer just taps Save again.
+      var fail = function(t, id){
+        m.className = "req-msg err"; m.textContent = t;
+        PP_ALL.forEach(function(x){ var e = $(x); if (e) e.classList.remove("err"); });
+        var el = id && $(id);
+        if (el){ el.classList.add("err"); el.focus({ preventScroll:true }); el.scrollIntoView({ block:"center", behavior:"smooth" }); }
+      };
+      if (!code) return fail("Part code is needed — it is what everyone orders by. / पार्ट कोड ज़रूरी है।", "m-pp-code");
+      if (!name) return fail("Give the part a name in English. / अंग्रेज़ी नाम भरें।", "m-pp-name");
+      if (!val("m-pp-section")) return fail("Pick or type a section. / सेक्शन भरें।", "m-pp-section");
+      if (!(num("m-pp-base") > 0)) return fail("Base price must be more than ₹0. / आधार मूल्य भरें।", "m-pp-base");
+      if (hsn && !/^[0-9]{4}([0-9]{2}([0-9]{2})?)?$/.test(hsn)) return fail("HSN must be 4, 6 or 8 digits. / HSN 4, 6 या 8 अंकों का।", "m-pp-hsn");
 
       var isNew = !pick.value;
+      // Changing an existing part's base price re-prices every dealer, shopkeeper and farmer
+      // below. #m-pp-pick is a 1746-option native select — one mis-scroll on a phone lands on
+      // the wrong part and fill() repopulates every field silently. Say the delta out loud.
+      if (!isNew){
+        var was = _ppCost[pick.value], now = num("m-pp-base");
+        if (was != null && Number(was) !== Number(now)){
+          var ok = await askConfirm(
+            "Change the price of " + code + "?\n\n" + inr(Number(was)) + "  →  " + inr(Number(now)) +
+            "\n\nEvery dealer, shopkeeper and farmer below you sees the new price straight away.\n\n" +
+            code + " का दाम बदलें? नीचे सबको तुरंत नया दाम दिखेगा।",
+            { okLabel: "Change price / दाम बदलें" });
+          if (!ok) { m.className = "req-msg"; m.textContent = "Price left unchanged. / दाम नहीं बदला।"; return; }
+        }
+      }
       this.disabled = true; m.textContent = "Saving… / सहेजा जा रहा है…";
       var r = await sb.rpc("save_product", {
         p_sku: pick.value || null, p_code: code, p_name: name, p_hindi: val("m-pp-hindi") || null,
@@ -2823,6 +2943,7 @@
 
   // ---------- catalog body: browse landing OR list ----------
   function renderCatalogBody(){
+    paintHindi();
     var body = $("catalog-body");
     if (state.loading){ body.innerHTML = '<div class="empty-state"><div class="spinner"></div>Loading catalogue…<br>सूची लोड हो रही है…</div>'; return; }
     if (state.loadError){
@@ -2989,6 +3110,7 @@
 
   // ---------- cart view ----------
   function renderCart(){
+    paintHindi();
     var wrap = $("cart-list");
     var keys = Object.keys(state.cart).filter(function(k){ return state.cart[k] > 0; });
     var grand = 0;
@@ -3000,7 +3122,8 @@
         '</div>';
       if (last) $("reorder-btn").onclick = reorderLast;
       else $("empty-browse-btn").onclick = showCatalog;
-      $("cart-grand-total").textContent = "₹0"; $("generate-pi-btn").disabled = true; $("cart-oos-note").classList.add("hidden"); return;
+      $("cart-grand-total").textContent = "₹0"; $("cart-gst").textContent = "₹0"; $("cart-payable").textContent = "₹0";
+      $("generate-pi-btn").disabled = true; $("cart-oos-note").classList.add("hidden"); return;
     }
     var hasOOS = false;
     wrap.innerHTML = keys.map(function(k){
@@ -3026,6 +3149,10 @@
           '</div><span class="line-total">' + inr(lineTotal) + '</span></div>' + outHtml + '</div>';
     }).join("");
     $("cart-grand-total").textContent = inr(grand);
+    // the figure a farmer is actually agreeing to — never make them compute it
+    var cartGst = Math.round(grand * GST_PCT / 100);
+    $("cart-gst").textContent = inr(cartGst);
+    $("cart-payable").textContent = inr(grand + cartGst);
     $("generate-pi-btn").disabled = hasOOS;
     $("cart-oos-note").classList.toggle("hidden", !hasOOS);
   }
@@ -3071,6 +3198,7 @@
   }
 
   function renderPI(){
+    paintHindi();
     var pi = state.piInfo;
     var rowsHtml = pi.lines.map(function(l){
       return '<tr><td class="ln-thumb">' + lineThumb(l.sku, 40) + '</td><td>' + esc(l.code) + '</td><td>' + esc(l.particular) + '</td>' +
@@ -3663,6 +3791,7 @@
 
   // ---------- init ----------
   function init(){
+    paintHindi(); // the static shell is bilingual too — nav, headings, cart labels
     paintIcons();
     wireStatic();
     sb = window.__sb; // set by the deferred module bootstrap; ready by DOMContentLoaded
