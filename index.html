@@ -34,8 +34,13 @@
     opacity:1; transition:opacity .25s ease-out;
   }
   .toast.fade{ opacity:0; }
-  .toast-undo{ margin-left:10px; background:none; border:0; color:#bfe9cb; font-weight:700;
-    font-size:13.5px; text-decoration:underline; cursor:pointer; padding:4px 2px; min-height:auto; }
+  /* Undo is the ONLY way back from an accidental line removal, and it lives on a 5-second
+     timer — it has to be as easy to hit as anything else in the app. The rule used to end in
+     `min-height:auto`, which is what kept it at 28px. */
+  .toast-undo{ display:inline-flex; align-items:center; justify-content:center;
+    margin-left:10px; background:none; border:0; color:#bfe9cb; font-weight:700;
+    font-size:13.5px; text-decoration:underline; cursor:pointer;
+    padding:0 12px; min-height:44px; }
   @media (prefers-reduced-motion: reduce){ .toast{ transition:none; } }
 
   /* keyboard focus visible everywhere (mouse clicks stay clean) */
@@ -458,7 +463,13 @@
   /* pressing a row should feel like pressing a real button on a cheap phone */
   .tile:active, .item:active .add-btn{ transform:scale(.985); }
   .tile{ transition:border-color .15s ease, box-shadow .15s ease, transform .1s ease; }
-  @media (hover:hover){ .tile:hover{ box-shadow:0 2px 8px rgba(27,43,32,.10); } }
+  @media (hover:hover){
+    .tile:hover{ box-shadow:0 2px 8px rgba(27,43,32,.10); }
+    #home-brand:hover{ opacity:.85; }
+    #list-reset:hover, .browse-back:hover{ background:var(--green-light); }
+    .item-thumb:hover{ filter:brightness(.94); }
+    .remove-btn:hover{ background:var(--danger-tint,#fdeceb); }
+  }
   @media (prefers-reduced-motion: reduce){ .tile{ transition:none; } .tile:active{ transform:none; } }
   .ship-to{ background:var(--green-light); border:1px solid var(--border); border-radius:8px; padding:8px 10px; margin:8px 0 2px; font-weight:600; font-size:13px; }
   /* one clear primary (irreversible stock move), the rest demoted below it */
@@ -497,6 +508,23 @@
   /* grouped More menu: intent headers + informative closed rows */
   .more-group{ font-size:13px; font-weight:700; color:var(--green-dark); margin:18px 2px 6px; }
   .more-group:first-of-type{ margin-top:14px; }
+  /* Tabs, because these are separate jobs done at separate times — not one long settings page. */
+  .more-tabs{ display:flex; gap:8px; overflow-x:auto; overflow-y:hidden; padding:4px 2px 10px;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+  .more-tabs::-webkit-scrollbar{ display:none; }
+  .more-tab{ position:relative; flex:0 0 auto; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:1px; min-width:76px; min-height:60px; padding:8px 12px;
+    border:1px solid var(--border); border-radius:12px; background:#fff; color:var(--muted);
+    font:inherit; font-weight:700; cursor:pointer; transition:background-color .15s ease, color .15s ease; }
+  .more-tab .ico{ width:20px; height:20px; }
+  .mt-en{ font-size:12.5px; line-height:1.1; }
+  .mt-hi{ font-size:11px; font-weight:600; opacity:.85; line-height:1.1; }
+  .more-tab[aria-selected="true"]{ background:var(--green); border-color:var(--green); color:#fff; }
+  .more-tab[aria-selected="true"] .mt-hi{ opacity:.9; }
+  .mt-dot{ position:absolute; top:4px; right:6px; min-width:16px; height:16px; padding:0 4px;
+    border-radius:99px; background:var(--danger); color:#fff; font-size:10px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; }
+  @media (prefers-reduced-motion: reduce){ .more-tab{ transition:none; } }
   .ms-hint{ display:block; font-size:12px; font-weight:400; color:var(--muted); margin-top:2px; }
   .ms-badge{ display:inline-block; min-width:20px; text-align:center; background:var(--danger); color:#fff; border-radius:10px; font-size:11.5px; font-weight:700; padding:1px 6px; margin-left:8px; }
   .ms-share{ float:right; display:inline-flex; align-items:center; gap:5px; background:var(--green); color:#fff; border:none; border-radius:8px; font-size:12.5px; font-weight:700; padding:6px 10px; margin:-4px 0 4px 8px; min-height:32px; }
@@ -595,11 +623,28 @@
   .pi-success{ background:var(--green-light); border:1px solid var(--border); color:var(--green-dark); border-radius:8px; padding:8px 10px; font-size:12.5px; margin-bottom:10px; font-weight:600; }
 
   /* modal */
+  html.modal-open{ overflow:hidden; }
+  body.modal-open{ position:fixed; width:100%; overflow:hidden; }
+  .skip-link{ position:fixed; left:0; top:0; z-index:calc(var(--z-nav) + 1);
+    transform:translateY(-200%); background:#fff; color:var(--green-dark); font-weight:700;
+    padding:12px 16px; min-height:44px; display:inline-flex; align-items:center;
+    border:2px solid var(--focus); border-radius:0 0 10px 0; }
+  .skip-link:focus{ transform:none; }
+  @media (prefers-reduced-motion: reduce){ .skip-link{ transition:none; } }
   .modal-overlay{
     position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:var(--z-modal);
     display:flex; align-items:center; justify-content:center; padding:10px;
   }
   .modal-box{ background:#fff; border-radius:12px; width:100%; max-width:520px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; }
+  .modal-box.modal-wide{ max-width:min(94vw, 980px); max-height:94vh; }
+  @media (orientation: landscape) and (max-height: 500px){
+    .modal-box{ max-height:96vh; max-width:96vw; }
+    .modal-head{ padding-block:6px; }
+    .modal-head h3{ font-size:13px; }
+    .modal-note{ display:none; }        /* the price caveat is on every row already */
+    .modal-zoom-row{ padding-block:4px; }
+    .modal-zoom-row button{ min-height:36px; }
+  }
   .modal-head{ display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-bottom:1px solid var(--border); }
   .modal-head h3{ margin:0; font-size:14px; }
   .modal-close{ background:none; border:none; font-size:24px; line-height:1; min-height:44px; min-width:44px; color:var(--muted); }
@@ -639,6 +684,21 @@
      to the same centred column as the body; the catalogue browses 2-up (3-up on
      big screens) so the parts list fills the space instead of a lone column. ---- */
   @media (min-width: 860px){
+    /* Desktop turns the pill strip into a real sidebar: the tabs stop competing with the
+       content for vertical space, and the panel gets a readable measure instead of one
+       column stretched across the monitor. */
+    .more-wrap{ display:grid; grid-template-columns:200px minmax(0,1fr); gap:24px; align-items:start; }
+    .more-tabs{ flex-direction:column; overflow:visible; padding:0; position:sticky; top:16px; gap:4px; }
+    .more-tab{ flex-direction:row; justify-content:flex-start; gap:10px; width:100%;
+      min-height:48px; padding:10px 12px; border-color:transparent; background:transparent; }
+    .more-tab:hover{ background:var(--green-light); }
+    .more-tab[aria-selected="true"]{ background:var(--green); border-color:var(--green); }
+    .more-tab .mt-hi{ display:none; }   /* the sidebar has room for one clear label, not two */
+    .more-tab .mt-en{ font-size:14px; }
+    .more-panels{ min-width:0; max-width:640px; }
+    /* 640px of 12.5px hint text runs ~98 characters a line, well past the comfortable measure.
+       The controls still use the full panel; only the prose is capped. */
+    .more-panels .more-hint, .more-panels .setup-foot{ max-width:62ch; }
     /* app shell: the phone tab bar becomes a fixed left rail — same buttons, same order,
        so nothing moves when a dealer switches between the shop desktop and their phone.
        The rail only claims space while the nav is visible (login stays full-width). */
@@ -654,23 +714,38 @@
     main{ max-width:1040px; padding-bottom:32px; }
     header.app-header{ padding-inline:max(16px, calc(50% - 520px)); }
     /* task views read best at column width; the catalogue uses the full grid */
-    #view-cart, #view-orders, #view-more{ max-width:640px; margin-inline:auto; }
+    #view-cart, #view-orders{ max-width:640px; margin-inline:auto; }
+    /* More carries a 200px sidebar now, so it needs that much more room — otherwise the
+       sidebar eats the reading column and the panel ends up NARROWER than it was before. */
+    #view-more{ max-width:calc(640px + 200px + 24px); margin-inline:auto; }
     #view-pi, #view-requests{ max-width:760px; margin-inline:auto; }
     /* minmax(0,…) — long part names otherwise push columns to unequal widths */
-    #catalog-body{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px 12px; align-items:start; }
+    #catalog-body{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px 12px; align-items:stretch; }
+    #catalog-body > .item{ height:100%; }
     #catalog-body > .item{ margin-bottom:0; }
     #catalog-body > .browse-head, #catalog-body > .browse-back,
     #catalog-body > .result-count, #catalog-body > .list-reset,
     #catalog-body > .show-more, #catalog-body > .empty-state,
     #catalog-body > .tiles{ grid-column:1 / -1; }
-    .tiles{ grid-template-columns:repeat(3, 1fr); }
+    .tiles{ grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); }
+    /* these are back/reset affordances, not primary actions — full-bleed at 1020px was absurd */
+    #list-reset, .browse-back{ width:auto; display:inline-flex; justify-self:start; }
   }
   @media (min-width: 1200px){
     #catalog-body{ grid-template-columns:repeat(3, minmax(0,1fr)); }
   }
+  /* A parts grid is data-dense: at 1440+ the 1040px cap left 21-41% of the screen empty while
+     the list still scrolled three-up. Widen the shell and take a fourth column. */
+  @media (min-width: 1440px){
+    main{ max-width:1360px; }
+    #catalog-body{ grid-template-columns:repeat(4, minmax(0,1fr)); }
+  }
 </style>
 </head>
 <body>
+
+<a class="skip-link" href="#main">Skip to content / सीधे सामग्री पर</a>
+
 
 <div id="sr-live" class="sr-only" aria-live="polite"></div>
 <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
@@ -685,10 +760,21 @@
   </div>
 </header>
 
+<!-- nav sits before <main> purely for tab order: it is position:fixed at every width, so its
+     visual place (bottom bar on a phone, left rail on desktop) is unchanged. On desktop it
+     renders at 0,0 — visually first — and DOM-last meant 458 Tab presses to reach it. -->
+<nav class="bottom-nav hidden" id="bottom-nav">
+  <button id="nav-catalog" class="active" aria-label="Shop / दुकान"><span class="ico" data-ico="home" aria-hidden="true"></span><span class="nl">Shop</span><span class="nl-hi">दुकान</span></button>
+  <button id="nav-cart" aria-label="Cart / कार्ट"><span class="ico" data-ico="cart" aria-hidden="true"></span><span class="nav-badge hidden" id="cart-badge">0</span><span class="nl">Cart</span><span class="nl-hi">कार्ट</span></button>
+  <button id="nav-orders" class="hidden" aria-label="My orders / मेरे ऑर्डर"><span class="ico" data-ico="orders" aria-hidden="true"></span><span class="nl">Orders</span><span class="nl-hi">ऑर्डर</span></button>
+  <button id="nav-requests" class="hidden" aria-label="Requests / अनुरोध"><span class="ico" data-ico="bell" aria-hidden="true"></span><span class="nav-badge hidden" id="req-badge">0</span><span class="nl">Requests</span><span class="nl-hi">अनुरोध</span></button>
+  <button id="nav-more" class="hidden" aria-label="More / अधिक"><span class="ico" data-ico="more" aria-hidden="true"></span><span class="nl">More</span><span class="nl-hi">अधिक</span></button>
+</nav>
+
 <main id="main">
 
   <!-- LOGIN -->
-  <section id="view-login" class="login-wrap">
+  <section id="view-login" class="login-wrap hidden">
     <h2 id="login-title">Sign In / साइन इन</h2>
 
     <div id="signin-box">
@@ -764,13 +850,15 @@
   <section id="view-cart" class="hidden">
     <h2 class="view-title">Cart / कार्ट</h2>
     <div id="cart-list"></div>
-    <div class="cart-sum">
-      <div class="cart-sum-row"><span>Subtotal / उप-योग</span><span id="cart-grand-total">₹0</span></div>
-      <div class="cart-sum-row"><span>+ 5% GST</span><span id="cart-gst">₹0</span></div>
-    </div>
-    <div class="grand-total-bar">
-      <span>Total to pay / कुल देना है</span>
-      <span id="cart-payable">₹0</span>
+    <div id="cart-totals">
+      <div class="cart-sum">
+        <div class="cart-sum-row"><span>Subtotal / उप-योग</span><span id="cart-grand-total">₹0</span></div>
+        <div class="cart-sum-row"><span>+ 5% GST</span><span id="cart-gst">₹0</span></div>
+      </div>
+      <div class="grand-total-bar">
+        <span>Total to pay / कुल देना है</span>
+        <span id="cart-payable">₹0</span>
+      </div>
     </div>
     <div id="eu-contact" class="hidden">
       <label class="field-label" for="eu-name">Your name / आपका नाम</label>
@@ -818,13 +906,7 @@
 <input type="file" id="bill-file" accept="application/pdf,image/*" class="hidden" aria-hidden="true" aria-label="Choose a bill or LR file to upload" tabindex="-1">
 <input type="file" id="pp-file" accept="image/*" class="hidden" aria-hidden="true" aria-label="Choose a photo of this part" tabindex="-1">
 
-<nav class="bottom-nav hidden" id="bottom-nav">
-  <button id="nav-catalog" class="active" aria-label="Shop / दुकान"><span class="ico" data-ico="home" aria-hidden="true"></span><span class="nl">Shop</span><span class="nl-hi">दुकान</span></button>
-  <button id="nav-cart" aria-label="Cart / कार्ट"><span class="ico" data-ico="cart" aria-hidden="true"></span><span class="nav-badge hidden" id="cart-badge">0</span><span class="nl">Cart</span><span class="nl-hi">कार्ट</span></button>
-  <button id="nav-orders" class="hidden" aria-label="My orders / मेरे ऑर्डर"><span class="ico" data-ico="orders" aria-hidden="true"></span><span class="nl">Orders</span><span class="nl-hi">ऑर्डर</span></button>
-  <button id="nav-requests" class="hidden" aria-label="Requests / अनुरोध"><span class="ico" data-ico="bell" aria-hidden="true"></span><span class="nav-badge hidden" id="req-badge">0</span><span class="nl">Requests</span><span class="nl-hi">अनुरोध</span></button>
-  <button id="nav-more" class="hidden" aria-label="More / अधिक"><span class="ico" data-ico="more" aria-hidden="true"></span><span class="nl">More</span><span class="nl-hi">अधिक</span></button>
-</nav>
+
 
 <div id="modal-root"></div>
 
@@ -890,7 +972,11 @@
 
   // one line-icon set for the whole UI (replaces emojis). currentColor = inherits button colour.
   var ICON_PATHS = {
-    home:    '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/>',
+    rupee: '<path d="M6 4h12M6 9h12M16 4c0 5-4 5-10 5l9 10"/>',
+    box: '<path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+    shop: '<path d="M4 9h16l-1 11H5z"/><path d="M3 9l2-5h14l2 5"/><path d="M9 13h6"/>',
+    people: '<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 6a3 3 0 0 1 0 6M17 20a6 6 0 0 0-1.5-4"/>',
+    home:   '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/>',
     cart:    '<circle cx="9.5" cy="20" r="1.4"/><circle cx="17.5" cy="20" r="1.4"/><path d="M3 4h2l2.2 11a1 1 0 0 0 1 .8h8.2a1 1 0 0 0 1-.8L20 8H6"/>',
     logout:  '<path d="M14 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4"/><path d="m9 16 4-4-4-4"/><path d="M13 12H3"/>',
     page:    '<path d="M14 3H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7z"/><path d="M14 3v4h4"/>',
@@ -1353,9 +1439,10 @@
     var e = (email || "").trim();
     if (!e || !pw){ showLoginError("Enter email and password. / ईमेल और पासवर्ड डालें।"); return; }
     if (!sb){ showLoginError("App not configured. / ऐप कॉन्फ़िगर नहीं है।"); return; }
-    $("login-submit").disabled = true;
+    var loginBtn = $("login-submit"), loginLabel = loginBtn.textContent;
+    loginBtn.disabled = true; loginBtn.textContent = "Signing in… / साइन इन हो रहा है…";
     sb.auth.signInWithPassword({ email: e, password: pw }).then(function(res){
-      $("login-submit").disabled = false;
+      loginBtn.disabled = false; loginBtn.textContent = loginLabel;
       if (res.error || !res.data || !res.data.user){ showLoginError("Incorrect email or password / गलत ईमेल या पासवर्ड"); return; }
       var u = res.data.user;
       state.session = { id: u.id, email: u.email, role: null };
@@ -1390,6 +1477,13 @@
     var err = $("register-error"); err.classList.add("hidden");
     if (!biz || !email || !pw){ err.textContent = "Business name, email and password are required. / नाम, ईमेल, पासवर्ड ज़रूरी।"; err.classList.remove("hidden"); return; }
     if (pw.length < 6){ err.textContent = "Password must be at least 6 characters. / पासवर्ड कम से कम 6 अक्षर।"; err.classList.remove("hidden"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){
+      err.textContent = "That email does not look right — check for a typo. / ईमेल जाँच लें।"; err.classList.remove("hidden"); return; }
+    // phone and PIN reached the server unchecked; both are how a parcel and a phone call find you
+    if (phone && phone.replace(/\D/g, "").length < 10){
+      err.textContent = "Phone must be 10 digits, or leave it blank. / फ़ोन 10 अंकों का हो या खाली छोड़ें।"; err.classList.remove("hidden"); return; }
+    if (pin && !/^[0-9]{6}$/.test(pin)){
+      err.textContent = "PIN code must be 6 digits, or leave it blank. / पिन 6 अंकों का हो या खाली छोड़ें।"; err.classList.remove("hidden"); return; }
     // GSTIN & UPI are optional — validate format only when the user filled them, so a
     // typo'd tax/bank id can't reach the bill. Both left blank is fine.
     if (gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(gstin)){
@@ -1549,10 +1643,10 @@
     setActiveNav("nav-catalog"); pushView("catalog");
     renderDealerStrip();
     populateFilters();
-    // reset to the browse landing on (re)entry
-    $("search-box").value = ""; $("filter-group").value = ""; $("filter-section").value = ""; $("filter-stock").value = "";
-    state.mode = "browse"; state.browseGroup = null; state.renderLimit = RENDER_CHUNK;
-    $("search-clear").classList.add("hidden");
+    // Do NOT reset the list here. A farmer drills a group, scrolls 3000px through 264 rows,
+    // taps Cart to check the total, taps Shop to add one more part — and used to land back on
+    // the four machine tiles with his search and filter silently cleared. Resetting is now only
+    // what the Home button and "All groups" do, because those are the times he asked for it.
     renderCatalogBody();
     updateCartBadge();
   }
@@ -1979,14 +2073,12 @@
       '<div class="setup-foot">Fill these in below — they take a minute and prevent problems later. / नीचे भरें।</div></div>';
 
     // grouped by intent, most-used first; closed rows carry a one-line hint so nothing is a mystery box
-    html += '<div class="more-group">Daily / रोज़ का काम</div>';
-
-    // Money first: in a credit trade "who owes what" is the question asked every morning, and
-    // it is short. The stock dashboard is long, so it now opens on demand instead.
-    html += '<details class="more-sec" open><summary>Money / पैसा<span class="ms-hint">Who owes whom / कौन कितना देना है</span></summary>'+
+    // Money first inside its tab: in a credit trade "who owes what" is the question asked
+    // every morning, and it is short.
+    var secMoney = '<details class="more-sec" open><summary>Who owes whom / कौन कितना देना है<span class="ms-hint">Your customers and your supplier / ग्राहक और सप्लायर</span></summary>'+
       '<div id="m-money-card"><div style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</div></div></details>';
 
-    html += '<details class="more-sec"><summary>Stock &amp; my network / स्टॉक व नेटवर्क<span class="ms-hint">Who holds what, everywhere / किसके पास कितना है</span></summary>'+
+    var secStock = '<details class="more-sec" open><summary>Who holds what / किसके पास कितना है<span class="ms-hint">Across your whole network / पूरे नेटवर्क में</span></summary>'+
       '<input type="search" id="m-stock-filter" placeholder="Filter — part or party / खोजें" autocomplete="off" class="m-input">'+
       '<div id="m-stock-card"><div style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</div></div></details>';
 
@@ -2171,12 +2263,39 @@
       '<div id="m-approvals-card"><div style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</div></div></details>';
 
     // Daily continues with transfer + walk-in order; then shop setup, network admin, importer-only tools
-    html += secTransfer + secCustOrder;
-    html += '<div class="more-group">My shop / मेरी दुकान</div>' + secAddress + secLink + secPrice + secPay;
-    if (secAddDealer || secApprovals) html += '<div class="more-group">My network / मेरा नेटवर्क</div>' + secAddDealer + secApprovals;
-    if (isImporter) html += '<div class="more-group">Importer tools / इम्पोर्टर</div>' + secWork + secBulk + secProduct + secExternal + secCorrect;
+    // Five headings stacked over fourteen accordions meant every job lived at the bottom of the
+    // same long scroll. These are separate jobs done at separate times — money in the morning,
+    // stock when a parcel lands, parts on a quiet afternoon — so they get separate places.
+    var tabs = [
+      { id:"money", en:"Money",   hi:"पैसा",    ico:"rupee",   html: secMoney },
+      { id:"stock", en:"Stock",   hi:"स्टॉक",   ico:"box",     html: secStock + secTransfer + (isImporter ? secExternal + secCorrect : "") },
+      { id:"sell",  en:"My shop", hi:"दुकान",   ico:"shop",    html: secCustOrder + secLink + secPrice + secAddress + secPay,
+        alert: detailsMissing },
+      { id:"team",  en:"Network", hi:"नेटवर्क", ico:"people",  html: secAddDealer + secApprovals },
+      { id:"parts", en:"Parts",   hi:"पुर्ज़े",  ico:"page",    html: isImporter ? (secWork + secBulk + secProduct) : "" }
+    ].filter(function(t){ return t.html; });
 
-    html += '<button class="more-link more-signout" id="more-signout">Sign out / साइन आउट</button>';
+    if (!state.moreTab || !tabs.some(function(t){ return t.id === state.moreTab; })) state.moreTab = tabs[0].id;
+
+    html += '<div class="more-wrap">'+
+      '<div class="more-tabs" role="tablist" aria-label="More sections">'+
+        tabs.map(function(t){
+          var on = t.id === state.moreTab;
+          return '<button type="button" role="tab" class="more-tab" id="tab-'+t.id+'" data-tab="'+t.id+'"'+
+            ' aria-selected="'+on+'" aria-controls="panel-'+t.id+'" tabindex="'+(on?0:-1)+'">'+
+            svgIco(t.ico)+'<span class="mt-en">'+esc(t.en)+'</span><span class="mt-hi">'+esc(t.hi)+'</span>'+
+            (t.alert ? '<span class="mt-dot" aria-label="needs attention">!</span>' : '')+
+            (t.id === "team" ? '<span class="mt-dot hidden" id="tab-dot-team">!</span>' : '')+
+          '</button>';
+        }).join("")+
+      '</div>'+
+      '<div class="more-panels">'+
+        tabs.map(function(t){
+          return '<div role="tabpanel" id="panel-'+t.id+'" aria-labelledby="tab-'+t.id+'"'+
+            (t.id === state.moreTab ? '' : ' hidden')+'>'+t.html+'</div>';
+        }).join("")+
+        '<button class="more-link more-signout" id="more-signout">Sign out / साइन आउट</button>'+
+      '</div></div>';
     $("more-body").innerHTML = html;
     wireLabels($("more-body"));
     markHindi($("more-body"));
@@ -2237,7 +2356,42 @@
     };
   }
 
+  // Arrow keys move between tabs and Home/End jump to the ends — the standard tablist contract.
+  // Without it a keyboard user tabs through every tab button before reaching any content.
+  function wireMoreTabs(){
+    var bar = document.querySelector(".more-tabs"); if (!bar) return;
+    var tabs = Array.prototype.slice.call(bar.querySelectorAll(".more-tab"));
+    function select(id, focus){
+      state.moreTab = id;
+      tabs.forEach(function(t){
+        var on = t.getAttribute("data-tab") === id;
+        t.setAttribute("aria-selected", on ? "true" : "false");
+        t.tabIndex = on ? 0 : -1;
+        if (on && focus) t.focus();
+        if (on) t.scrollIntoView({ block:"nearest", inline:"nearest" });
+        var panel = $("panel-" + t.getAttribute("data-tab"));
+        if (panel) panel.hidden = !on;
+      });
+      var body = $("more-body"); if (body) body.scrollTop = 0;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    bar.addEventListener("click", function(e){
+      var b = e.target.closest("[data-tab]"); if (b) select(b.getAttribute("data-tab"), false);
+    });
+    bar.addEventListener("keydown", function(e){
+      var i = tabs.indexOf(document.activeElement); if (i < 0) return;
+      var n = null;
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") n = (i + 1) % tabs.length;
+      else if (e.key === "ArrowLeft" || e.key === "ArrowUp") n = (i - 1 + tabs.length) % tabs.length;
+      else if (e.key === "Home") n = 0;
+      else if (e.key === "End") n = tabs.length - 1;
+      if (n === null) return;
+      e.preventDefault(); select(tabs[n].getAttribute("data-tab"), true);
+    });
+  }
+
   function wireMore(isImporter){
+    wireMoreTabs();
     $("more-signout").onclick = doSignOut;
     renderMoreMoney();
     // stock list
@@ -3219,6 +3373,14 @@
   }
   // restart a CSS animation class (feedback bump/pulse) reliably on repeat triggers
   function bump(el){ if (!el) return; el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); }
+  // Typing 0 (or a negative) used to `delete state.cart[idx]` silently, while stepping down to
+  // zero routes through removeLine() and offers an Undo. Same outcome, so it gets the same
+  // recovery — a fat-fingered 0 in a 20-line cart was unrecoverable.
+  function setQtyTyped(idx, qty, rerender){
+    var n = Math.floor(qty) || 0;
+    if (n <= 0){ removeLine(idx, rerender || function(){}); return; }
+    setQty(idx, n);
+  }
   function setQty(idx, qty){
     var raw = Math.floor(qty) || 0;
     qty = Math.max(0, Math.min(999, raw));
@@ -3242,6 +3404,9 @@
       if (last) $("reorder-btn").onclick = reorderLast;
       else $("empty-browse-btn").onclick = showCatalog;
       $("cart-grand-total").textContent = "₹0"; $("cart-gst").textContent = "₹0"; $("cart-payable").textContent = "₹0";
+      // an empty cart has no total to show — a row of ₹0s reads like a broken price, not "empty"
+      $("cart-totals").classList.add("hidden");
+      $("generate-pi-btn").classList.add("hidden");
       $("generate-pi-btn").disabled = true; $("cart-oos-note").classList.add("hidden"); return;
     }
     var hasOOS = false;
@@ -3267,6 +3432,8 @@
             '<button class="qty-plus" type="button" aria-label="Increase quantity">+</button>' +
           '</div><span class="line-total">' + inr(lineTotal) + '</span></div>' + outHtml + '</div>';
     }).join("");
+    $("cart-totals").classList.remove("hidden");
+    $("generate-pi-btn").classList.remove("hidden");
     $("cart-grand-total").textContent = inr(grand);
     // the figure a farmer is actually agreeing to — never make them compute it
     var cartGst = Math.round(grand * GST_PCT / 100);
@@ -3512,13 +3679,32 @@
   var lastFocus = null;
   // Shared zoomable image modal (used for both the part photo and the catalogue page).
   // opts: { src, fb (fallback src on error), title, altText, note (optional), label }
+  // At 1920 the modal backdrop is most of the screen, so a wheel scroll over it is the normal
+  // desktop gesture — and the catalogue used to slide away underneath the dialog.
+  var _lockY = 0;
+  function lockScroll(){
+    if (document.body.classList.contains("modal-open")) return;
+    _lockY = window.scrollY || document.documentElement.scrollTop || 0;
+    document.body.style.top = (-_lockY) + "px";
+    document.documentElement.classList.add("modal-open");
+    document.body.classList.add("modal-open");
+  }
+  function unlockScroll(){
+    if (!document.body.classList.contains("modal-open")) return;
+    document.documentElement.classList.remove("modal-open");
+    document.body.classList.remove("modal-open");
+    document.body.style.top = "";
+    window.scrollTo(0, _lockY);
+  }
+
   function showImageModal(opts){
     lastFocus = document.activeElement;
+    lockScroll();
     var missing = "<div class='empty-state'>Image not available.<br>छवि उपलब्ध नहीं है।</div>";
     var root = $("modal-root");
     root.innerHTML =
       '<div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-label="' + esc(opts.label || "Image") + '">' +
-        '<div class="modal-box">' +
+        '<div class="modal-box' + (opts.wide ? ' modal-wide' : '') + '">' +
           '<div class="modal-head"><h3>' + esc(opts.title) + '</h3>' +
             '<button class="modal-close" id="modal-close" type="button" aria-label="Close">&times;</button></div>' +
           (opts.note ? '<div class="modal-note">' + opts.note + '</div>' : '') +
@@ -3534,8 +3720,22 @@
         '</div>' +
       '</div>';
 
-    var zoom = 100;
-    function applyZoom(){ var im = $("modal-img"); if (im) im.style.width = zoom + "%"; }
+    // A part photo averages ~185px wide but the box is 520 — stretching it to fill was
+    // rendering a 126px source at 520px (4x) and the picture became a smear, exactly when the
+    // user is asking "is this the right part?". Base width is the smaller of the image's own
+    // pixels and the space available; zoom multiplies THAT.
+    var zoom = 100, baseW = null;
+    function fitBase(){
+      var im = $("modal-img"), wrap = $("modal-img-wrap");
+      if (!im || !wrap || !im.naturalWidth) return;
+      baseW = Math.min(im.naturalWidth * 2, wrap.clientWidth);
+      applyZoom();
+    }
+    function applyZoom(){
+      var im = $("modal-img"); if (!im) return;
+      im.style.width = baseW ? Math.round(baseW * zoom / 100) + "px" : (zoom + "%");
+      im.style.marginInline = "auto";
+    }
     $("zoom-in").onclick = function(){ zoom = Math.min(400, zoom + 50); applyZoom(); };
     $("zoom-out").onclick = function(){ zoom = Math.max(50, zoom - 50); applyZoom(); };
     $("zoom-reset").onclick = function(){ zoom = 100; applyZoom(); };
@@ -3546,8 +3746,13 @@
     // notice. Wired in JS (not an inline onerror attribute) so the HTML markup inside
     // `missing` can't break attribute quoting.
     var imgEl = $("modal-img");
+    if (imgEl){
+      if (imgEl.complete && imgEl.naturalWidth) fitBase();
+      else imgEl.addEventListener("load", fitBase, { once: true });
+    }
     if (imgEl) imgEl.onerror = function(){
-      if (imgEl.dataset.fb){ imgEl.src = imgEl.dataset.fb; imgEl.dataset.fb = ""; imgEl.style.width = "100%"; }
+      if (imgEl.dataset.fb){ imgEl.src = imgEl.dataset.fb; imgEl.dataset.fb = ""; baseW = null;
+        imgEl.addEventListener("load", fitBase, { once: true }); }
       else if (imgEl.parentElement){ imgEl.parentElement.innerHTML = missing; }
     };
     // scroll a tall page scan so the requested part's row sits in the middle of the view
@@ -3587,8 +3792,9 @@
     var frac = await partYFrac(idx);
     showImageModal({
       src: pageScan(r),
+      wide: true,          // a dense technical diagram needs the screen it is being read on
       scrollFrac: frac,
-      title: (r.product_code || r.particular || "Catalog page") + " — catalogue page",
+      title: (r.product_code || nice(r.particular) || "Catalog page") + " — catalogue page",
       altText: "Catalogue reference page " + r.pdf_page + " for group " + r.group + (r.product_code ? " (" + r.product_code + ")" : ""),
       label: "Catalogue page",
       note: "Reference catalogue page. Your dealer price is the one shown in the app; rates printed on this page are list/base rates. / आपकी दर ऐप में दिखती है; पेज पर छपी दरें सूची दर हैं।"
@@ -3597,7 +3803,7 @@
   function modalKeydown(e){
     if (e.key === "Escape"){ closeDiagram(); return; }
     if (e.key === "Tab"){
-      var f = $("modal-root").querySelectorAll("button");
+      var f = $("modal-root").querySelectorAll('button, a[href], input:not([type=hidden]), select, textarea, [tabindex]:not([tabindex="-1"])');
       if (!f.length) return;
       var first = f[0], last = f[f.length - 1];
       if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
@@ -3605,6 +3811,7 @@
     }
   }
   function closeDiagram(){
+    unlockScroll();
     document.removeEventListener("keydown", modalKeydown);
     $("modal-root").innerHTML = "";
     if (lastFocus && lastFocus.focus) lastFocus.focus();
@@ -3733,8 +3940,16 @@
       };
     });
     $("auth-btn").onclick = doSignOut; // attached once here; updateAuthButton() only toggles visibility
-    $("home-brand").onclick = function(){ if (state.session && state.session.role !== "admin") showCatalog(); };
-    $("nav-catalog").onclick = showCatalog;
+    $("home-brand").onclick = function(){
+      if (state.session && state.session.role !== "admin"){ showCatalog(); resetToBrowse(); }
+    };
+    $("nav-catalog").onclick = function(){
+      // tapping the tab you are already on returns to the top — the standard mobile contract.
+      // Coming from Cart or Orders keeps your place in the list instead.
+      var onCatalog = !$("view-catalog").classList.contains("hidden");
+      showCatalog();
+      if (onCatalog) resetToBrowse();
+    };
     $("nav-cart").onclick = showCart;
     $("nav-orders").onclick = showOrders;
     $("nav-requests").onclick = showRequests;
@@ -3755,8 +3970,21 @@
     if (location.hash === "#requests"){ window._deepReq = true; try { history.replaceState(null, "", location.pathname + location.search); } catch(e){} }
     $("generate-pi-btn").onclick = function(){
       if (!Object.keys(state.cart).some(function(k){ return state.cart[k] > 0; })) return;
-      if (state.enduser && !(($("eu-name") || {}).value || "").trim()){
-        showToast("Please enter your name / कृपया नाम डालें"); $("eu-name").focus(); return;
+      if (state.enduser){
+        if (!(($("eu-name") || {}).value || "").trim()){
+          showToast("Please enter your name / कृपया नाम डालें"); $("eu-name").focus(); return;
+        }
+        var euPh = (($("eu-phone") || {}).value || "").replace(/\D/g, "");
+        if (euPh.length < 10){
+          showToast("Enter a 10-digit phone — the shop calls you to confirm / 10 अंकों का फ़ोन डालें");
+          $("eu-phone").focus(); return;
+        }
+        // min="0" is inert without a <form>, so a typed -500 was reaching the shop as an offer
+        var euOff = (($("eu-offer") || {}).value || "").trim();
+        if (euOff !== "" && !(Number(euOff) > 0)){
+          showToast("Your price offer must be more than ₹0 / क़ीमत ₹0 से ज़्यादा हो");
+          $("eu-offer").focus(); return;
+        }
       }
       // a signed-in buyer with no delivery address cannot be shipped to — ask for it at the
       // exact moment it matters instead of letting a parcel become undeliverable later
@@ -3881,8 +4109,7 @@
   function handleListChange(e){
     if (e.target.classList.contains("qty-input")){
       var stepper = e.target.closest(".stepper");
-      setQty(stepper.getAttribute("data-idx"), parseInt(e.target.value, 10) || 0);
-      renderCatalogBody();
+      setQtyTyped(stepper.getAttribute("data-idx"), parseInt(e.target.value, 10) || 0, renderCatalogBody);
     }
   }
   function handleCartClick(e){
@@ -3903,8 +4130,7 @@
   function handleCartChange(e){
     if (e.target.classList.contains("qty-input")){
       var stepper = e.target.closest(".stepper");
-      setQty(stepper.getAttribute("data-idx"), parseInt(e.target.value, 10) || 0);
-      renderCart();
+      setQtyTyped(stepper.getAttribute("data-idx"), parseInt(e.target.value, 10) || 0, renderCart);
     }
   }
 
