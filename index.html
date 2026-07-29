@@ -170,7 +170,7 @@
   .field-label{ display:block; font-size:13px; font-weight:600; margin:14px 0 4px; color:var(--text); }
   /* `tel` was missing, so the one phone field in the request modal rendered UA-black on a page
      where every other input is --text, and skipped the 48px min-height with it. */
-  input[type=text], input[type=number], input[type=password], input[type=email], input[type=search], input[type=tel]{
+  input[type=text], input[type=number], input[type=password], input[type=email], input[type=search], input[type=tel], textarea{
     width:100%; padding:12px; border:1px solid var(--border); border-radius:var(--r-md);
     font-size:16px; background:#fff; min-height:48px; -webkit-appearance:none; appearance:none;
     color:var(--text);
@@ -179,6 +179,15 @@
   /* one placeholder treatment app-wide: brand muted at full opacity (Firefox dims by default),
      so every hint clears 4.5:1 instead of the browser-default light gray */
   input::placeholder, textarea::placeholder{ color:var(--muted); opacity:1; }
+  /* an address is 2-3 lines, so it gets height and a normal line-height the single-line rule can't give */
+  textarea{ min-height:88px; line-height:1.45; resize:vertical; font-family:inherit; }
+  /* Collecting from the shop is a real answer, not an excuse to skip the field — without it a
+     walk-in customer types "shop" into the address box and the courier data is poisoned. */
+  .eu-pickup{ display:flex; align-items:center; gap:10px; min-height:44px; margin-top:10px;
+    font-size:13px; color:var(--text); cursor:pointer; }
+  .eu-pickup input{ width:20px; height:20px; flex:none; margin:0; }
+  .eu-ship-off #eu-addr, .eu-ship-off #eu-pin,
+  .eu-ship-off label[for="eu-addr"], .eu-ship-off label[for="eu-pin"]{ display:none; }
   .btn{
     display:inline-block; border:none; border-radius:var(--r-md); padding:12px 16px;
     font-size:15px; font-weight:700; min-height:48px;
@@ -980,6 +989,21 @@
       <input type="text" id="eu-name" autocomplete="name" placeholder="Full name">
       <label class="field-label" for="eu-phone">Phone / फ़ोन</label>
       <input type="text" id="eu-phone" inputmode="tel" autocomplete="tel" placeholder="10-digit mobile">
+
+      <!-- Without this the shop confirms an order and has no idea where to send it, so the first
+           thing they do is phone the customer — the exact call this app exists to prevent. The
+           column (enduser_orders.ship_to_addr), the RPC arg (p_addr) and the shop's dispatch card
+           were all built for this from the start; only the field was missing. -->
+      <label class="field-label" for="eu-addr">Delivery address / डिलीवरी का पता</label>
+      <textarea id="eu-addr" rows="3" autocomplete="street-address"
+        placeholder="House / village, landmark, town&#10;घर / गाँव, पहचान, कस्बा"></textarea>
+      <label class="field-label" for="eu-pin">PIN code / पिन कोड</label>
+      <input type="text" id="eu-pin" inputmode="numeric" autocomplete="postal-code" maxlength="6" placeholder="6 digits / 6 अंक">
+      <label class="eu-pickup" for="eu-pickup">
+        <input type="checkbox" id="eu-pickup">
+        <span>I'll collect it from the shop / मैं दुकान से ले लूँगा</span>
+      </label>
+
       <label class="field-label" for="eu-offer">Your price offer (optional) / आपकी क़ीमत (वैकल्पिक)</label>
       <input type="number" id="eu-offer" inputmode="numeric" min="0" placeholder="Propose a total — the shop can accept it / कुल क़ीमत सुझाएँ">
     </div>
@@ -1341,7 +1365,10 @@
     try {
       localStorage.setItem(euContactKey(), JSON.stringify({
         name: (($("eu-name")||{}).value || ""), phone: (($("eu-phone")||{}).value || ""),
-        offer: (($("eu-offer")||{}).value || "")
+        offer: (($("eu-offer")||{}).value || ""),
+        // a returning customer should never retype where they live
+        addr: (($("eu-addr")||{}).value || ""), pin: (($("eu-pin")||{}).value || ""),
+        pickup: !!(($("eu-pickup")||{}).checked)
       }));
     } catch(e){}
   }
@@ -1352,8 +1379,27 @@
       if ($("eu-name") && !$("eu-name").value) $("eu-name").value = d.name || "";
       if ($("eu-phone") && !$("eu-phone").value) $("eu-phone").value = d.phone || "";
       if ($("eu-offer") && !$("eu-offer").value) $("eu-offer").value = d.offer || "";
+      if ($("eu-addr") && !$("eu-addr").value) $("eu-addr").value = d.addr || "";
+      if ($("eu-pin") && !$("eu-pin").value) $("eu-pin").value = d.pin || "";
+      if ($("eu-pickup")) $("eu-pickup").checked = !!d.pickup;
+      applyPickupState();
     } catch(e){}
   }
+  // hide the shipping fields when the customer says they will collect, so an address is never
+  // demanded from someone who does not need one — and never faked to get past a required field
+  function applyPickupState(){
+    var box = $("eu-contact"); if (!box) return;
+    box.classList.toggle("eu-ship-off", !!(($("eu-pickup")||{}).checked));
+  }
+  // one place that decides what the shop will see as the destination
+  function euShipTo(){
+    if (($("eu-pickup")||{}).checked) return "Collecting from the shop / दुकान से लेंगे";
+    var a = (($("eu-addr")||{}).value || "").trim().replace(/\s+/g, " ");
+    var pin = (($("eu-pin")||{}).value || "").replace(/\D/g, "");
+    if (!a) return "";
+    return pin ? a + " - " + pin : a;
+  }
+
   function saveCart(){ try { localStorage.setItem(cartKey(), JSON.stringify(state.cart)); } catch(e){} }
   function loadCart(){
     try { var raw = localStorage.getItem(cartKey()); state.cart = raw ? JSON.parse(raw) : {}; }
@@ -1409,6 +1455,7 @@
       args: { p_supplier: state.enduser, p_name: pi.dealerName,
         p_phone: (($("eu-phone") || {}).value || "").trim() || null,
         p_offer: (parseInt((($("eu-offer") || {}).value || "").trim(), 10) || null),
+        p_addr: euShipTo() || null,
         p_lines: pi.lines.map(function(l){ return { sku: l.sku, qty: l.qty }; }), p_client_key: pi.clientKey } };
     return { key: pi.clientKey, kind:"dealer", ts: Date.now(),
       args: { p_pi: pi.number, p_subtotal: pi.subtotal, p_gst: pi.gst, p_grand: pi.grand,
@@ -3820,6 +3867,7 @@
     var dealerCodeDisplay = state.enduser ? "RETAIL" : "";
     var dealerGstin = (!state.enduser && state.account && state.account.gstin) ? state.account.gstin : "";
     var pi = { number: num, date: fmtDate(now), validTill: fmtDate(valid), dealerName: dealerName,
+             shipTo: state.enduser ? euShipTo() : "",
              dealerCode: dealerCodeDisplay, dealerGstin: dealerGstin, lines: lines, subtotal: subtotal, gst: gst,
              gstPct: (gstInfo.only != null ? gstInfo.only : null), grand: grand };
     return pi;
@@ -3852,7 +3900,8 @@
       '<div class="pi-head"><h2>' + (isPI ? 'PROFORMA INVOICE' : 'PURCHASE ORDER') + '</h2><div class="pi-no">' + esc(pi.number) + '</div></div>' +
       '<div class="pi-meta">' +
         '<strong>Buyer / ख़रीदार:</strong> ' + esc(pi.dealerName) + (pi.dealerCode ? ' (' + esc(pi.dealerCode) + ')' : '') +
-        (pi.dealerGstin ? '<br><strong>GSTIN:</strong> ' + esc(pi.dealerGstin) : '') + '<br>' +
+        (pi.dealerGstin ? '<br><strong>GSTIN:</strong> ' + esc(pi.dealerGstin) : '') +
+        (pi.shipTo ? '<br><strong>Deliver to / भेजें:</strong> ' + esc(pi.shipTo) : '') + '<br>' +
         '<strong>Date / दिनांक:</strong> ' + esc(pi.date) + ' &middot; <strong>Valid till / मान्य:</strong> ' + esc(pi.validTill) +
       '</div>' +
       '<div style="overflow-x:auto;"><table class="pi-table"><thead><tr>' +
@@ -3947,7 +3996,10 @@
       txt(M, y, 13, true, pi.docType === "PI" ? "PROFORMA INVOICE" : "PURCHASE ORDER");
       txt(W - M - 170, y, 11, true, pi.number); y -= 18;
       txt(M, y, 10, false, "Buyer: " + pi.dealerName + (pi.dealerCode ? " (" + pi.dealerCode + ")" : "") + (pi.dealerGstin ? "  GSTIN: " + pi.dealerGstin : "")); y -= 13;
-      txt(M, y, 10, false, "Date: " + pi.date + "   Valid till: " + pi.validTill); y -= 18;
+      txt(M, y, 10, false, "Date: " + pi.date + "   Valid till: " + pi.validTill); y -= 13;
+      // the PDF is what gets printed and taped to the parcel — the destination has to be on it
+      if (pi.shipTo) wrapText("Deliver to: " + pi.shipTo, 88).forEach(function(w){ txt(M, y, 10, false, w); y -= 12; });
+      y -= 6;
       txt(TX, y, 9, true, "Part"); txt(cols.qty, y, 9, true, "Qty"); txt(cols.rate, y, 9, true, "Rate"); txt(cols.amt, y, 9, true, "Amount");
       y -= 5; line(M, y, W - M, y); y -= 13;
     }
@@ -4304,8 +4356,11 @@
       };
     });
     $("auth-btn").onclick = doSignOut; // attached once here; updateAuthButton() only toggles visibility
-    ["eu-name","eu-phone","eu-offer"].forEach(function(id){
+    ["eu-name","eu-phone","eu-offer","eu-addr","eu-pin"].forEach(function(id){
       var el = $(id); if (el) el.addEventListener("input", saveEuContact);
+    });
+    if ($("eu-pickup")) $("eu-pickup").addEventListener("change", function(){
+      applyPickupState(); saveEuContact();
     });
     $("home-brand").onclick = function(){
       if (state.session && state.session.role !== "admin"){ showCatalog(); resetToBrowse(); }
@@ -4345,6 +4400,19 @@
         if (euPh.length < 10){
           showToast("Enter a 10-digit phone — the shop calls you to confirm / 10 अंकों का फ़ोन डालें");
           $("eu-phone").focus(); return;
+        }
+        // An order the shop cannot deliver is not an order. Blocked here rather than discovered
+        // by the shopkeeper after they have already confirmed it and moved stock.
+        if (!($("eu-pickup") || {}).checked){
+          if (!(($("eu-addr") || {}).value || "").trim()){
+            showToast("Where should we deliver? Add your address / पता डालें");
+            $("eu-addr").focus(); return;
+          }
+          var euPin = (($("eu-pin") || {}).value || "").replace(/\D/g, "");
+          if (euPin.length !== 6){
+            showToast("Enter a 6-digit PIN code — the courier needs it / 6 अंकों का पिन कोड डालें");
+            $("eu-pin").focus(); return;
+          }
         }
         // min="0" is inert without a <form>, so a typed -500 was reaching the shop as an offer
         var euOff = (($("eu-offer") || {}).value || "").trim();
@@ -4388,6 +4456,8 @@
       var lineCount = preview.lines.length;
       askConfirm("Send this order to " + (state.supplierName || "the shop") + "?\n\n" +
                  lineCount + " part" + (lineCount === 1 ? "" : "s") + " · " + inr(preview.grand) + " total\n" +
+                 // the last moment a wrong address is cheap to fix
+                 "Deliver to: " + (euShipTo() || "—") + "\n" +
                  "No payment now — the shop will confirm.\n\n" +
                  "यह ऑर्डर भेजें? अभी भुगतान नहीं — दुकान पुष्टि करेगी।",
                  { okLabel: "Send order / ऑर्डर भेजें" }).then(function(go){ if (go) submit(); });
