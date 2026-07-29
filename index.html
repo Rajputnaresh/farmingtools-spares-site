@@ -10,6 +10,12 @@
 <title>FarmingTools.in Spares</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1e7d34">
+<!-- Light-only, deliberately. There is no prefers-color-scheme rule anywhere in this file and
+     that is a decision, not an omission: this app is read outdoors in direct sun on cheap LCD
+     phones, where a dark sheet is unreadable. Declaring color-scheme:light also stops the UA
+     auto-darkening form controls, which is what produces a half-inverted page. If a night mode
+     is ever wanted it needs its own palette pass, not an inversion. -->
+<meta name="color-scheme" content="light">
 <style>
   :root{
     --green:#1e7d34; --green-dark:#155924; --green-light:#eaf7ee;
@@ -192,6 +198,11 @@
     padding:8px 10px; margin-bottom:10px; font-size:13px;
   }
   .dealer-strip .name{ font-weight:700; color:var(--green-dark); text-transform:capitalize; }
+  /* amber, not red: the prices on screen are real, just not freshly confirmed */
+  .stale-note{
+    background:#fff6e0; border:1px solid #f0c96b; color:#7a5b00;
+    padding:8px 10px; border-radius:8px; font-size:12.5px; margin-bottom:10px; font-weight:600;
+  }
 
   /* search & filters */
   .search-row{ position:relative; margin-bottom:8px; }
@@ -213,7 +224,7 @@
     flex:1 1 140px; min-width:0; padding:12px 10px; border:1px solid var(--border);
     border-radius:10px; background:#fff; font-size:13px; min-height:48px;
   }
-  .result-count{ font-size:12px; color:var(--muted); margin:2px 0 8px; }
+  .result-count{ font-size:13px; color:var(--muted); margin:2px 0 8px; }
   .list-reset{ background:none; border:none; color:var(--green-dark); font-weight:600; font-size:13px; min-height:44px; padding:6px 2px; margin-bottom:2px; }
 
   /* browse landing (progressive disclosure over 1,746 SKUs) */
@@ -278,16 +289,21 @@
   .thumb-ph{ display:flex; align-items:center; justify-content:center; cursor:default; color:var(--green-dark); background:var(--green-light); }
   .thumb-ph .t-icon{ width:30px; height:30px; }
   .item-main{ flex:1 1 auto; min-width:0; }
+  /* the meta tag alone leaves computed color-scheme at "normal"; this is what actually pins it */
+  :root{ color-scheme:light; }
   .item-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
   .item-code{ font-weight:700; font-size:14px; color:var(--green-dark); }
+  /* Contrast on these was never the problem — size was. A 55-year-old shopkeeper reading a
+     Devanagari conjunct in direct sunlight cannot resolve a 10px glyph at any contrast ratio,
+     so the whole small-text band moves up. Costs a little vertical space; worth it. */
   .badge{
-    background:var(--green-light); color:var(--green-dark); font-size:10.5px; font-weight:600;
+    background:var(--green-light); color:var(--green-dark); font-size:12px; font-weight:600;
     padding:3px 7px; border-radius:20px; white-space:nowrap;
   }
   .item-particular{ font-size:13.5px; margin:4px 0 8px; color:var(--text); line-height:1.35; }
   /* availability from Supabase (chain_availability) — three states: on my supplier's shelf,
      reachable further up the chain, or nowhere. Who holds upstream stock is never revealed. */
-  .stock-badge{ font-size:10.5px; font-weight:600; padding:3px 7px; border-radius:20px; white-space:nowrap; }
+  .stock-badge{ font-size:12px; font-weight:600; padding:3px 7px; border-radius:20px; white-space:nowrap; }
   .stock-in{ background:var(--green-light); color:var(--green-dark); }
   /* out-of-stock is a calm, muted state — not an alarm (most of the catalog may be unstocked) */
   .stock-out{ background:#eef0ee; color:var(--muted); }
@@ -347,7 +363,7 @@
   }
   /* nav labels: English over Hindi, uniformly two lines so nothing wraps raggedly */
   nav.bottom-nav button .nl{ display:block; line-height:1.15; }
-  nav.bottom-nav button .nl-hi{ display:block; font-size:10px; font-weight:600; opacity:.85; line-height:1.15; }
+  nav.bottom-nav button .nl-hi{ display:block; font-size:11.5px; font-weight:600; opacity:.85; line-height:1.15; }
   /* cart count is informational (green), not an alert like the red Requests badge */
   #cart-badge{ background:var(--green-dark); }
 
@@ -395,7 +411,7 @@
   .cart-item{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:8px; }
   .cart-item-top{ display:flex; justify-content:space-between; gap:8px; }
   .cart-item-name{ font-size:13.5px; font-weight:600; }
-  .cart-item-code{ font-size:11.5px; color:var(--muted); }
+  .cart-item-code{ font-size:13px; color:var(--muted); }
   .cart-item-bottom{ display:flex; align-items:center; justify-content:space-between; margin-top:8px; }
   .remove-btn{ background:none; border:none; color:var(--danger); font-size:12px; font-weight:700; min-height:44px; padding:6px 8px; }
   .line-total{ font-weight:700; font-size:13.5px; }
@@ -592,7 +608,7 @@
   @media (prefers-reduced-motion: reduce){ .pp-bar > i{ transition:none; } }
   /* one calm line of hard facts under the part name — fitment first, because that is the
      question a shopkeeper is actually asking before anything else */
-  .item-spec{ font-size:11.5px; color:var(--muted); margin-top:2px; line-height:1.45; }
+  .item-spec{ font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.45; }
   .item-spec b{ color:var(--text); font-weight:600; }
   .badge-green, .badge-amber, .badge-red{ display:inline-block; border-radius:8px; padding:2px 8px; font-size:11px; font-weight:700; margin-bottom:3px; }
   .badge-green{ background:var(--green-light); color:var(--green-dark); }
@@ -1050,10 +1066,13 @@
     catalog: [],
     priceByIndex: [],      // net rate per catalog index (from my_prices RPC); undefined = no price
     availByIndex: [],      // qty (number) or in/out (boolean) per catalog index; undefined = no badge
+    upstreamByIndex: [],   // held further up the chain; must exist before the first loadData —
+                           // the availability reset is conditional now, so nothing else creates it
     enduser: null,         // supplier party id when opened via a retail link (?s=…)
     supplierName: null,
     loading: true,
     loadError: false,
+    stalePrices: false,    // the price/stock RPC failed and the screen is showing cached figures
     session: null,         // { id: auth user uid, email, role }
     account: null,         // { company, role, id } resolved from the parties table
     cart: {},
@@ -1376,6 +1395,23 @@
       return count ? cart : null;
     } catch(e){ return null; }
   }
+  // The last order a buyer actually sent, kept so a refresh, a lock-screen or a background kill
+  // can't erase every trace of it. `state.piInfo` is memory-only and retail has no Orders tab,
+  // so before this the whole record of a committed order was one screen deep in RAM. Keyed by
+  // cacheScope() — a retail link (eu:<supplier>) and a signed-in dealer (u:<id>) never share.
+  function receiptKey(){ return "kg_receipt_v1:" + cacheScope(); }
+  function saveReceipt(pi, ok){
+    try { localStorage.setItem(receiptKey(), JSON.stringify({ pi: pi, ok: ok, ts: Date.now() })); } catch(e){}
+  }
+  function getReceipt(){
+    try {
+      var raw = localStorage.getItem(receiptKey());
+      var rec = raw ? JSON.parse(raw) : null;
+      // a receipt older than a PO's validity window is history, not "your last order"
+      if (!rec || !rec.pi || (Date.now() - (rec.ts || 0)) > PI_VALID_DAYS * 86400000) return null;
+      return rec;
+    } catch(e){ return null; }
+  }
   function reorderLast(){
     var last = getLastOrder();
     if (!last) return;
@@ -1456,12 +1492,28 @@
       // a sparse array would hand `undefined` rows to every map/filter downstream
       for (var fi = 0; fi < state.catalog.length; fi++)
         if (!state.catalog[fi]) state.catalog[fi] = { group:0, section:"", product_code:"", particular:"", active:false };
-      state.priceByIndex = []; state.availByIndex = []; state.upstreamByIndex = [];
-      ((res[1] && res[1].data) || []).forEach(function(p){ var i = skuToIndex(p.sku); if (i >= 0) state.priceByIndex[i] = (p.net_rate != null ? p.net_rate : p.mrp); });
-      ((res[2] && res[2].data) || []).forEach(function(a){ var i = skuToIndex(a.sku); if (i < 0) return;
-        state.availByIndex[i] = (a.qty != null ? a.qty : a.in_stock);
-        state.upstreamByIndex[i] = !!a.upstream; });
-      persistData();
+      // Only replace prices and availability when the RPC actually answered. supabase-js RESOLVES
+      // rather than rejects on a network failure, so the old unconditional reset blanked every
+      // price in the catalogue on a bad connection — and then persistData() wrote the blanks over
+      // the last-good snapshot, poisoning the next cold boot. The whole offline story (service
+      // worker, outbox, instant paint from cache) was defeated by three lines, and defeated
+      // invisibly: 1746 parts silently became "Rate on request" with an empty console.
+      var priceOk = !!(res[1] && !res[1].error && Array.isArray(res[1].data));
+      var availOk = !!(res[2] && !res[2].error && Array.isArray(res[2].data));
+      if (priceOk){
+        state.priceByIndex = [];
+        res[1].data.forEach(function(p){ var i = skuToIndex(p.sku); if (i >= 0) state.priceByIndex[i] = (p.net_rate != null ? p.net_rate : p.mrp); });
+      }
+      if (availOk){
+        state.availByIndex = []; state.upstreamByIndex = [];
+        res[2].data.forEach(function(a){ var i = skuToIndex(a.sku); if (i < 0) return;
+          state.availByIndex[i] = (a.qty != null ? a.qty : a.in_stock);
+          state.upstreamByIndex[i] = !!a.upstream; });
+      }
+      // degrading is acceptable; degrading silently is not
+      state.stalePrices = !(priceOk && availOk);
+      // never write a half-loaded snapshot over a good one
+      if (priceOk && availOk) persistData();
     });
   }
 
@@ -1713,6 +1765,22 @@
     $("generate-pi-btn").textContent = state.enduser ? "Send order / ऑर्डर भेजें" : "Generate PO / परचेज़ ऑर्डर बनाएँ";
     renderCart(); updateCartBadge();
   }
+  // "Cart" promises self-service checkout with payment. A retail customer's basket ends in "the
+  // shop will confirm your order" — it is a request, not a purchase, and every downstream line of
+  // copy was fighting the label. Dealers keep "Cart": theirs really does become a PO they issue.
+  function applyCartWording(){
+    var retail = !!state.enduser;
+    var en = retail ? "Order" : "Cart", hi = retail ? "ऑर्डर" : "कार्ट";
+    var btn = $("nav-cart");
+    if (btn){
+      btn.setAttribute("aria-label", en + " / " + hi);
+      var nl = btn.querySelector(".nl"), nh = btn.querySelector(".nl-hi");
+      if (nl) nl.textContent = en;
+      if (nh) nh.textContent = hi;
+    }
+    var t = document.querySelector("#view-cart .view-title");
+    if (t) t.textContent = en + " / " + hi;
+  }
   function showPI(){ hideAll(); $("view-pi").classList.remove("hidden"); $("header-actions").classList.remove("hidden"); updateAuthButton(); pushView("pi"); renderPI(); }
   function showOrders(){
     hideAll();
@@ -1725,6 +1793,7 @@
     renderMyOrders();
   }
   function setActiveNav(id){
+    applyCartWording();
     ["nav-catalog","nav-cart","nav-orders","nav-requests","nav-more"].forEach(function(nid){
       var el = $(nid); if (el) el.classList.toggle("active", nid === id);
     });
@@ -2097,6 +2166,14 @@
   function skuOptionsHtml(list){
     return list.map(function(c){ return '<option value="'+esc(c.sku)+'">'+esc(c.product_code||c.sku)+' — '+esc((c.particular||"").slice(0,40))+'</option>'; }).join("");
   }
+  // m-pp-pick ships with only its "add a brand-new part" row (see renderMore). Anything that
+  // reads or SETS its value has to fill it first, or the assignment silently no-ops.
+  function ensurePpOptions(){
+    var pick = $("m-pp-pick");
+    if (pick && pick.options.length <= 1)
+      pick.innerHTML = '<option value="">➕ Add a brand-new part / नया पुर्ज़ा</option>' + skuOptionsHtml(state.catalog || []);
+    return pick;
+  }
 
   function renderMore(){
     if (!isSupplier()) return;
@@ -2106,7 +2183,12 @@
     var mine = descendants(state.parties || [], a.id); mine.delete(a.id);
     var partyOpts = (state.parties || []).filter(function(p){ return mine.has(p.id); })
       .map(function(p){ return '<option value="'+p.id+'">'+esc(p.name)+' ('+esc(p.role)+')</option>'; }).join("") || '<option value="">— no downstream parties yet —</option>';
-    var skuOpts = skuOptionsHtml(state.catalog || []);
+    // Built EMPTY on purpose, then filled on first focus by fillSkuSelect(). Interpolating all
+    // 1,746 parts into the five part-pickers here meant ~534 KB of HTML and 8,730 <option> nodes
+    // parsed synchronously in one innerHTML — a visible freeze on the ₹6,000 Android this tab is
+    // used on, for a control nobody can operate anyway (Android's native picker has no search,
+    // which is exactly why each of these already has a "type code or name to filter" box above it).
+    var skuOpts = "";
 
     var html = '<div class="more-card"><div style="font-weight:700;">'+esc(name)+'</div><div style="color:var(--muted);font-size:13px;">'+esc(role)+'</div></div>';
 
@@ -2455,12 +2537,14 @@
       var pr = e.target.closest("[data-nav-party]"); if (pr){ _stockStack.push({ t:'party', val:pr.getAttribute("data-nav-party") }); drawMoreStock(); return; }
       var pt = e.target.closest("[data-nav-part]"); if (pt){ _stockStack.push({ t:'part', val:pt.getAttribute("data-nav-part"), label:pt.getAttribute("data-nav-label") }); drawMoreStock(); return; }
     });
-    // sku search filters
+    // sku search filters — and the lazy fill that keeps 8,730 <option> nodes out of the initial paint
     [["m-t-search","m-t-sku"],["m-o-search","m-o-sku"],["m-adj-search","m-adj-sku"],["m-co-search","m-co-sku"]].forEach(function(pair){
-      var s = $(pair[0]); if (!s) return;
+      var s = $(pair[0]), sel = $(pair[1]); if (!s || !sel) return;
       s.oninput = function(){ var q = this.value.trim().toLowerCase();
         var list = q ? (state.catalog||[]).filter(function(c){ return ((c.product_code||"")+" "+(c.particular||"")).toLowerCase().indexOf(q) !== -1; }).slice(0,200) : (state.catalog||[]);
-        $(pair[1]).innerHTML = skuOptionsHtml(list); };
+        sel.innerHTML = skuOptionsHtml(list); };
+      // one list, built once, only for the picker actually being opened
+      sel.addEventListener("focus", function(){ if (!sel.options.length) sel.innerHTML = skuOptionsHtml(state.catalog || []); });
     });
     // add downstream
     if ($("m-d-add")) $("m-d-add").onclick = async function(){
@@ -2618,7 +2702,7 @@
       var sku = b.getAttribute("data-wk");
       var sec = $("m-pp-sec"); if (!sec) return;
       sec.open = true;
-      var pick = $("m-pp-pick"); if (pick) pick.value = sku;
+      var pick = ensurePpOptions(); if (pick) pick.value = sku;
       if (_ppFill) _ppFill(sku);
       sec.scrollIntoView({ block: "start", behavior: "smooth" });
     };
@@ -2735,6 +2819,7 @@
       var m = $("m-pp-msg"); m.className = "req-msg"; m.textContent = "";
     }
     pick.onchange = function(){ fill(this.value); };
+    pick.addEventListener("focus", ensurePpOptions); // build the 1,746-row list only when opened
     _ppFill = fill;   // the worklist hands a part straight into this form
 
     var find = $("m-pp-find");
@@ -3278,6 +3363,18 @@
 
   function renderCatalogBody(){
     paintHindi();
+    // Say so when the figures on screen came from the phone rather than the shop. This lives here
+    // rather than in renderDealerStrip because every path that repaints the list ends up here,
+    // including the retail revalidate that repaints without rebuilding the strip.
+    var noticeEl = $("notice-area");
+    if (noticeEl){
+      var staleEl = noticeEl.querySelector(".stale-note");
+      if (state.stalePrices && !staleEl){
+        noticeEl.insertAdjacentHTML("beforeend",
+          '<div class="stale-note" role="status">Showing saved prices — could not reach the shop just now.' +
+          '<br>सहेजी हुई क़ीमतें — दुकान से संपर्क नहीं हो पाया।</div>');
+      } else if (!state.stalePrices && staleEl) staleEl.remove();
+    }
     var body = $("catalog-body");
     if (state.loading){ body.innerHTML = '<div class="empty-state"><div class="spinner"></div>Loading catalogue…<br>सूची लोड हो रही है…</div>'; return; }
     if (state.loadError){
@@ -3460,33 +3557,50 @@
     var keys = Object.keys(state.cart).filter(function(k){ return state.cart[k] > 0; });
     var grand = 0;
     if (!keys.length){
-      var last = getLastOrder();
+      var last = getLastOrder(), rec = getReceipt();
+      // An empty cart right after sending used to read as "nothing happened". The receipt is the
+      // reassurance the buyer needs before the alternative — phoning the shop to ask.
       wrap.innerHTML = '<div class="empty-state">Cart is empty.<br>कार्ट खाली है।' +
+        (rec ? '<div style="margin-top:14px;font-weight:700;color:var(--ink);">Your last order / आपका पिछला ऑर्डर</div>' +
+               '<div style="font-size:13px;color:var(--muted);margin-top:2px;">' + esc(rec.pi.number) + ' &middot; ' + esc(rec.pi.date) + ' &middot; ' + inr(rec.pi.grand) + '</div>' +
+               '<br><button class="retry-btn" id="receipt-btn" type="button">View this order / ऑर्डर देखें</button>' : "") +
         (last ? '<br><button class="retry-btn" id="reorder-btn" type="button">Reorder last order / पिछला ऑर्डर दोहराएँ</button>' :
-          '<br><button class="retry-btn" id="empty-browse-btn" type="button">Browse parts / पार्ट्स देखें</button>') +
+          (rec ? "" : '<br><button class="retry-btn" id="empty-browse-btn" type="button">Browse parts / पार्ट्स देखें</button>')) +
         '</div>';
+      if (rec) $("receipt-btn").onclick = function(){ state.piInfo = rec.pi; state.piOrderOk = rec.ok; showPI(); };
       if (last) $("reorder-btn").onclick = reorderLast;
-      else $("empty-browse-btn").onclick = showCatalog;
+      else if (!rec) $("empty-browse-btn").onclick = showCatalog;
       $("cart-grand-total").textContent = "₹0"; $("cart-gst").textContent = "₹0"; $("cart-payable").textContent = "₹0";
       // an empty cart has no total to show — a row of ₹0s reads like a broken price, not "empty"
       $("cart-totals").classList.add("hidden");
       $("generate-pi-btn").classList.add("hidden");
       $("generate-pi-btn").disabled = true; $("cart-oos-note").classList.add("hidden"); return;
     }
-    var hasOOS = false;
+    var hasOOS = false, hasUnpriced = false, skipped = 0;
     wrap.innerHTML = keys.map(function(k){
-      var r = state.catalog[k]; if (!r) return "";
-      var qty = state.cart[k], rate = netRate(k) || 0, lineTotal = rate * qty;
+      // A cart entry whose catalog row is missing (stale cart, catalogue not loaded yet) used to
+      // vanish from the list AND from the totals, leaving a live "Send order" button over a ₹0
+      // screen with nothing on it. Reproduced live: badge said 3, the list was blank, the button
+      // was enabled. Count it and block, rather than quietly shipping a phantom order.
+      var r = state.catalog[k]; if (!r){ skipped++; return ""; }
+      // A part with no price row must NEVER fall through to 0. `netRate(k) || 0` used to render
+      // "₹0 each", add ₹0 to the subtotal and GST, and print ₹0 on the PO — an order the buyer
+      // believes is free and the shop is expected to honour. Prices come from a different RPC
+      // than the catalogue, so the two going out of sync is a question of when, not if.
+      var priced = netRate(k), qty = state.cart[k];
+      if (priced === null) hasUnpriced = true;
+      var rate = priced || 0, lineTotal = rate * qty;
       grand += lineTotal;
       // no role can check out an out-of-stock line — stale carts (added before it went OOS) still get blocked
       var outHtml = "";
       var kClass = stockClass(k);
       if (kClass === "none"){ hasOOS = true; outHtml = '<div style="color:var(--danger);font-size:12px;font-weight:700;margin-top:4px;">Out of stock / स्टॉक नहीं</div>'; }
       else if (kClass === "chain"){ outHtml = '<div style="color:var(--warn-ink,#7a5b00);font-size:12px;font-weight:600;margin-top:4px;">Ordered in for you — takes a little longer / मंगाया जाएगा, थोड़ा समय लगेगा</div>'; }
+      if (priced === null) outHtml += '<div style="color:var(--danger);font-size:12px;font-weight:700;margin-top:4px;">No price yet — ask the shop / अभी दाम तय नहीं, दुकान से पूछें</div>';
       return '<div class="cart-item">' +
         '<div class="cart-item-top"><div>' +
             '<div class="cart-item-name">' + esc(nice(r.particular)) + '</div>' +
-            '<div class="cart-item-code">' + (r.product_code ? esc(r.product_code) : "—") + ' &middot; ' + inr(rate) + ' each</div>' +
+            '<div class="cart-item-code">' + (r.product_code ? esc(r.product_code) : "—") + ' &middot; ' + (priced === null ? "Rate on request" : inr(rate) + " each") + '</div>' +
           '</div>' +
           '<button class="remove-btn" type="button" data-remove="' + k + '">Remove / हटाएँ</button></div>' +
         '<div class="cart-item-bottom">' +
@@ -3494,7 +3608,7 @@
             '<button class="qty-minus" type="button" aria-label="Decrease quantity">−</button>' +
             '<input type="number" class="qty-input" min="0" value="' + qty + '" inputmode="numeric" aria-label="Quantity">' +
             '<button class="qty-plus" type="button" aria-label="Increase quantity">+</button>' +
-          '</div><span class="line-total">' + inr(lineTotal) + '</span></div>' + outHtml + '</div>';
+          '</div><span class="line-total">' + (priced === null ? "—" : inr(lineTotal)) + '</span></div>' + outHtml + '</div>';
     }).join("");
     $("cart-totals").classList.remove("hidden");
     $("generate-pi-btn").classList.remove("hidden");
@@ -3506,8 +3620,16 @@
     if (gstLabelEl) gstLabelEl.textContent = gstLabel;
     $("cart-gst").textContent = inr(cartGst);
     $("cart-payable").textContent = inr(grand + cartGst);
-    $("generate-pi-btn").disabled = hasOOS;
-    $("cart-oos-note").classList.toggle("hidden", !hasOOS);
+    // Block checkout on an unpriced line exactly as on an out-of-stock one. Out-of-stock is
+    // visible in the total; a missing price is not — which is precisely why it needs the gate.
+    $("generate-pi-btn").disabled = hasOOS || hasUnpriced || skipped > 0;
+    var note = $("cart-oos-note");
+    note.classList.toggle("hidden", !(hasOOS || hasUnpriced || skipped));
+    note.textContent = hasOOS
+      ? "Remove out-of-stock items to continue / जारी रखने के लिए स्टॉक-रहित पुर्जे हटाएँ"
+      : hasUnpriced
+      ? "One or more parts have no price yet. Ask the shop for a rate, or remove them to continue. / किसी पुर्ज़े का दाम तय नहीं — दुकान से पूछें या हटाएँ"
+      : "Some parts in this order could not be loaded. Refresh, or empty the cart and add them again. / कुछ पुर्ज़े लोड नहीं हुए — रिफ़्रेश करें या कार्ट खाली करके दोबारा जोड़ें";
   }
 
   // ---------- PI ----------
@@ -4065,19 +4187,36 @@
         return;
       }
       var btn = this;
-      btn.disabled = true;
-      var pi = buildPI();
-      pi.clientKey = uuid(); // stable idempotency key — the same order never books twice on retry
-      saveLastOrder();
-      // hold the "PI ready" screen until the order settles. A stored-offline order ("queued")
-      // is a success too: it's safely in the outbox and the cart can clear.
-      placeOrder(pi).then(function(ok){
-        btn.disabled = false;
-        state.piInfo = pi;
-        state.piOrderOk = ok;
-        if (ok === true || ok === "queued"){ state.cart = {}; saveCart(); updateCartBadge(); }
-        showPI();
-      });
+      function submit(){
+        btn.disabled = true;
+        var pi = buildPI();
+        pi.clientKey = uuid(); // stable idempotency key — the same order never books twice on retry
+        saveLastOrder();
+        // hold the "PI ready" screen until the order settles. A stored-offline order ("queued")
+        // is a success too: it's safely in the outbox and the cart can clear.
+        placeOrder(pi).then(function(ok){
+          btn.disabled = false;
+          state.piInfo = pi;
+          state.piOrderOk = ok;
+          if (ok === true || ok === "queued"){
+            state.cart = {}; saveCart(); updateCartBadge();
+            saveReceipt(pi, ok); // survives the refresh that used to erase every trace of the order
+          }
+          showPI();
+        });
+      }
+      if (!state.enduser) return submit();
+      // The supplier side confirms fifteen separate stock- and money-moving actions before
+      // anything happens. The one action a retail buyer takes — committing to an order — used
+      // to fire on a single tap of a full-width button at the bottom of the screen, with no
+      // re-read and no way back. Same care on both sides of the counter.
+      var preview = buildPI();
+      var lineCount = preview.lines.length;
+      askConfirm("Send this order to " + (state.supplierName || "the shop") + "?\n\n" +
+                 lineCount + " part" + (lineCount === 1 ? "" : "s") + " · " + inr(preview.grand) + " total\n" +
+                 "No payment now — the shop will confirm.\n\n" +
+                 "यह ऑर्डर भेजें? अभी भुगतान नहीं — दुकान पुष्टि करेगी।",
+                 { okLabel: "Send order / ऑर्डर भेजें" }).then(function(go){ if (go) submit(); });
     };
     $("pi-back-btn").onclick = showCart;
 
