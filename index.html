@@ -423,10 +423,15 @@
      Devanagari conjunct in direct sunlight cannot resolve a 10px glyph at any contrast ratio,
      so the whole small-text band moves up. That bump pushed this nowrap pill 204px wide in a
      334px row, which is what put seven badges past the viewport edge — hence min-width:0. */
+  /* Now that this only renders on cross-section lists, it is the ONLY thing telling you which
+     section a search hit came from — so an ellipsis eats precisely the information it is kept
+     for ("Brush Cutter Accessories & Part" needs 204px and had 137px at 320px, truncating 43 of
+     51 rows). The nowrap+ellipsis was added to stop the pill pushing past the viewport; wrapping
+     stops that too, and keeps the words. */
   .badge{
     background:var(--green-light); color:var(--green-dark); font-size:12px; font-weight:600;
-    padding:3px 7px; border-radius:var(--r-pill);
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; flex:0 1 auto;
+    padding:3px 7px; border-radius:var(--r-lg); line-height:1.35;
+    min-width:0; flex:0 1 auto; overflow-wrap:anywhere; text-align:right;
   }
   .item-particular{ font-size:13.5px; margin:4px 0 8px; color:var(--text); line-height:1.35; }
   /* availability from Supabase (chain_availability) — three states: on my supplier's shelf,
@@ -455,9 +460,13 @@
      Shortening the label to "Catalog / सूची" lets them share one line from 360px up. Neither
      may SHRINK to achieve it: letting the secondary flex down just moved the truncation from
      the badge to the button, and at 320px crushed it to a 54px sliver. It wraps instead. */
-  .item-controls{ display:flex; align-items:center; gap:6px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; }
-  .item-controls .add-btn, .item-controls .stepper, .item-controls .diagram-btn{ flex:0 0 auto; }
-  .item-controls .diagram-btn{ white-space:nowrap; }
+  /* The row cannot hold price + catalogue link + a 130px stepper on one line inside 236px, so
+     it is two lines by arithmetic. Given that, make the two lines mean something: what the part
+     IS and costs on the first, the one thing you can DO about it on the second, alone and
+     right-aligned under your thumb. */
+  .item-facts{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0; flex:1 1 100%; }
+  .item-controls{ display:flex; align-items:center; gap:6px; margin-left:auto; flex:0 0 auto; }
+  .item-facts .diagram-btn{ flex:0 0 auto; white-space:nowrap; margin-left:auto; }
   /* Secondary by construction. This opens a scan of the printed catalogue page — genuinely
      useful, never the reason anyone came to the row. As a filled green pill sitting above the
      ordering action it made the reference material louder than the purchase, on all 1,746 rows.
@@ -467,6 +476,14 @@
     padding:8px 6px; font-size:12px; font-weight:600; min-height:44px;
     display:inline-flex; align-items:center; justify-content:center; gap:6px;
   }
+  /* Add and the stepper that replaces it must occupy the SAME footprint. They did not — 86px
+     against 136px — so tapping Add wrapped .item-controls onto a second line and grew the row
+     by 52px, shoving every row below it down. On a phone that means your next tap lands on the
+     row above the one you were aiming at, and there is no order-review step to catch it.
+     Slimming the row in v110 made the jolt proportionally worse, not better.
+     Equal widths only fit once the Catalog link moved off this line onto .item-facts; while
+     they shared a line the pair needed 266px of a 236px row and every row wrapped. */
+  .item-controls .add-btn, .item-controls .stepper{ min-width:136px; box-sizing:border-box; justify-content:center; }
   .stepper{ display:flex; align-items:center; border:1px solid var(--border); border-radius:var(--r-sm); overflow:hidden; }
   .stepper button{ background:var(--green-light); border:none; width:44px; height:44px; font-size:18px; color:var(--green-dark); font-weight:700; }
   .stepper input{ width:46px; text-align:center; border:none; padding:0; height:44px; min-height:44px; -moz-appearance:textfield; font-size:15px; }
@@ -1045,7 +1062,7 @@
     <div class="dealer-strip" id="dealer-strip"></div>
     <div id="notice-area"></div>
     <div class="search-row">
-      <input type="search" id="search-box" enterkeyhint="search" autocomplete="off" aria-label="Search parts / पुर्जे खोजें" aria-controls="catalog-body" placeholder="Search / खोजें — code, name, sr no.">
+      <input type="search" id="search-box" enterkeyhint="search" autocomplete="off" aria-label="Search parts / पुर्जे खोजें" aria-controls="catalog-body" placeholder="Search / खोजें — code, name, sr no." data-ph-en="Search — code, name, sr no.">
       <button class="search-clear hidden" id="search-clear" type="button" aria-label="Clear search / खोज साफ़ करें">&times;</button>
     </div>
     <div class="filter-row hidden" id="filter-row">
@@ -1084,9 +1101,9 @@
            were all built for this from the start; only the field was missing. -->
       <label class="field-label" for="eu-addr">Delivery address / डिलीवरी का पता</label>
       <textarea id="eu-addr" rows="3" autocomplete="street-address"
-        placeholder="House / village, landmark, town&#10;घर / गाँव, पहचान, कस्बा"></textarea>
+        placeholder="House / village, landmark, town&#10;घर / गाँव, पहचान, कस्बा" data-ph-en="House / village, landmark, town"></textarea>
       <label class="field-label" for="eu-pin">PIN code / पिन कोड</label>
-      <input type="text" id="eu-pin" inputmode="numeric" autocomplete="postal-code" maxlength="6" placeholder="6 digits / 6 अंक">
+      <input type="text" id="eu-pin" inputmode="numeric" autocomplete="postal-code" maxlength="6" placeholder="6 digits / 6 अंक" data-ph-en="6 digits">
       <div id="eu-pin-note" class="pin-note" role="status" aria-live="polite"></div>
       <label class="eu-pickup" for="eu-pickup">
         <input type="checkbox" id="eu-pickup">
@@ -1379,10 +1396,27 @@
     try { var v = localStorage.getItem(LANG_KEY); return LANG_MODES.indexOf(v) >= 0 ? v : "both"; }
     catch(e){ return "both"; }
   }
+  // markHindi() walks text nodes, so a placeholder — an ATTRIBUTE — can never be wrapped in
+  // .l-en/.l-hi and is invisible to the toggle. Four user-facing ones carried Devanagari,
+  // including the search box, the most prominent control on the Shop screen: someone who turned
+  // Hindi off because they cannot read it still got it in the search, address and PIN fields.
+  // Stash the bilingual original once, then swap on every mode change.
+  // The English half is AUTHORED in data-ph-en, not derived. Stripping Devanagari with a regex
+  // looked cheaper and got two of four wrong: "Search / खोजें — code…" lost the space before
+  // its dash, and "6 digits / 6 अंक" left "6 digits / 6" because the numeral is Latin and
+  // survived the strip. Four short strings are not worth a parser that can be subtly wrong.
+  function applyPlaceholderLang(m){
+    var els = document.querySelectorAll("[data-ph-en]");
+    Array.prototype.forEach.call(els, function(el){
+      if (!el.dataset.phBoth) el.dataset.phBoth = el.getAttribute("placeholder") || "";
+      el.setAttribute("placeholder", m === "en" ? el.dataset.phEn : el.dataset.phBoth);
+    });
+  }
   function applyLang(){
     var m = langMode();
     if (m === "both") document.documentElement.removeAttribute("data-lang");
     else document.documentElement.setAttribute("data-lang", m);
+    applyPlaceholderLang(m);
     var b = $("lang-btn");
     if (b){
       b.textContent = LANG_LABEL[m];
@@ -1505,6 +1539,9 @@
     b.type = "button"; b.className = "toast-undo"; b.textContent = "Undo / वापस";
     b.onclick = function(){ if (_toastTimer) clearTimeout(_toastTimer); t.classList.add("hidden"); t.textContent = ""; onUndo(); };
     t.appendChild(b);
+    // showToast marks its text so the language toggle can reach it; this one never did, which
+    // left the single control that reverses a deletion showing Devanagari in English-only mode.
+    markHindi(t); applyLang();
     _toastTimer = setTimeout(function(){
       t.classList.add("fade");
       setTimeout(function(){ t.classList.add("hidden"); t.textContent = ""; }, 260);
@@ -1681,6 +1718,18 @@
     return here === null ? "unknown" : "none";
   }
   function isOrderable(idx){ var s = stockClass(idx); return s !== "none"; }
+  // Which stock state is so common in THIS list that saying it adds nothing. "none" is never
+  // ordinary — an unorderable part is news however many of them there are — and a short list
+  // has no "ordinary" worth inferring, so it keeps every chip.
+  // Takes the {row, idx} pairs the list renders, not bare indices.
+  function dominantStockClass(pairs){
+    if (!pairs || pairs.length < 8) return null;
+    var count = {}, best = null;
+    pairs.forEach(function(p){ var k = stockClass(p.idx); count[k] = (count[k] || 0) + 1; });
+    Object.keys(count).forEach(function(k){ if (best === null || count[k] > count[best]) best = k; });
+    if (best === "none" || best === "unknown") return null;
+    return (count[best] / pairs.length) >= 0.8 ? best : null;
+  }
 
   // ---------- offline order outbox (IndexedDB) ----------
   // Placing an order is the one write a dealer makes on patchy rural data. If the network is
@@ -2677,7 +2726,7 @@
       '<div id="m-money-card"><div style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</div></div></details>';
 
     var secStock = '<details class="more-sec" open><summary>Who holds what / किसके पास कितना है<span class="ms-hint">Across your whole network / पूरे नेटवर्क में</span></summary>'+
-      '<input type="search" id="m-stock-filter" placeholder="Filter — part or party / खोजें" autocomplete="off" class="m-input">'+
+      '<input type="search" id="m-stock-filter" placeholder="Filter — part or party / खोजें" data-ph-en="Filter — part or party" autocomplete="off" class="m-input">'+
       '<div id="m-stock-card"><div style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</div></div></details>';
 
     var secAddDealer = !below.length ? '' : '<details class="more-sec"><summary>Add a dealer / shopkeeper — नया जोड़ें<span class="ms-hint">Create a login for a party under you / अपने नीचे नया लॉगिन बनाएँ</span></summary>'+
@@ -3755,15 +3804,30 @@
     return "Showing prices saved " + age + " ago — could not reach the shop just now.<br>सहेजी हुई क़ीमतें — दुकान से संपर्क नहीं हो पाया।";
   }
 
+  // A signed-in buyer's counterparty is the party they hang off in the tree. v110 gave retail
+  // customers a named, callable seller and left every dealer in the network without one —
+  // the same trust gap, on the side of the app where the money is larger. loadParty() already
+  // holds the branch (RLS returns only their own), so the contact is right there.
+  function mySupplierParty(){
+    var pid = state.account && state.account.parentId;
+    if (!pid) return null;                       // the root importer buys from nobody
+    var found = null;
+    (state.parties || []).forEach(function(p){ if (p.id === pid) found = p; });
+    return found;
+  }
   // Name the counterparty and make them callable, at the one moment it matters. A dealer's
   // shop link carries their own name and number; the public storefront carries ours. Either
   // way the buyer sees who and can ring before handing over an address — the phone is already
   // in supplier_info, it was simply never rendered anywhere a customer could reach it.
   function renderSeller(){
     var el = $("eu-seller"); if (!el) return;
-    var s = state.enduser && state.supplierInfo;
+    var s = state.enduser ? state.supplierInfo : mySupplierParty();
     if (!s || state.badLink){ el.classList.add("hidden"); el.innerHTML = ""; return; }
     var name = s.name || "", tel = String(s.phone || "").replace(/[^0-9+]/g, "");
+    // A Call button that dials nothing spends the trust it was added to buy. Indian mobile
+    // numbers are 10 digits; anything shorter is placeholder data, so show the name without
+    // the button rather than a control that fails in the user's hand.
+    if (!/^(\+91)?[0-9]{10}$/.test(tel)) tel = "";
     if (!name && !tel){ el.classList.add("hidden"); el.innerHTML = ""; return; }
     var where = [s.city, s.pin].filter(Boolean).join(" ");
     el.classList.remove("hidden");
@@ -3996,9 +4060,29 @@
     // The section name on a row is news only when the rows come from more than one section —
     // a live query, or a group with no section picked. Pinned to one section it repeated on
     // every row, and at 204px of text in a 137px slot every copy was truncated identically.
-    var crossSection = !$("filter-section").value;
+    // A live query searches the WHOLE catalogue and ignores the section picker (see
+    // filteredRows), so results span sections even while a section is still selected — reading
+    // the picker alone hid the badge on exactly the screen that needs it.
+    var crossSection = !!q || !$("filter-section").value;
+    // A stock chip earns its place by marking an EXCEPTION. Which state is ordinary depends
+    // entirely on who is looking: the importer holds the catalogue, so their retail customers
+    // see "in stock" on every row; everyone downstream of them holds almost nothing and orders
+    // in, so every row of theirs reads "Available to order". v110 suppressed the first constant
+    // and left the second, which meant the fix reached retail customers and missed every dealer
+    // in the network. Work out what this list's ordinary case actually is and suppress that,
+    // instead of hardcoding which one it is expected to be.
+    var dominantStock = dominantStockClass(shown);
+    // Say which section you are standing in. Both browse levels have carried a .browse-head all
+    // along; the part list never did, because the per-row badge happened to spell out the
+    // section 150 times. v110 rightly stopped that repetition — and the name then had no home
+    // at all. Group 2's five sections read almost alike to a non-expert ("Diesel Weeder
+    // 173F/178F/186F" vs "Petrol Weeder 170F"), so mistapping one and scrolling 20,000px with
+    // nothing on screen to reveal it is exactly the trap the two-tier Back button exists for.
+    var here = q ? "" : ($("filter-section").value ||
+      (state.browseGroup ? ((state.browseGroup + " · ") + (GROUP_LABELS[state.browseGroup] || "")) : ""));
     var head = '<button class="list-reset" id="list-reset" type="button">&larr; ' +
       (upOne ? 'Back to sections / अनुभाग पर वापस' : 'Browse all machines / सभी देखें') + '</button>' +
+      (here ? '<div class="browse-head">' + esc(here) + '</div>' : '') +
       '<div class="result-count" role="status" aria-live="polite">' + total + ' item' + (total === 1 ? "" : "s") +
       (total > shown.length ? ' — showing ' + shown.length : '') + scopeNote + '</div>';
     if (q) announce(total + (total === 1 ? " part" : " parts") + " found");
@@ -4021,17 +4105,18 @@
       var sClass = stockClass(idx);
 
       var rateHtml = canAdd ? '<span class="rate">' + inr(net) + '</span>' : '<span class="rate na">Rate on request</span>';
-      // Availability is shown only when it is NOT the ordinary case. A chip that reads
-      // "In stock" on all 150 rows reports nothing and actively costs something: the eye
-      // learns to skip that slot, so the one row that says "Out of stock" gets scanned past
-      // with the rest. Absence is the default, presence is the signal. A dealer seeing a real
-      // count ("12 ready") is different — that is a number, not a constant, so it stays.
+      // Availability is shown only when it is NOT this list's ordinary case (see
+      // dominantStockClass). A chip repeated on all 150 rows reports nothing and actively
+      // costs something: the eye learns to skip that slot, so the one row that IS different
+      // gets scanned past with the rest. Absence is the default, presence is the signal.
+      // A real count ("12 ready") is a number rather than a constant, so it always stays.
       if (sClass !== "unknown"){
         var label = null, cls = "";
         if (sClass === "here"){
           if (typeof av === "number"){ cls = "stock-in"; label = av + ' ready / तैयार ' + av; }
+          else if (sClass !== dominantStock){ cls = "stock-in"; label = 'In stock / स्टॉक में'; }
         } else if (sClass === "chain"){
-          cls = "stock-chain"; label = 'Available to order / मंगाया जा सकता है';
+          if (sClass !== dominantStock){ cls = "stock-chain"; label = 'Available to order / मंगाया जा सकता है'; }
         } else { cls = "stock-out"; label = 'Out of stock / स्टॉक नहीं'; }
         if (label) rateHtml += ' <span class="stock-badge ' + cls + '">' + label + '</span>';
       }
@@ -4073,14 +4158,15 @@
         '<div class="item-particular">' + esc(nice(r.particular)) + '</div>' +
         (r.hindi_name ? '<div class="item-particular" style="font-weight:500;">' + esc(r.hindi_name) + '</div>' : '') +
         specLine(r) +
-        '<div class="item-bottom">' + rateHtml +
-          '<div class="item-controls">' +
+        '<div class="item-bottom">' +
+          '<div class="item-facts">' + rateHtml +
             // "Catalog page" was 182px next to an 86px Add, so the two could not share a line.
             // The page icon already says "page"; the word was carrying it twice.
             '<button class="diagram-btn" type="button" data-diagram="' + idx + '" ' +
               'aria-label="Catalog page / सूची पन्ना">' + svgIco("page") + 'Catalog / सूची</button>' +
-            controlsHtml +
-          '</div></div></div></div>';
+          '</div>' +
+          '<div class="item-controls">' + controlsHtml + '</div>' +
+          '</div></div></div>';
     }).join("");
 
     var more = total > shown.length
