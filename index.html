@@ -204,9 +204,13 @@
   .dash-cta{ text-decoration:none; text-align:center; margin-top:12px; }
   .btn-outline{ background:#fff; color:var(--green-dark); border:1px solid var(--green); width:100%; margin-top:10px; }
   .login-note{ text-align:center; font-size:12px; color:var(--muted); margin-top:16px; }
-  /* retail customers reach the shop via a supplier's ?s= link, never a login — say so, so a bare-URL visitor isn't stuck at the gate */
-  .login-retail{ text-align:center; font-size:12.5px; color:var(--text); background:var(--green-light);
-    border:1px solid var(--border); border-radius:var(--r-sm); padding:10px 12px; margin-top:14px; line-height:1.45; }
+  /* The bare URL is a shopfront before it is a login: most people who reach it came to find a
+     part and a price, not to sign in. Browsing costs them nothing — no login, no phone number. */
+  .pub-card{ background:var(--green-light); border:1px solid var(--green); border-radius:var(--r-lg);
+    padding:14px; margin-bottom:4px; }
+  .pub-card .btn-primary{ margin-top:0; }
+  .pub-lead{ text-align:center; margin:0 0 10px; font-size:15px; font-weight:800; color:var(--green-dark); line-height:1.4; }
+  .pub-sub{ text-align:center; margin:10px 0 0; font-size:12px; color:var(--muted); line-height:1.5; }
   .pw-wrap{ position:relative; }
   .pw-wrap input{ padding-right:64px; }
   .pw-toggle{ position:absolute; right:4px; top:50%; transform:translateY(-50%); background:none; border:none;
@@ -279,6 +283,9 @@
     padding:8px 10px; margin-bottom:10px; font-size:13px;
   }
   .dealer-strip .name{ font-weight:700; color:var(--green-dark); text-transform:capitalize; }
+  /* capitalize tidies a shop name typed in lowercase ("balwan"), but it mangles our own
+     brand into "FarmingTools.In Spares" — the one name that is already cased deliberately. */
+  .dealer-strip.strip-brand .name{ text-transform:none; }
   /* amber, not red: the prices on screen are real, just not freshly confirmed */
   /* Language filter. Every label in this app is written "English / हिन्दी" for both audiences,
      and nobody reads both — it doubles the text on every screen, which is most of why only one
@@ -939,6 +946,15 @@
       <div class="lb-name">FarmingTools.in</div>
       <div class="lb-tag"><span class="l-en">Spare parts for every machine you run</span><br><span lang="hi" class="l-hi">हर मशीन के स्पेयर पार्ट्स</span></div>
     </div>
+    <!-- Anyone who searches for FarmingTools and lands here is far more likely to be a farmer
+         looking for a part than a dealer looking for a password field. Browsing is public and
+         priced at MRP; we only ask who they are once they actually want the parts delivered. -->
+    <div class="pub-card">
+      <p class="pub-lead">Looking for a spare part? / पुर्ज़ा ढूँढ रहे हैं?</p>
+      <button class="btn btn-primary" id="public-browse" type="button">See all parts &amp; prices / सभी पुर्ज़े और क़ीमतें देखें</button>
+      <p class="pub-sub">1,700+ parts at retail price. No login, no phone number.<br><span lang="hi">बिना लॉगिन, बिना फ़ोन नंबर।</span></p>
+    </div>
+    <p class="login-divider">Dealer or distributor? / डीलर या डिस्ट्रीब्यूटर?</p>
     <h2 id="login-title">Sign In / साइन इन</h2>
 
     <div id="signin-box">
@@ -957,7 +973,6 @@
       <p class="login-divider">New dealer? / नया डीलर?</p>
       <button class="btn btn-outline" id="show-register">Create an account / खाता बनाएँ</button>
       <p class="login-note">Sign in with your dealer/distributor login for your own net price.<br>अपने लॉगिन से साइन इन करें; आपको आपकी दर दिखेगी।</p>
-      <p class="login-retail">Buying as a customer? You don't need a login — open the shop link your supplier shared with you.<br>ग्राहक हैं? लॉगिन ज़रूरी नहीं — अपने सप्लायर का दुकान लिंक खोलें।</p>
       <button class="install-cta" id="install-login" type="button">
         <span class="ico" data-ico="download" aria-hidden="true"></span>Install the app / ऐप इंस्टॉल करें
       </button>
@@ -1231,6 +1246,13 @@
   function skuOf(i){ return "L" + String(i + 1).padStart(4, "0"); }
   function skuToIndex(sku){ return parseInt(String(sku).slice(1), 10) - 1; }
 
+  // The root importer party. Browsing the public storefront is exactly the existing retail path
+  // pointed at ourselves: the importer's retail_mult is null and enduser_prices() defaults null
+  // to 3, so every price a walk-in customer sees is MRP without a second code path.
+  // Read from config rather than hardcoded here — it is already the deploy's single source of truth.
+  var PUBLIC_SUPPLIER = (window.LEDGER_CONFIG && window.LEDGER_CONFIG.IMPORTER_ID) || "";
+  var PUBLIC_SELLER_NAME = "FarmingTools.in Spares"; // the party row is suffixed "(Importer)" — trade wording, not shopfront wording
+
   var state = {
     catalog: [],
     priceByIndex: [],      // net rate per catalog index (from my_prices RPC); undefined = no price
@@ -1238,6 +1260,9 @@
     upstreamByIndex: [],   // held further up the chain; must exist before the first loadData —
                            // the availability reset is conditional now, so nothing else creates it
     enduser: null,         // supplier party id when opened via a retail link (?s=…)
+    publicMode: false,     // that retail link is OUR OWN storefront (?s=PUBLIC_SUPPLIER): open to
+                           // anyone from the home page, priced at the default 3× MRP, orders land
+                           // in the importer's own Requests inbox
     supplierName: null,
     loading: true,
     loadError: false,
@@ -1963,7 +1988,12 @@
   function showRegister(on){
     $("signin-box").classList.toggle("hidden", on);
     $("register-box").classList.toggle("hidden", !on);
-    $("login-title").textContent = on ? "Create Account / खाता बनाएँ" : "Sign In";
+    // This runs on every showLogin(), so an English-only string here permanently overwrote the
+    // bilingual heading the markup shipped — the sign-in screen lost its Hindi title on load.
+    // Re-mark the node, or the new text arrives as one bare node the language toggle can't split.
+    $("login-title").textContent = on ? "Create Account / खाता बनाएँ" : "Sign In / साइन इन";
+    try { markHindi($("login-title")); } catch(e){}
+    applyLang();
     $("register-error").classList.add("hidden");
     if (!on) $("register-done").classList.add("hidden");
   }
@@ -2048,7 +2078,17 @@
   }
 
   function updateAuthButton(){
-    $("auth-btn").classList.toggle("hidden", !!state.enduser); // no sign-out for retail customers
+    var b = $("auth-btn");
+    // No sign-out for retail customers — they never signed in. The one exception is the public
+    // storefront, which anyone can enter from the home page: a dealer who tapped "See all parts"
+    // to look something up would otherwise have no way back to their own login.
+    b.classList.toggle("hidden", !!state.enduser && !state.publicMode);
+    var en = state.publicMode ? "Login" : "Sign out", hi = state.publicMode ? "लॉगिन" : "साइन आउट";
+    var nl = b.querySelector(".nl"), nh = b.querySelector(".nl-hi");
+    if (nl) nl.textContent = en;
+    if (nh) nh.textContent = hi;
+    b.setAttribute("aria-label", en + " / " + hi);
+    b.setAttribute("title", en + " / " + hi);
     $("app-header").classList.add("authed");
   }
 
@@ -3687,6 +3727,7 @@
 
   function renderDealerStrip(){
     var el = $("dealer-strip"), notice = $("notice-area");
+    el.classList.toggle("strip-brand", !!state.publicMode);
     // Blanking the whole container erased the staleness banner, and this runs from a
     // fire-and-forget supplier_info .then() that races loadData() — so the warning appeared or
     // vanished depending on which promise happened to resolve last. Keep what the loader put here.
@@ -3696,7 +3737,8 @@
     if (state.enduser){
       el.innerHTML = state.badLink
         ? '<span class="name">Shop not found / दुकान नहीं मिली</span>'
-        : '<span class="name">' + esc(state.supplierName || "Shop") + '</span><span>Retail price (MRP) / खुदरा मूल्य</span>';
+        : '<span class="name">' + esc(state.supplierName || (state.publicMode ? PUBLIC_SELLER_NAME : "Shop")) + '</span>' +
+          '<span>Retail price (MRP) / खुदरा मूल्य</span>';
       return;
     }
     var role = state.session ? state.session.role : "enduser";
@@ -4699,7 +4741,16 @@
         btn.setAttribute("aria-label", (reveal ? "Hide" : "Show") + " password / पासवर्ड");
       };
     });
-    $("auth-btn").onclick = doSignOut; // attached once here; updateAuthButton() only toggles visibility
+    // attached once here; updateAuthButton() only relabels it and toggles visibility
+    $("auth-btn").onclick = function(){
+      // public storefront: nobody is signed in, so this is "back to the login screen", not a sign-out
+      if (state.publicMode){ location.href = location.pathname; return; }
+      doSignOut();
+    };
+    // The home page's public entrance. Navigating rather than mutating state in place reuses the
+    // whole tested ?s= retail path end to end, and leaves the customer with a URL they can
+    // bookmark or forward on WhatsApp — which is how these links actually travel.
+    if ($("public-browse")) $("public-browse").onclick = function(){ location.href = "?s=" + PUBLIC_SUPPLIER; };
     ["eu-name","eu-phone","eu-addr","eu-pin"].forEach(function(id){
       var el = $(id); if (el) el.addEventListener("input", saveEuContact);
     });
@@ -4971,9 +5022,11 @@
     var supplierId = new URLSearchParams(location.search).get("s");
     if (supplierId){
       state.enduser = supplierId;
+      state.publicMode = (supplierId === PUBLIC_SUPPLIER);
       loadCart(); // identity resolved (retail link) — load that supplier's own retail cart key
       sb.rpc("supplier_info", { p_supplier: supplierId }).then(function(r){
         var s = (r && r.data && r.data[0]) || null;
+        if (s && state.publicMode) s.name = PUBLIC_SELLER_NAME;
         // A shop link travels by WhatsApp, gets forwarded, retyped and truncated. When it does
         // not resolve, the app used to show a fully browsable 1,746-part catalogue with no
         // prices, a header promising "Retail price (MRP)", and no hint that the LINK was the
@@ -4983,7 +5036,11 @@
         state.badLink = !s;
         renderDealerStrip();
         renderCatalogBody();
-      }).catch(function(){ state.badLink = true; renderDealerStrip(); renderCatalogBody(); });
+        // A thrown RPC is a dead network, not a dead link. Claiming "this shop link is not
+        // working" to someone who is simply offline sends them back to their supplier for a
+        // link that was fine. Unknown is not the same as wrong — leave badLink alone and let
+        // the staleness banner explain that we could not reach the shop.
+      }).catch(function(){ renderDealerStrip(); renderCatalogBody(); });
       var painted = hydrateData(); if (painted) showCatalog();       // instant paint from last-good snapshot
       loadData().then(function(){ painted ? renderCatalogBody() : showCatalog(); }); // then revalidate
       if ("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(function(){}); }
