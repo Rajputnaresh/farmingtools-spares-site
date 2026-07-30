@@ -737,7 +737,13 @@
   .pi-head .pi-no{ font-size:12.5px; color:var(--muted); margin-top:2px; }
   .pi-meta{ font-size:13px; margin:10px 0; line-height:1.6; }
   table.pi-table{ width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; }
-  table.pi-table th, table.pi-table td{ border:1px solid var(--border); padding:6px 5px; text-align:left; word-break:break-word; overflow-wrap:anywhere; }
+  /* `overflow-wrap:anywhere` on a width:100% table meant the wrapper's overflow-x:auto never
+     engaged — the table crushed instead of scrolling, and "P58-001" broke across four lines as
+     P5 / 8- / 00 / 1. The code is the one string a shopkeeper reads back over the phone. */
+  table.pi-table{ min-width:520px; }
+  table.pi-table th, table.pi-table td{ border:1px solid var(--border); padding:6px 5px; text-align:left; }
+  table.pi-table td:nth-child(2), table.pi-table th:nth-child(2){ white-space:nowrap; }
+  table.pi-table td:nth-child(3){ word-break:break-word; overflow-wrap:anywhere; }
   table.pi-table th{ background:var(--green-light); color:var(--green-dark); }
   table.pi-table td.num, table.pi-table th.num{ text-align:right; white-space:nowrap; }
   .pi-pay{ margin-top:12px; padding:10px 12px; border:1px solid var(--border); border-radius:var(--r-sm); background:var(--green-light); font-size:13px; }
@@ -995,6 +1001,7 @@
 
   <!-- CATALOG -->
   <section id="view-catalog" class="hidden">
+    <h2 class="sr-only">Shop / दुकान</h2>
     <div class="dealer-strip" id="dealer-strip"></div>
     <div id="notice-area"></div>
     <div class="search-row">
@@ -1234,6 +1241,7 @@
     supplierName: null,
     loading: true,
     loadError: false,
+    badLink: false,        // ?s= did not resolve to a real shop — the link itself is wrong
     stalePrices: false,    // the price/stock RPC failed and the screen is showing cached figures
     snapTs: 0,             // age of those cached figures; 0 = there are none
     session: null,         // { id: auth user uid, email, role }
@@ -3686,7 +3694,9 @@
       if (!c.classList.contains("stale-note")) c.remove();
     });
     if (state.enduser){
-      el.innerHTML = '<span class="name">' + esc(state.supplierName || "Shop") + '</span><span>Retail price (MRP) / खुदरा मूल्य</span>';
+      el.innerHTML = state.badLink
+        ? '<span class="name">Shop not found / दुकान नहीं मिली</span>'
+        : '<span class="name">' + esc(state.supplierName || "Shop") + '</span><span>Retail price (MRP) / खुदरा मूल्य</span>';
       return;
     }
     var role = state.session ? state.session.role : "enduser";
@@ -3811,6 +3821,18 @@
       } else if (!state.stalePrices && staleEl) staleEl.remove();
     }
     var body = $("catalog-body");
+    if (state.badLink){
+      body.innerHTML = '<div class="empty-state" style="text-align:left;">' +
+        '<div style="font-weight:800;font-size:16px;color:var(--danger);margin-bottom:8px;">' +
+          'This shop link is not working / यह दुकान लिंक काम नहीं कर रहा</div>' +
+        '<p style="margin:0 0 12px;">The link may have been typed wrong, cut short when it was ' +
+          'forwarded, or the shop may have closed it.<br>' +
+          'लिंक अधूरा या ग़लत हो सकता है, या दुकान ने बंद कर दिया हो।</p>' +
+        '<p style="margin:0;font-weight:600;">Ask the shop to send you the link again. / ' +
+          'दुकान से लिंक दोबारा भेजने को कहें।</p></div>';
+      $("filter-row").classList.add("hidden");
+      return;
+    }
     if (state.loading){ body.innerHTML = '<div class="empty-state"><div class="spinner"></div>Loading catalogue…<br>सूची लोड हो रही है…</div>'; return; }
     if (state.loadError){
       body.innerHTML = '<div class="empty-state">Could not load the catalogue.<br>सूची लोड नहीं हो सकी।<br><button class="retry-btn" id="retry-load" type="button">Retry / फिर से</button></div>';
@@ -3867,7 +3889,12 @@
     var q = ($("search-box").value || "").trim();
     // a live query searches the whole catalogue, ignoring the group/section pickers — say so
     var scopeNote = q ? ' · <span class="search-scope">searching all groups — clear search to go back / खोज हटाएँ</span>' : '';
-    var head = '<button class="list-reset" id="list-reset" type="button">&larr; Browse all machines / सभी देखें</button>' +
+    // one step up, not all the way home: from a part list you came from a section grid, and
+    // re-drilling from the four machine tiles after mistapping one of twelve sections is the
+    // difference between browsing and giving up
+    var upOne = !!((state.browseGroup || $("filter-group").value) && $("filter-section").value);
+    var head = '<button class="list-reset" id="list-reset" type="button">&larr; ' +
+      (upOne ? 'Back to sections / अनुभाग पर वापस' : 'Browse all machines / सभी देखें') + '</button>' +
       '<div class="result-count" role="status" aria-live="polite">' + total + ' item' + (total === 1 ? "" : "s") +
       (total > shown.length ? ' — showing ' + shown.length : '') + scopeNote + '</div>';
     if (q) announce(total + (total === 1 ? " part" : " parts") + " found");
@@ -3875,7 +3902,7 @@
     if (!total){
       body.innerHTML = head + '<div class="empty-state">No parts match. / कोई पुर्जा नहीं मिला।<br>Try the part code from the catalogue page. / कैटलॉग पेज का पार्ट कोड आज़माएँ।' +
         '<br><button class="retry-btn" id="empty-clear-btn" type="button">Clear search / खोज हटाएँ</button></div>';
-      $("list-reset").onclick = resetToBrowse;
+      $("list-reset").onclick = goUp;
       $("empty-clear-btn").onclick = resetToBrowse;
       return;
     }
@@ -3945,10 +3972,22 @@
       : '';
 
     body.innerHTML = head + itemsHtml + more;
-    $("list-reset").onclick = resetToBrowse;
+    $("list-reset").onclick = goUp;
     if (more) $("show-more").onclick = function(){ state.renderLimit += RENDER_CHUNK; renderCatalogBody(); };
   }
 
+  // up one level when there is one, otherwise all the way to the machine tiles
+  function goUp(){
+    var g = state.browseGroup || $("filter-group").value;
+    if (g && $("filter-section").value){          // in a part list → back to that group's sections
+      $("filter-section").value = ""; $("search-box").value = "";
+      $("search-clear").classList.add("hidden");
+      state.browseGroup = Number(g) || state.browseGroup;
+      state.mode = "browse"; state.renderLimit = RENDER_CHUNK;
+      renderCatalogBody(); return;
+    }
+    resetToBrowse();
+  }
   function resetToBrowse(){
     $("search-box").value = ""; $("filter-group").value = ""; $("filter-section").value = ""; $("filter-stock").value = "";
     $("search-clear").classList.add("hidden");
@@ -4935,8 +4974,16 @@
       loadCart(); // identity resolved (retail link) — load that supplier's own retail cart key
       sb.rpc("supplier_info", { p_supplier: supplierId }).then(function(r){
         var s = (r && r.data && r.data[0]) || null;
-        state.supplierInfo = s; state.supplierName = (s && s.name) || "Shop"; renderDealerStrip();
-      }).catch(function(){});
+        // A shop link travels by WhatsApp, gets forwarded, retyped and truncated. When it does
+        // not resolve, the app used to show a fully browsable 1,746-part catalogue with no
+        // prices, a header promising "Retail price (MRP)", and no hint that the LINK was the
+        // problem. The customer blames the shop. Say it plainly instead.
+        state.supplierInfo = s;
+        state.supplierName = (s && s.name) || "";
+        state.badLink = !s;
+        renderDealerStrip();
+        renderCatalogBody();
+      }).catch(function(){ state.badLink = true; renderDealerStrip(); renderCatalogBody(); });
       var painted = hydrateData(); if (painted) showCatalog();       // instant paint from last-good snapshot
       loadData().then(function(){ painted ? renderCatalogBody() : showCatalog(); }); // then revalidate
       if ("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(function(){}); }
