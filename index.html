@@ -134,7 +134,9 @@
   }
   /* the icon alone read as a mystery glyph — it carries a visible bilingual label, stacked
      English-over-Hindi exactly like the bottom-nav buttons so the vocabulary matches */
-  .logout-link{ background:rgba(255,255,255,.15); border:none; color:#fff; border-radius:var(--r-md); min-height:44px; min-width:44px; padding:4px 10px; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+  /* The 15% white wash composites #1e7d34 to #409152, and white on that is 3.92:1 — under AA.
+     Bare green measures 5.20:1. Icon-only siblings keep the wash; anything with TEXT drops it. */
+  .logout-link{ background:none; border:1px solid rgba(255,255,255,.35); color:#fff; border-radius:var(--r-md); min-height:44px; min-width:44px; padding:4px 10px; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
   .logout-link .lo-label{ display:flex; flex-direction:column; align-items:flex-start; line-height:1.15; }
   .logout-link .lo-label .nl{ font-size:12px; font-weight:700; }
   .logout-link .lo-label .nl-hi{ font-size:10px; font-weight:600; opacity:.9; }
@@ -294,11 +296,11 @@
   html[data-lang="hi"] .logout-link .nl{ display:none; }
   .lang-btn{
     flex:none; min-width:44px; min-height:44px; padding:0 8px;
-    background:rgba(255,255,255,.15); border:none; color:#fff;
+    background:none; border:1px solid rgba(255,255,255,.35); color:#fff;
     border-radius:var(--r-md); font-size:13px; font-weight:700; line-height:1.1;
     display:inline-flex; align-items:center; justify-content:center;
   }
-  @media (hover:hover){ .lang-btn:hover{ background:rgba(255,255,255,.28); } }
+  @media (hover:hover){ .lang-btn:hover, .logout-link:hover{ background:rgba(255,255,255,.18); } }
   .stale-note{
     background:var(--warn-tint); border:1px solid var(--warn-border); color:var(--warn-ink);
     padding:8px 10px; border-radius:var(--r-sm); font-size:12.5px; margin-bottom:10px; font-weight:600;
@@ -929,12 +931,12 @@
     <div class="login-brand">
       <img src="brand/logo-256.png" alt="FarmingTools.in" width="104" height="104" fetchpriority="high">
       <div class="lb-name">FarmingTools.in</div>
-      <div class="lb-tag">Spare parts for every machine you run<br><span lang="hi">हर मशीन के स्पेयर पार्ट्स</span></div>
+      <div class="lb-tag"><span class="l-en">Spare parts for every machine you run</span><br><span lang="hi" class="l-hi">हर मशीन के स्पेयर पार्ट्स</span></div>
     </div>
     <h2 id="login-title">Sign In / साइन इन</h2>
 
     <div id="signin-box">
-      <p class="tag">साइन इन — enter your email and password</p>
+      <p class="tag">Enter your email and password / साइन इन</p>
       <label class="field-label" for="login-id">Email / ईमेल</label>
       <input type="email" id="login-id" placeholder="you@example.com" autocomplete="username" autocapitalize="none">
       <label class="field-label" for="login-password">Password / पासवर्ड</label>
@@ -946,7 +948,7 @@
       <button type="button" class="list-reset" id="forgot-pw" style="width:100%;text-align:center;">Forgot password? / पासवर्ड भूल गए?</button>
       <div id="login-error" class="login-error hidden" role="alert"></div>
       <div id="login-info" class="login-info hidden"></div>
-      <p class="login-divider">— new dealer? / नया डीलर? —</p>
+      <p class="login-divider">New dealer? / नया डीलर?</p>
       <button class="btn btn-outline" id="show-register">Create an account / खाता बनाएँ</button>
       <p class="login-note">Sign in with your dealer/distributor login for your own net price.<br>अपने लॉगिन से साइन इन करें; आपको आपकी दर दिखेगी।</p>
       <p class="login-retail">Buying as a customer? You don't need a login — open the shop link your supplier shared with you.<br>ग्राहक हैं? लॉगिन ज़रूरी नहीं — अपने सप्लायर का दुकान लिंक खोलें।</p>
@@ -960,7 +962,7 @@
     </div>
 
     <div id="register-box" class="hidden">
-      <p class="tag">नया खाता बनाएँ — the importer will approve it before you can order</p>
+      <p class="tag">The importer will approve it before you can order / नया खाता बनाएँ</p>
       <label class="field-label" for="reg-business">Business name / दुकान का नाम</label>
       <input type="text" id="reg-business" placeholder="e.g. Sharma Agro" autocomplete="organization">
       <label class="field-label" for="reg-phone">Phone / फ़ोन</label>
@@ -1259,6 +1261,7 @@
   function showToast(msg){
     var t = $("toast"); if (!t) return;
     t.textContent = msg; t.classList.remove("hidden", "fade");
+    markHindi(t);   // toasts are the most frequent copy in the app; they follow the toggle too
     if (_toastTimer) clearTimeout(_toastTimer);
     _toastTimer = setTimeout(function(){
       t.classList.add("fade");
@@ -1301,10 +1304,16 @@
   // header has ~19px of slack at 360px once a dealer is signed in — a segmented control does
   // not fit, and the effect is visible instantly, which is what makes a cycle acceptable here.
   var LANG_KEY = "kg_lang";
-  var LANG_MODES = ["both", "en", "hi"];
-  var LANG_LABEL = { both: "A+अ", en: "A", hi: "अ" };
-  var LANG_NEXT_HINT = { both: "Show English only", en: "केवल हिन्दी दिखाएँ", hi: "Show both languages / दोनों दिखाएँ" };
+  // "hi" is DELIBERATELY not offered. The marker can hide the English half, but the catalogue has
+  // no Hindi to fall back on: the four machine-group tiles, every section name, "Rate on request"
+  // on all 1,746 rows and the whole login screen are English-only strings. Choosing Hindi made the
+  // screen MORE English, not less — a promise the content cannot keep. The mode still works in
+  // CSS; re-add it here once those strings have real Hindi twins, not glosses.
+  var LANG_MODES = ["both", "en"];
+  var LANG_LABEL = { both: "A+अ", en: "A" };
+  var LANG_NEXT_HINT = { both: "Hide the Hindi / हिन्दी छिपाएँ", en: "Show both languages / दोनों दिखाएँ" };
   function langMode(){
+    // a stored "hi" from the previous build is no longer a valid mode — fall back, don't strand
     try { var v = localStorage.getItem(LANG_KEY); return LANG_MODES.indexOf(v) >= 0 ? v : "both"; }
     catch(e){ return "both"; }
   }
@@ -1346,7 +1355,14 @@
       // " / " that introduces it, so hiding the Hindi half leaves "Add", not "Add / ". The English
       // run is wrapped too, so the reverse also works. A node with no Devanagari never gets here,
       // which is why English-only strings survive in both modes rather than vanishing.
-      var parts = node.nodeValue.split(/((?:\s*[\/·]\s*)?[ऀ-ॿ][ऀ-ॿ\s।॥.,/()\u200d-]*)/);
+      // `?`, `!`, `:`, `;` and dashes were missing from the continuation class, so a Devanagari run
+      // stopped before its own terminator and left it behind on the English side — which is how
+      // "Forgot password? / पासवर्ड भूल गए?" rendered as "Forgot password??" in English mode.
+      // A dash is consumed ONLY when more Devanagari follows it. Without the lookahead, the Hindi
+      // run in "Search / खोजें — code, name" swallowed the "— " that INTRODUCES English, and
+      // hiding it rendered "Searchcode, name". With it, an internal Hindi dash still binds
+      // ("क़ीमतें — दुकान…" stays one span) while a dash handing over to English does not.
+      var parts = node.nodeValue.split(/((?:\s*[\/·\u2013\u2014]\s*)?[ऀ-ॿ](?:[ऀ-ॿ\s।॥.,;:?!/()\u200d]|[-\u2013\u2014](?=\s*[ऀ-ॿ]))*)/);
       if (parts.length < 2) return;
       var frag = document.createDocumentFragment();
       parts.forEach(function(p){
@@ -1354,7 +1370,7 @@
         if (DEVANAGARI.test(p)){
           // the " / " belongs to neither language — its own span, hidden whenever one is chosen,
           // otherwise English mode reads "Add" but Hindi mode reads "/ जोड़ें"
-          var m = p.match(/^(\s*[\/·]\s*)([\s\S]*)$/);
+          var m = p.match(/^(\s*[\/·\u2013\u2014]\s*)([\s\S]*)$/);
           if (m){
             var sep = document.createElement("span");
             sep.className = "l-sep"; sep.textContent = m[1];
@@ -1403,6 +1419,7 @@
             '</div>' +
           '</div>' +
         '</div>';
+      markHindi(root);   // every irreversible decision lives in here; it must obey the toggle
       var f = [$("cf-cancel"), $("cf-ok")];
       function done(v){ document.removeEventListener("keydown", onKey, true); root.innerHTML = ""; if (lastFocus && lastFocus.focus) lastFocus.focus(); resolve(v); }
       function onKey(e){
@@ -2652,8 +2669,8 @@
     var detailsMissing = addrMissing || !String(a.gstin||"").trim();
     var secAddress = '<details class="more-sec"'+(detailsMissing ? ' open' : '')+'><summary>My business details — मेरी जानकारी'+
       (detailsMissing ? '<span class="ms-badge">!</span>' : '')+
-      '<span class="ms-hint">Address for your parcels, GSTIN for your bills / पता और GSTIN</span></summary>'+
-      (addrMissing ? '<p class="more-hint" style="color:var(--warn-ink);font-weight:600;">Still needed before your supplier can courier to you: <b>'+esc(addrGaps.join(", "))+'</b><br><span lang="hi">इनके बिना सप्लायर पार्सल नहीं भेज सकता।</span></p>' : '')+
+      '<span class="ms-hint">Address for your parcels, GSTIN for your bills / पता और जीएसटीआईएन</span></summary>'+
+      (addrMissing ? '<p class="more-hint" style="color:var(--warn-ink);font-weight:600;">Still needed before your supplier can courier to you: <b>'+esc(addrGaps.join(", "))+'</b><br><span lang="hi" class="l-hi">इनके बिना सप्लायर पार्सल नहीं भेज सकता।</span></p>' : '')+
       '<label class="m-lbl">Address / पता</label><input type="text" id="m-ad-addr" class="m-input" maxlength="300" placeholder="Shop no., street, landmark" value="'+esc(a.address||"")+'">'+
       '<div class="row2"><div><label class="m-lbl">City / शहर</label><input type="text" id="m-ad-city" class="m-input" value="'+esc(a.city||"")+'"></div>'+
         '<div><label class="m-lbl">PIN / पिन</label><input type="text" id="m-ad-pin" class="m-input" inputmode="numeric" maxlength="6" value="'+esc(a.pin||"")+'"></div></div>'+
@@ -4104,9 +4121,9 @@
     $("pi-box").innerHTML =
       '<div class="pi-fail">' +
         '<div class="pf-title">Not sent / नहीं भेजा गया</div>' +
-        '<p class="pf-body">The shop could not accept this order just now. Nothing has been sent, and ' +
-          'your cart is still here — nothing is lost.<br>' +
-          '<span lang="hi">दुकान अभी यह ऑर्डर नहीं ले सकी। कुछ भेजा नहीं गया, आपका कार्ट सुरक्षित है।</span></p>' +
+        '<p class="pf-body"><span class="l-en">The shop could not accept this order just now. ' +
+          'Nothing has been sent, and your cart is still here — nothing is lost.</span><br>' +
+          '<span lang="hi" class="l-hi">दुकान अभी यह ऑर्डर नहीं ले सकी। कुछ भेजा नहीं गया, आपका कार्ट सुरक्षित है।</span></p>' +
         '<div class="pf-sum">' + n + ' part' + (n === 1 ? '' : 's') + ' &middot; ' + inr(pi.grand) + '</div>' +
         '<button class="btn btn-primary" id="pi-retry-btn" type="button">Try again / फिर से भेजें</button>' +
         (phone ? '<a class="btn btn-outline pf-call" href="tel:' + esc(phone.replace(/[^0-9+]/g, "")) + '">' +
@@ -4566,7 +4583,14 @@
       name = (($("demand-name") || {}).value || "").trim();
       phone = (($("demand-phone") || {}).value || "").trim();
       if (!name){
-        errEl.textContent = "Please enter your name / कृपया नाम डालें"; errEl.classList.remove("hidden"); return;
+        errEl.textContent = "Please enter your name / कृपया नाम डालें"; errEl.classList.remove("hidden"); markHindi(errEl); return;
+      }
+      // the entire point of this form is that the shop rings you back with a price
+      if (phone.replace(/\D/g, "").length < 10){
+        errEl.textContent = "Enter a 10-digit phone — the shop calls you with the price / 10 अंकों का फ़ोन डालें";
+        errEl.classList.remove("hidden"); markHindi(errEl);
+        if ($("demand-phone")) $("demand-phone").focus();
+        return;
       }
     }
     $("demand-send").disabled = true;
@@ -4574,12 +4598,20 @@
       var res = state.enduser
         ? await sb.rpc("record_enduser_demand", { p_supplier: state.enduser, p_name: name, p_phone: phone, p_sku: sku, p_qty: qty })
         : await sb.rpc("record_demand", { p_sku: sku, p_qty: qty, p_note: null });
-      if (res.error) throw res.error;
+      if (res.error){ res.error._rejected = true; throw res.error; }
       closeDiagram();
       showToast("✓ Demand recorded — your supplier has been notified / माँग दर्ज हो गई");
     } catch (e){
-      errEl.textContent = "Could not send — check internet / नहीं भेजा गया — इंटरनेट देखें";
+      // The order path learned this and its sibling did not: the server REJECTING a request and
+      // the phone having no signal are different problems with different answers. Telling a
+      // farmer with full bars to "check internet" sends him to debug a network that works.
+      var ph = String((state.supplierInfo && state.supplierInfo.phone) || "").replace(/[^0-9+]/g, "");
+      errEl.innerHTML = e && e._rejected
+        ? "The shop could not take this request just now. / दुकान अभी यह अनुरोध नहीं ले सकी।" +
+          (ph ? ' <a href="tel:' + esc(ph) + '" style="color:var(--danger);font-weight:700;">Call the shop / फ़ोन करें</a>' : "")
+        : "No connection — check your internet and try again. / कनेक्शन नहीं — इंटरनेट देखकर फिर कोशिश करें।";
       errEl.classList.remove("hidden");
+      markHindi(errEl);
       $("demand-send").disabled = false;
     }
   }
@@ -4737,13 +4769,20 @@
       // re-read and no way back. Same care on both sides of the counter.
       var preview = buildPI();
       var lineCount = preview.lines.length;
+      var shipLine = euShipTo() || "—";
       askConfirm("Send this order to " + (state.supplierName || "the shop") + "?\n\n" +
                  lineCount + " part" + (lineCount === 1 ? "" : "s") + " · " + inr(preview.grand) + " total\n" +
                  // the last moment a wrong address is cheap to fix
-                 "Deliver to: " + (euShipTo() || "—") + "\n" +
+                 "Deliver to: " + shipLine + "\n" +
                  (state.stalePrices ? "\n⚠ These prices could not be confirmed with the shop just now.\n" : "") +
                  "No payment now — the shop will confirm.\n\n" +
-                 "यह ऑर्डर भेजें? अभी भुगतान नहीं — दुकान पुष्टि करेगी।",
+                 // The Hindi half used to be one closing reassurance, so a Hindi reader committed
+                 // money without ever being shown the amount, the address, or the price warning.
+                 "यह ऑर्डर भेजें?\n" +
+                 lineCount + " पुर्ज़े · " + inr(preview.grand) + "\n" +
+                 "पता: " + shipLine + "\n" +
+                 (state.stalePrices ? "⚠ क़ीमतें दुकान से पक्की नहीं हो पाईं।\n" : "") +
+                 "अभी भुगतान नहीं — दुकान पुष्टि करेगी।",
                  { okLabel: "Send order / ऑर्डर भेजें" }).then(function(go){ if (go) submit(); });
     };
     $("pi-back-btn").onclick = showCart;
