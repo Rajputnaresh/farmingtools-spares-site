@@ -207,6 +207,18 @@
   .eu-pickup{ display:flex; align-items:center; gap:10px; min-height:44px; margin-top:10px;
     font-size:13px; color:var(--text); cursor:pointer; }
   .eu-pickup input{ width:20px; height:20px; flex:none; margin:0; }
+  /* who the money and the address are going to, sitting with the "no payment now" line */
+  .eu-seller{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    margin-top:10px; padding:10px 12px; background:var(--green-light);
+    border:1px solid var(--border); border-radius:var(--r-md); }
+  .es-who{ display:flex; flex-direction:column; min-width:0; }
+  .es-lbl{ font-size:11px; font-weight:700; color:var(--muted); }
+  .es-name{ font-size:15px; font-weight:700; color:var(--green-dark); }
+  .es-where{ font-size:12px; color:var(--muted); }
+  .es-call{ display:inline-flex; align-items:center; gap:6px; flex:none; min-height:44px; padding:8px 14px;
+    background:#fff; color:var(--green-dark); border:1px solid var(--green); border-radius:var(--r-md);
+    font-size:13px; font-weight:700; text-decoration:none; }
+  .es-call .ico svg{ width:16px; height:16px; }
   .eu-ship-off #eu-addr, .eu-ship-off #eu-pin,
   .eu-ship-off label[for="eu-addr"], .eu-ship-off label[for="eu-pin"]{ display:none; }
   .btn{
@@ -366,28 +378,16 @@
   .tile .t-chip{ display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:var(--r-lg); margin-bottom:4px; background:var(--green-light); }
   .tile .t-name{ font-weight:700; font-size:13.5px; color:var(--text); line-height:1.3; }
   .tile .t-count{ font-size:12px; color:var(--muted); }
-  /* group category hues (muted, chroma ~0.09–0.12) + matching high-lightness chip tints */
-  :root{
-    --cat-1:oklch(50% 0.12 150); --cat-1-tint:oklch(95% 0.035 150);
-    --cat-2:oklch(52% 0.09 210); --cat-2-tint:oklch(95% 0.03 210);
-    --cat-3:oklch(56% 0.10 75);  --cat-3-tint:oklch(95% 0.045 75);
-    --cat-4:oklch(52% 0.10 35);  --cat-4-tint:oklch(95% 0.035 35);
-  }
-  [data-g="1"] .t-icon,[data-g="1"].thumb-ph{ color:var(--cat-1); }
-  [data-g="2"] .t-icon,[data-g="2"].thumb-ph{ color:var(--cat-2); }
-  [data-g="3"] .t-icon,[data-g="3"].thumb-ph{ color:var(--cat-3); }
-  [data-g="4"] .t-icon,[data-g="4"].thumb-ph{ color:var(--cat-4); }
-  /* every thumbnail slot carries its group's tint, so a photoless or still-loading row
-     is a soft category square (not a stark empty box); the photo covers it once loaded,
-     and thumbFail() swaps in the group icon on that same tint if the image is missing. */
-  .item-thumb[data-g="1"],.thumb-ph[data-g="1"]{ background:var(--cat-1-tint); }
-  .item-thumb[data-g="2"],.thumb-ph[data-g="2"]{ background:var(--cat-2-tint); }
-  .item-thumb[data-g="3"],.thumb-ph[data-g="3"]{ background:var(--cat-3-tint); }
-  .item-thumb[data-g="4"],.thumb-ph[data-g="4"]{ background:var(--cat-4-tint); }
-  .tile[data-g="1"] .t-chip{ background:var(--cat-1-tint); }
-  .tile[data-g="2"] .t-chip{ background:var(--cat-2-tint); }
-  .tile[data-g="3"] .t-chip{ background:var(--cat-3-tint); }
-  .tile[data-g="4"] .t-chip{ background:var(--cat-4-tint); }
+  /* Four category hues used to live here (oklch 150 / 210 / 75 / 35) so a returning dealer
+     could recognise a group by colour. Removed: two of them WERE the app's own signal colours
+     — hue 75 is the amber reserved for warning, hue 35 the red reserved for danger — spent as
+     decoration on the first screen a farmer sees. And the tints were chroma 0.03–0.045, which
+     is invisible on a cheap LCD in sunlight, so the One Green Rule was broken for a
+     distinction nobody could perceive. The four icon glyphs (gear / weeder / droplet /
+     seedling) already carry the recognition, in one green, at any brightness.
+     Every thumbnail slot keeps a tint so a photoless or still-loading row is a soft square
+     rather than a stark empty box; thumbFail() swaps in the group icon on that same tint. */
+  .item-thumb,.thumb-ph,.tile .t-chip{ background:var(--green-light); }
 
   /* list */
   .item{
@@ -399,7 +399,7 @@
   .item-thumb{
     flex:0 0 66px; width:66px; height:66px; border:1px solid var(--border);
     border-radius:var(--r-sm); object-fit:cover; object-position:top center;
-    background:var(--bg); cursor:zoom-in;
+    background:var(--green-light); cursor:zoom-in;
   }
   .item-thumb:focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
   /* while the lazy JPEG loads, show a quiet wrench glyph so slow-3G lists don't read as "no photos";
@@ -438,8 +438,11 @@
   /* held further up the chain: orderable, just not on the shelf today */
   .stock-chain{ background:var(--warn-tint); color:var(--warn-ink); }
   .item-bottom{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
-  .rate{ font-weight:700; font-size:14.5px; color:var(--text); }
-  .rate.na{ color:var(--muted); font-weight:600; font-size:12.5px; }
+  /* The price is the number a retail buyer is actually deciding on, and it was set smaller
+     than the taxonomy pill above it. DESIGN.md gives 800 weight to the number that carries
+     data; this is that number. 18px is the Headline step — the row's loudest element. */
+  .rate{ font-weight:800; font-size:18px; color:var(--text); }
+  .rate.na{ color:var(--muted); font-weight:600; font-size:13px; }
   /* per-line photo cell + decline button on request / PI tables */
   td.ln-thumb{ width:1%; padding:2px 4px; vertical-align:middle; }
   .line-x{ background:#fff; border:1px solid var(--border); color:var(--danger); font-weight:700;
@@ -447,7 +450,14 @@
   .line-x:hover{ background:var(--danger-tint); }
   /* wrap, not nowrap: at 360px (the commonest cheap-Android width) an active stepper pushed
      .item-controls to 264px inside a 236px column and clipped the "+" button off-screen */
+  /* These two used to always wrap onto separate lines — 182px of secondary link plus an 86px
+     primary button could not share 264px — which was most of why a row stood 194px tall.
+     Shortening the label to "Catalog / सूची" lets them share one line from 360px up. Neither
+     may SHRINK to achieve it: letting the secondary flex down just moved the truncation from
+     the badge to the button, and at 320px crushed it to a 54px sliver. It wraps instead. */
   .item-controls{ display:flex; align-items:center; gap:6px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; }
+  .item-controls .add-btn, .item-controls .stepper, .item-controls .diagram-btn{ flex:0 0 auto; }
+  .item-controls .diagram-btn{ white-space:nowrap; }
   /* Secondary by construction. This opens a scan of the printed catalogue page — genuinely
      useful, never the reason anyone came to the row. As a filled green pill sitting above the
      ordering action it made the reference material louder than the purchase, on all 1,746 rows.
@@ -602,20 +612,21 @@
   .setup-list{ margin:6px 0 0; padding-left:18px; font-size:13px; color:var(--text); line-height:1.55; }
   .setup-foot{ margin-top:6px; font-size:12px; color:var(--warn-ink); }
 
-  /* ---- finish: quiet depth + typographic tightening. Cards get one soft shadow so they read
-     as objects on a surface rather than outlines; headings tighten slightly; numbers stay
-     tabular. Nothing decorative — the tool still has to look like infrastructure. ---- */
-  .item, .order-row, .req-card, .more-sec, .more-card, .tile, .money-tile{
-    box-shadow:0 1px 2px rgba(27,43,32,.05);
-  }
+  /* ---- finish: typographic tightening only. A soft card shadow used to live here, arguing
+     for itself as "quiet depth". DESIGN.md §4 is the Flat Ledger Rule: "No box-shadow for
+     elevation. A shadow is the wrong answer every time." A spec the front page contradicts is
+     worth less than no spec, so the shadow goes and the 1px --border does the work it was
+     always doing anyway. ---- */
   h1, h2, .view-title, .mt-val{ letter-spacing:-0.01em; }
   .view-title{ font-weight:800; }
   header.app-header h1{ letter-spacing:-0.015em; }
   /* pressing a row should feel like pressing a real button on a cheap phone */
   .tile:active, .item:active .add-btn{ transform:scale(.985); }
-  .tile{ transition:border-color .15s ease, box-shadow .15s ease, transform .1s ease; }
+  .tile{ transition:border-color .15s ease, background-color .15s ease, transform .1s ease; }
   @media (hover:hover){
-    .tile:hover{ box-shadow:0 2px 8px rgba(27,43,32,.10); }
+    /* lift-on-hover was the most template-coded gesture in the file, and it never fired on the
+       touch devices this app is built for. Borders and tint carry the state instead. */
+    .tile:hover{ border-color:var(--green); background:var(--hover-faintest); }
     #home-brand:hover{ opacity:.85; }
     #list-reset:hover, .browse-back:hover{ background:var(--green-light); }
     .item-thumb:hover{ filter:brightness(.94); }
@@ -966,7 +977,7 @@
     <div class="pub-card">
       <p class="pub-lead">Looking for a spare part? / पुर्ज़ा ढूँढ रहे हैं?</p>
       <button class="btn btn-primary" id="public-browse" type="button">See all parts &amp; prices / सभी पुर्ज़े और क़ीमतें देखें</button>
-      <p class="pub-sub">1,700+ parts at retail price. No login, no phone number.<br><span lang="hi">बिना लॉगिन, बिना फ़ोन नंबर।</span></p>
+      <p class="pub-sub">1,700+ parts at retail price. No login, no phone number.<br><span lang="hi" class="l-hi">बिना लॉगिन, बिना फ़ोन नंबर।</span></p>
     </div>
     <p class="login-divider">Dealer or distributor? / डीलर या डिस्ट्रीब्यूटर?</p>
     <h2 id="login-title">Sign In / साइन इन</h2>
@@ -1086,6 +1097,10 @@
     <div id="cart-stale-note" class="stale-note hidden" style="margin-top:10px;"></div>
     <div id="cart-oos-note" class="login-error hidden" style="margin-top:10px;">Remove out-of-stock items to continue / जारी रखने के लिए स्टॉक-रहित पुर्जे हटाएँ</div>
     <p id="eu-reassure" class="hidden" style="font-size:12.5px;color:var(--green-dark);font-weight:600;margin:10px 2px 0;">No payment now — the shop will confirm your order. / अभी भुगतान नहीं — दुकान आपके ऑर्डर की पुष्टि करेगी।</p>
+    <!-- Who is about to receive this person's name, phone, home address and money. It was
+         nowhere on the browsing screens: no name, no number, nothing to call. A rural buyer
+         will not extend that much trust to a party they cannot ring first. -->
+    <div id="eu-seller" class="eu-seller hidden"></div>
     <button class="generate-btn" id="generate-pi-btn">Generate PO / परचेज़ ऑर्डर बनाएँ</button>
   </section>
 
@@ -2213,6 +2228,7 @@
     $("eu-contact").classList.toggle("hidden", !state.enduser);
     // retail customers don't issue POs — plain words + "no payment" reassurance at the money moment
     $("eu-reassure").classList.toggle("hidden", !state.enduser);
+    renderSeller();
     $("generate-pi-btn").textContent = state.enduser ? "Send order / ऑर्डर भेजें" : "Generate PO / परचेज़ ऑर्डर बनाएँ";
     renderCart(); updateCartBadge();
   }
@@ -3739,6 +3755,28 @@
     return "Showing prices saved " + age + " ago — could not reach the shop just now.<br>सहेजी हुई क़ीमतें — दुकान से संपर्क नहीं हो पाया।";
   }
 
+  // Name the counterparty and make them callable, at the one moment it matters. A dealer's
+  // shop link carries their own name and number; the public storefront carries ours. Either
+  // way the buyer sees who and can ring before handing over an address — the phone is already
+  // in supplier_info, it was simply never rendered anywhere a customer could reach it.
+  function renderSeller(){
+    var el = $("eu-seller"); if (!el) return;
+    var s = state.enduser && state.supplierInfo;
+    if (!s || state.badLink){ el.classList.add("hidden"); el.innerHTML = ""; return; }
+    var name = s.name || "", tel = String(s.phone || "").replace(/[^0-9+]/g, "");
+    if (!name && !tel){ el.classList.add("hidden"); el.innerHTML = ""; return; }
+    var where = [s.city, s.pin].filter(Boolean).join(" ");
+    el.classList.remove("hidden");
+    el.innerHTML =
+      '<div class="es-who"><span class="es-lbl">Sold by / विक्रेता</span>' +
+        '<span class="es-name">' + esc(name || "This shop") + '</span>' +
+        (where ? '<span class="es-where">' + esc(where) + '</span>' : '') + '</div>' +
+      (tel ? '<a class="es-call" href="tel:' + esc(tel) + '">' + svgIco("phone") +
+             'Call the shop / दुकान को फ़ोन करें</a>' : '');
+    markHindi(el);
+    applyLang();
+  }
+
   function renderDealerStrip(){
     var el = $("dealer-strip"), notice = $("notice-area");
     el.classList.toggle("strip-brand", !!state.publicMode);
@@ -3955,6 +3993,10 @@
     // re-drilling from the four machine tiles after mistapping one of twelve sections is the
     // difference between browsing and giving up
     var upOne = !!((state.browseGroup || $("filter-group").value) && $("filter-section").value);
+    // The section name on a row is news only when the rows come from more than one section —
+    // a live query, or a group with no section picked. Pinned to one section it repeated on
+    // every row, and at 204px of text in a 137px slot every copy was truncated identically.
+    var crossSection = !$("filter-section").value;
     var head = '<button class="list-reset" id="list-reset" type="button">&larr; ' +
       (upOne ? 'Back to sections / अनुभाग पर वापस' : 'Browse all machines / सभी देखें') + '</button>' +
       '<div class="result-count" role="status" aria-live="polite">' + total + ' item' + (total === 1 ? "" : "s") +
@@ -3979,15 +4021,19 @@
       var sClass = stockClass(idx);
 
       var rateHtml = canAdd ? '<span class="rate">' + inr(net) + '</span>' : '<span class="rate na">Rate on request</span>';
+      // Availability is shown only when it is NOT the ordinary case. A chip that reads
+      // "In stock" on all 150 rows reports nothing and actively costs something: the eye
+      // learns to skip that slot, so the one row that says "Out of stock" gets scanned past
+      // with the rest. Absence is the default, presence is the signal. A dealer seeing a real
+      // count ("12 ready") is different — that is a number, not a constant, so it stays.
       if (sClass !== "unknown"){
-        var label, cls;
+        var label = null, cls = "";
         if (sClass === "here"){
-          cls = "stock-in";
-          label = (typeof av === "number") ? av + ' ready / तैयार ' + av : 'In stock / स्टॉक में';
+          if (typeof av === "number"){ cls = "stock-in"; label = av + ' ready / तैयार ' + av; }
         } else if (sClass === "chain"){
           cls = "stock-chain"; label = 'Available to order / मंगाया जा सकता है';
         } else { cls = "stock-out"; label = 'Out of stock / स्टॉक नहीं'; }
-        rateHtml += ' <span class="stock-badge ' + cls + '">' + label + '</span>';
+        if (label) rateHtml += ' <span class="stock-badge ' + cls + '">' + label + '</span>';
       }
 
       // only a part nobody in the chain holds is unorderable — then we record demand instead
@@ -4018,13 +4064,21 @@
           'onerror="thumbFail(this)">' +
         '<div class="item-main">' +
         '<div class="item-top"><span class="item-code">' + code + '</span>' +
-          '<span class="badge">' + esc(r.section || "") + '</span></div>' +
+          // The section name is news only when the list spans sections. Inside one section it
+          // repeated on all 150 rows AND was too long for the slot, so every row carried the
+          // same truncated string — 204px of text in 137px of space at 320px. v98 gave it an
+          // ellipsis, which made the overflow safe without making the badge worth its place.
+          (crossSection ? '<span class="badge">' + esc(r.section || "") + '</span>' : '') +
+          '</div>' +
         '<div class="item-particular">' + esc(nice(r.particular)) + '</div>' +
         (r.hindi_name ? '<div class="item-particular" style="font-weight:500;">' + esc(r.hindi_name) + '</div>' : '') +
         specLine(r) +
         '<div class="item-bottom">' + rateHtml +
           '<div class="item-controls">' +
-            '<button class="diagram-btn" type="button" data-diagram="' + idx + '">' + svgIco("page") + 'Catalog page / सूची पन्ना</button>' +
+            // "Catalog page" was 182px next to an 86px Add, so the two could not share a line.
+            // The page icon already says "page"; the word was carrying it twice.
+            '<button class="diagram-btn" type="button" data-diagram="' + idx + '" ' +
+              'aria-label="Catalog page / सूची पन्ना">' + svgIco("page") + 'Catalog / सूची</button>' +
             controlsHtml +
           '</div></div></div></div>';
     }).join("");
