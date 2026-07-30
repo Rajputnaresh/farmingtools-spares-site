@@ -278,6 +278,27 @@
   }
   .dealer-strip .name{ font-weight:700; color:var(--green-dark); text-transform:capitalize; }
   /* amber, not red: the prices on screen are real, just not freshly confirmed */
+  /* Language filter. Every label in this app is written "English / हिन्दी" for both audiences,
+     and nobody reads both — it doubles the text on every screen, which is most of why only one
+     part fits above the fold. This hides one half at the render layer instead of duplicating
+     500 strings into a lookup table. Default is unset: both halves show, exactly as before. */
+  .l-sep{ white-space:pre; }   /* the spaces around " / " collapse at the span boundary otherwise */
+  html[data-lang] .l-sep{ display:none; }
+  html[data-lang="en"] .l-hi{ display:none; }
+  html[data-lang="hi"] .l-en{ display:none; }
+  /* the nav labels are structural spans, not marked text, and `nav.bottom-nav button .nl` at
+     (0,2,2) out-specifies a plain `html[data-lang] .nl` — match the nav selector to beat it */
+  html[data-lang="en"] nav.bottom-nav button .nl-hi{ display:none; }
+  html[data-lang="hi"] nav.bottom-nav button .nl{ display:none; }
+  html[data-lang="en"] .logout-link .nl-hi{ display:none; }
+  html[data-lang="hi"] .logout-link .nl{ display:none; }
+  .lang-btn{
+    flex:none; min-width:44px; min-height:44px; padding:0 8px;
+    background:rgba(255,255,255,.15); border:none; color:#fff;
+    border-radius:var(--r-md); font-size:13px; font-weight:700; line-height:1.1;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  @media (hover:hover){ .lang-btn:hover{ background:rgba(255,255,255,.28); } }
   .stale-note{
     background:var(--warn-tint); border:1px solid var(--warn-border); color:var(--warn-ink);
     padding:8px 10px; border-radius:var(--r-sm); font-size:12.5px; margin-bottom:10px; font-weight:600;
@@ -726,6 +747,18 @@
   .pi-brand{ display:flex; align-items:center; justify-content:center; gap:6px;
     margin-top:10px; font-size:10.5px; color:var(--muted); }
   .pi-brand img{ width:22px; height:22px; object-fit:contain; flex:none; }
+  /* The failure screen is deliberately not a document: no table, no totals block, no letterhead.
+     It is a card with one action, because a farmer in a field needs a next step, not a receipt. */
+  .pi-fail{ background:#fff; border:1px solid var(--danger-border); border-radius:var(--r-lg);
+    padding:18px 16px; margin-top:12px; text-align:center; }
+  .pi-fail .pf-title{ font-size:17px; font-weight:800; color:var(--danger); margin-bottom:8px; }
+  .pi-fail .pf-body{ font-size:13.5px; color:var(--text); line-height:1.6; margin:0 0 12px; }
+  .pi-fail .pf-sum{ font-size:14px; font-weight:700; color:var(--text);
+    background:var(--green-light); border-radius:var(--r-md); padding:10px; margin-bottom:14px; }
+  .pi-fail .btn{ width:100%; margin-top:8px; }
+  .pi-fail .pf-call{ display:inline-flex; align-items:center; justify-content:center;
+    min-height:48px; text-decoration:none; }
+  .pi-fail .pf-back{ margin-top:14px; }
   .pi-footer{ font-size:11px; color:var(--muted); margin-top:14px; border-top:1px dashed var(--border); padding-top:8px; line-height:1.5; }
   .pi-actions{ display:flex; gap:8px; margin-top:14px; }
   .pi-actions .btn{ flex:1; margin-top:0; }
@@ -869,6 +902,7 @@
       <span class="sub">Spare parts ordering / स्पेयर पार्ट्स ऑर्डर</span>
     </span>
   </button>
+  <button class="lang-btn" id="lang-btn" type="button"></button>
   <div class="header-actions hidden" id="header-actions">
     <button class="logout-link" id="auth-btn" aria-label="Sign out / साइन आउट" title="Sign out / साइन आउट"><span class="ico" data-ico="logout" aria-hidden="true"></span><span class="lo-label"><span class="nl">Sign out</span><span class="nl-hi">साइन आउट</span></span></button>
   </div>
@@ -1010,9 +1044,8 @@
         <span>I'll collect it from the shop / मैं दुकान से ले लूँगा</span>
       </label>
 
-      <label class="field-label" for="eu-offer">Your price offer (optional) / आपकी क़ीमत (वैकल्पिक)</label>
-      <input type="number" id="eu-offer" inputmode="numeric" min="0" placeholder="Propose a total — the shop can accept it / कुल क़ीमत सुझाएँ">
     </div>
+    <div id="cart-stale-note" class="stale-note hidden" style="margin-top:10px;"></div>
     <div id="cart-oos-note" class="login-error hidden" style="margin-top:10px;">Remove out-of-stock items to continue / जारी रखने के लिए स्टॉक-रहित पुर्जे हटाएँ</div>
     <p id="eu-reassure" class="hidden" style="font-size:12.5px;color:var(--green-dark);font-weight:600;margin:10px 2px 0;">No payment now — the shop will confirm your order. / अभी भुगतान नहीं — दुकान आपके ऑर्डर की पुष्टि करेगी।</p>
     <button class="generate-btn" id="generate-pi-btn">Generate PO / परचेज़ ऑर्डर बनाएँ</button>
@@ -1020,7 +1053,7 @@
 
   <!-- PI -->
   <section id="view-pi" class="hidden">
-    <button class="back-link" id="pi-back-btn">&larr; Back to Cart</button>
+    <button class="back-link" id="pi-back-btn">&larr; Back / वापस</button>
     <div class="pi-box" id="pi-box"></div>
   </section>
 
@@ -1200,6 +1233,7 @@
     loading: true,
     loadError: false,
     stalePrices: false,    // the price/stock RPC failed and the screen is showing cached figures
+    snapTs: 0,             // age of those cached figures; 0 = there are none
     session: null,         // { id: auth user uid, email, role }
     account: null,         // { company, role, id } resolved from the parties table
     cart: {},
@@ -1262,6 +1296,37 @@
   // string with an English voice. Tagging the runs at render time is one pass instead of
   // hand-wrapping several hundred literals, and it catches strings added later.
   var DEVANAGARI = /[ऀ-ॿ]/;
+  // Three states rather than two: "both" is what every existing user already has, so it stays
+  // the default and nobody is opted into a change they did not ask for. One button, because the
+  // header has ~19px of slack at 360px once a dealer is signed in — a segmented control does
+  // not fit, and the effect is visible instantly, which is what makes a cycle acceptable here.
+  var LANG_KEY = "kg_lang";
+  var LANG_MODES = ["both", "en", "hi"];
+  var LANG_LABEL = { both: "A+अ", en: "A", hi: "अ" };
+  var LANG_NEXT_HINT = { both: "Show English only", en: "केवल हिन्दी दिखाएँ", hi: "Show both languages / दोनों दिखाएँ" };
+  function langMode(){
+    try { var v = localStorage.getItem(LANG_KEY); return LANG_MODES.indexOf(v) >= 0 ? v : "both"; }
+    catch(e){ return "both"; }
+  }
+  function applyLang(){
+    var m = langMode();
+    if (m === "both") document.documentElement.removeAttribute("data-lang");
+    else document.documentElement.setAttribute("data-lang", m);
+    var b = $("lang-btn");
+    if (b){
+      b.textContent = LANG_LABEL[m];
+      b.setAttribute("aria-label", "Language: " + m + ". Next: " + LANG_NEXT_HINT[m]);
+      b.title = LANG_NEXT_HINT[m];
+    }
+  }
+  function cycleLang(){
+    var next = LANG_MODES[(LANG_MODES.indexOf(langMode()) + 1) % LANG_MODES.length];
+    try { localStorage.setItem(LANG_KEY, next); } catch(e){}
+    applyLang();
+    // the nav labels are built once at boot; everything else re-marks on its next render
+    paintHindi();
+  }
+
   function markHindi(root){
     if (!root) return;
     var walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
@@ -1269,6 +1334,7 @@
         if (!DEVANAGARI.test(t.nodeValue)) return NodeFilter.FILTER_REJECT;
         var p = t.parentNode;
         if (!p || /^(SCRIPT|STYLE|TEXTAREA|OPTION)$/.test(p.tagName)) return NodeFilter.FILTER_REJECT;
+        if (p.id === "lang-btn") return NodeFilter.FILTER_REJECT;   // its label IS "A+अ"; leave it alone
         if (p.getAttribute && p.getAttribute("lang") === "hi") return NodeFilter.FILTER_REJECT;
         return NodeFilter.FILTER_ACCEPT;
       }
@@ -1276,16 +1342,38 @@
     var hits = [], t;
     while ((t = walk.nextNode())) hits.push(t);
     hits.forEach(function(node){
-      // split into alternating non-Devanagari / Devanagari runs, wrapping only the latter
-      var parts = node.nodeValue.split(/([ऀ-ॿ][ऀ-ॿ\s।॥.,/()-]*)/);
+      // Split into alternating non-Devanagari / Devanagari runs. The Devanagari run swallows the
+      // " / " that introduces it, so hiding the Hindi half leaves "Add", not "Add / ". The English
+      // run is wrapped too, so the reverse also works. A node with no Devanagari never gets here,
+      // which is why English-only strings survive in both modes rather than vanishing.
+      var parts = node.nodeValue.split(/((?:\s*[\/·]\s*)?[ऀ-ॿ][ऀ-ॿ\s।॥.,/()\u200d-]*)/);
       if (parts.length < 2) return;
       var frag = document.createDocumentFragment();
       parts.forEach(function(p){
         if (!p) return;
         if (DEVANAGARI.test(p)){
+          // the " / " belongs to neither language — its own span, hidden whenever one is chosen,
+          // otherwise English mode reads "Add" but Hindi mode reads "/ जोड़ें"
+          var m = p.match(/^(\s*[\/·]\s*)([\s\S]*)$/);
+          if (m){
+            var sep = document.createElement("span");
+            sep.className = "l-sep"; sep.textContent = m[1];
+            frag.appendChild(sep);
+            p = m[2];
+          }
           var s = document.createElement("span");
-          s.setAttribute("lang", "hi"); s.textContent = p;
+          s.setAttribute("lang", "hi"); s.className = "l-hi"; s.textContent = p;
           frag.appendChild(s);
+        } else if (/[A-Za-z0-9]/.test(p)){
+          // A leading glyph like "← " or "✓ " is an affordance, not English — split it off so the
+          // back arrow and the tick survive Hindi mode instead of leaving a bare noun.
+          var lead = p.match(/^([^A-Za-z0-9\u0900-\u097F]*)([\s\S]*)$/);
+          if (lead && lead[1]) frag.appendChild(document.createTextNode(lead[1]));
+          var e = document.createElement("span");
+          e.className = "l-en"; e.textContent = lead ? lead[2] : p;
+          frag.appendChild(e);
+        // A run with no letters or digits — "← ", "✓ ", "₹", "· " — belongs to neither language.
+        // Left unwrapped it survives both modes, so the back arrow does not vanish in Hindi.
         } else frag.appendChild(document.createTextNode(p));
       });
       node.parentNode.replaceChild(frag, node);
@@ -1443,7 +1531,6 @@
     try {
       localStorage.setItem(euContactKey(), JSON.stringify({
         name: (($("eu-name")||{}).value || ""), phone: (($("eu-phone")||{}).value || ""),
-        offer: (($("eu-offer")||{}).value || ""),
         // a returning customer should never retype where they live
         addr: (($("eu-addr")||{}).value || ""), pin: (($("eu-pin")||{}).value || ""),
         pickup: !!(($("eu-pickup")||{}).checked)
@@ -1456,7 +1543,6 @@
       var d = JSON.parse(localStorage.getItem(euContactKey()) || "null"); if (!d) return;
       if ($("eu-name") && !$("eu-name").value) $("eu-name").value = d.name || "";
       if ($("eu-phone") && !$("eu-phone").value) $("eu-phone").value = d.phone || "";
-      if ($("eu-offer") && !$("eu-offer").value) $("eu-offer").value = d.offer || "";
       if ($("eu-addr") && !$("eu-addr").value) $("eu-addr").value = d.addr || "";
       if ($("eu-pin") && !$("eu-pin").value) $("eu-pin").value = d.pin || "";
       if ($("eu-pickup")) $("eu-pickup").checked = !!d.pickup;
@@ -1548,7 +1634,6 @@
     if (state.enduser) return { key: pi.clientKey, kind:"enduser", ts: Date.now(),
       args: { p_supplier: state.enduser, p_name: pi.dealerName,
         p_phone: (($("eu-phone") || {}).value || "").trim() || null,
-        p_offer: (parseInt((($("eu-offer") || {}).value || "").trim(), 10) || null),
         p_addr: euShipTo() || null,
         p_lines: pi.lines.map(function(l){ return { sku: l.sku, qty: l.qty }; }), p_client_key: pi.clientKey } };
     return { key: pi.clientKey, kind:"dealer", ts: Date.now(),
@@ -1731,6 +1816,7 @@
       if (d.account) state.account = d.account;
       if (d.parties) state.parties = d.parties;
       state._hydrated = true;
+      state.snapTs = d.ts || 0;   // when these prices were last confirmed with the shop
       return true;
     } catch(e){ return false; }
   }
@@ -3563,9 +3649,25 @@
       .subscribe();
   }
 
+  // On a cold install there are no saved prices at all, so "showing saved prices" was simply
+  // false. Two situations, two sentences — and an age, because "saved" means nothing without
+  // knowing whether that was an hour ago or last week.
+  function staleText(){
+    if (!state.snapTs)
+      return "Could not reach the shop — prices may have changed since.<br>दुकान से संपर्क नहीं हो पाया — क़ीमतें बदल सकती हैं।";
+    var mins = Math.max(1, Math.round((Date.now() - state.snapTs) / 60000));
+    var age = mins < 60 ? mins + " min" : (mins < 1440 ? Math.round(mins / 60) + " hr" : Math.round(mins / 1440) + " day");
+    return "Showing prices saved " + age + " ago — could not reach the shop just now.<br>सहेजी हुई क़ीमतें — दुकान से संपर्क नहीं हो पाया।";
+  }
+
   function renderDealerStrip(){
     var el = $("dealer-strip"), notice = $("notice-area");
-    notice.innerHTML = "";
+    // Blanking the whole container erased the staleness banner, and this runs from a
+    // fire-and-forget supplier_info .then() that races loadData() — so the warning appeared or
+    // vanished depending on which promise happened to resolve last. Keep what the loader put here.
+    Array.prototype.slice.call(notice.children).forEach(function(c){
+      if (!c.classList.contains("stale-note")) c.remove();
+    });
     if (state.enduser){
       el.innerHTML = '<span class="name">' + esc(state.supplierName || "Shop") + '</span><span>Retail price (MRP) / खुदरा मूल्य</span>';
       return;
@@ -3688,9 +3790,7 @@
     if (noticeEl){
       var staleEl = noticeEl.querySelector(".stale-note");
       if (state.stalePrices && !staleEl){
-        noticeEl.insertAdjacentHTML("beforeend",
-          '<div class="stale-note" role="status">Showing saved prices — could not reach the shop just now.' +
-          '<br>सहेजी हुई क़ीमतें — दुकान से संपर्क नहीं हो पाया।</div>');
+        noticeEl.insertAdjacentHTML("beforeend", '<div class="stale-note" role="status">' + staleText() + '</div>');
       } else if (!state.stalePrices && staleEl) staleEl.remove();
     }
     var body = $("catalog-body");
@@ -3928,6 +4028,9 @@
             '<button class="qty-plus" type="button" aria-label="Increase quantity">+</button>' +
           '</div><span class="line-total">' + (priced === null ? "—" : inr(lineTotal)) + '</span></div>' + outHtml + '</div>';
     }).join("");
+    // repeat the staleness warning here — this is where the figure gets agreed to
+    var cs = $("cart-stale-note");
+    if (cs){ cs.classList.toggle("hidden", !state.stalePrices); if (state.stalePrices) cs.innerHTML = staleText(); }
     $("cart-totals").classList.remove("hidden");
     $("generate-pi-btn").classList.remove("hidden");
     $("cart-grand-total").textContent = inr(grand);
@@ -3992,9 +4095,51 @@
     return pi;
   }
 
+  // The only screen a farmer sees when an order does not go through. One question answered
+  // (what happened), one thing to do (try again), one honest alternative (call the shop).
+  function renderPIFailed(pi){
+    var sel = pi.sellerOverride || seller();
+    var phone = String(sel.phone || "").trim();
+    var n = pi.lines.length;
+    $("pi-box").innerHTML =
+      '<div class="pi-fail">' +
+        '<div class="pf-title">Not sent / नहीं भेजा गया</div>' +
+        '<p class="pf-body">The shop could not accept this order just now. Nothing has been sent, and ' +
+          'your cart is still here — nothing is lost.<br>' +
+          '<span lang="hi">दुकान अभी यह ऑर्डर नहीं ले सकी। कुछ भेजा नहीं गया, आपका कार्ट सुरक्षित है।</span></p>' +
+        '<div class="pf-sum">' + n + ' part' + (n === 1 ? '' : 's') + ' &middot; ' + inr(pi.grand) + '</div>' +
+        '<button class="btn btn-primary" id="pi-retry-btn" type="button">Try again / फिर से भेजें</button>' +
+        (phone ? '<a class="btn btn-outline pf-call" href="tel:' + esc(phone.replace(/[^0-9+]/g, "")) + '">' +
+          'Call the shop / दुकान को फ़ोन करें</a>' : '') +
+        '<button class="more-link pf-back" id="pi-fail-back" type="button">← Back to my order / मेरे ऑर्डर पर वापस</button>' +
+      '</div>';
+    $("pi-fail-back").onclick = showCart;
+    $("pi-retry-btn").onclick = function(){
+      var b = this; b.disabled = true; b.textContent = "Sending… / भेजा जा रहा है…";
+      // SAME clientKey: the server treats a repeat as the same order, so a retry can never
+      // become a second one even if the first attempt actually landed.
+      placeOrder(pi).then(function(ok){
+        state.piOrderOk = ok;
+        if (ok === true || ok === "queued"){
+          state.cart = {}; saveCart(); updateCartBadge(); saveReceipt(pi, ok);
+        }
+        renderPI();
+      });
+    };
+  }
+
   function renderPI(){
     paintHindi();
     var pi = state.piInfo;
+    // A rejected order used to render the full Purchase Order anyway — number, GSTIN, validity
+    // date — with Print and "Share PDF on WhatsApp" underneath and no way to retry. A farmer who
+    // forwarded that document believed he had ordered; the shop had received nothing. Nothing
+    // was sent, so there is nothing to print or share: show a way back instead of a receipt.
+    if (state.piOrderOk === false){
+      $("pi-back-btn").classList.add("hidden");   // the card has its own, correctly worded
+      renderPIFailed(pi); return;
+    }
+    $("pi-back-btn").classList.remove("hidden");
     var rowsHtml = pi.lines.map(function(l){
       return '<tr><td class="ln-thumb">' + lineThumb(l.sku, 40) + '</td><td>' + esc(l.code) + '</td><td>' + esc(l.particular) + '</td>' +
         '<td class="num">' + l.qty + '</td><td class="num">' + inr(l.rate) + '</td>' +
@@ -4006,8 +4151,9 @@
       ? '<div class="pi-success">✓ Proforma Invoice from your supplier. / आपके सप्लायर का प्रोफ़ॉर्मा इनवॉइस।</div>'
       : state.piOrderOk === "queued"
       ? '<div class="notice">✓ Saved on your phone — it will be sent automatically when you’re online. / फ़ोन पर सेव — ऑनलाइन होते ही अपने आप भेजा जाएगा।</div>'
-      : state.piOrderOk === false
-      ? '<div class="login-error">⚠ Order could not be saved — check internet and try again. / ऑर्डर सेव नहीं हुआ — इंटरनेट देखें और फिर से कोशिश करें।</div>'
+      // (piOrderOk === false never reaches here — renderPI() hands it to renderPIFailed above.
+      //  Its old copy said "check internet", which was wrong anyway: placeOrder() only returns
+      //  false on a server rejection, and queues on every network failure.)
       : state.enduser
       ? '<div class="pi-success">✓ Order sent to the shop — they will confirm. You can also share it on WhatsApp below. / ऑर्डर दुकान को भेज दिया गया — वे पुष्टि करेंगे। नीचे व्हाट्सऐप पर भी भेज सकते हैं।</div>'
       : '<div class="pi-success">✓ Purchase Order ready. Share it on WhatsApp below. / परचेज़ ऑर्डर तैयार है, नीचे व्हाट्सऐप पर भेजें।</div>';
@@ -4016,12 +4162,17 @@
       bannerHtml +
       '<div class="pi-seller"><div class="biz">' + esc(sel.name) + '</div>' +
         '<div class="biz-line">' + (sel.gstin ? 'GSTIN: ' + esc(sel.gstin) + ' &middot; ' : '') + esc(sel.place) + (sel.phone ? '<br>Phone: ' + esc(sel.phone) : '') + '</div></div>' +
-      '<div class="pi-head"><h2>' + (isPI ? 'PROFORMA INVOICE' : 'PURCHASE ORDER') + '</h2><div class="pi-no">' + esc(pi.number) + '</div></div>' +
+      // A farmer asked a shop for a carburettor; he did not raise a procurement document. Dealers
+      // still get a real PO — they issue one. Retail gets a plain record of what they asked for.
+      '<div class="pi-head"><h2>' + (isPI ? 'PROFORMA INVOICE' : (state.enduser ? 'ORDER / ऑर्डर' : 'PURCHASE ORDER')) + '</h2>' +
+        '<div class="pi-no">' + esc(pi.number) + '</div></div>' +
       '<div class="pi-meta">' +
-        '<strong>Buyer / ख़रीदार:</strong> ' + esc(pi.dealerName) + (pi.dealerCode ? ' (' + esc(pi.dealerCode) + ')' : '') +
+        '<strong>' + (state.enduser ? 'Ordered by / ऑर्डर करने वाले' : 'Buyer / ख़रीदार') + ':</strong> ' +
+          esc(pi.dealerName) + ((pi.dealerCode && !state.enduser) ? ' (' + esc(pi.dealerCode) + ')' : '') +
         (pi.dealerGstin ? '<br><strong>GSTIN:</strong> ' + esc(pi.dealerGstin) : '') +
         (pi.shipTo ? '<br><strong>Deliver to / भेजें:</strong> ' + esc(pi.shipTo) : '') + '<br>' +
-        '<strong>Date / दिनांक:</strong> ' + esc(pi.date) + ' &middot; <strong>Valid till / मान्य:</strong> ' + esc(pi.validTill) +
+        '<strong>Date / दिनांक:</strong> ' + esc(pi.date) +
+        (state.enduser ? '' : ' &middot; <strong>Valid till / मान्य:</strong> ' + esc(pi.validTill)) +
       '</div>' +
       '<div style="overflow-x:auto;"><table class="pi-table"><thead><tr>' +
         '<th></th><th>Code</th><th>Particular</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount</th>' +
@@ -4034,7 +4185,10 @@
         (sel.upi ? '<div>UPI: <b>' + esc(sel.upi) + '</b> · <a href="upi://pay?pa=' + encodeURIComponent(sel.upi) + '&pn=' + encodeURIComponent(sel.name) + '&am=' + pi.grand + '&cu=INR">Pay via UPI / यूपीआई से भुगतान</a></div>' : '') +
         (sel.qr ? '<img src="' + esc(sel.qr) + '" alt="Payment QR" style="width:150px;height:150px;object-fit:contain;margin-top:6px;" loading="lazy">' : '') +
         '</div>' : '') +
-      '<div class="pi-footer">' + (isPI ? 'This is a Proforma Invoice from the seller. ' : 'This is a Purchase Order (buyer’s request). ') + esc(gstFoot(pi)) + 'Payment via UPI / bank transfer as agreed. Prices valid till ' + esc(pi.validTill) + '. | ' + (isPI ? 'यह प्रोफ़ॉर्मा इनवॉइस है (विक्रेता से)।' : 'यह परचेज़ ऑर्डर है (ख़रीदार का अनुरोध)।') + ' ' + esc(gstFootHi(pi)) + '</div>' +
+      '<div class="pi-footer">' + (state.enduser
+        ? 'The shop will confirm this order and contact you on the phone number above. Prices may change until they confirm. / दुकान पुष्टि करेगी और आपको फ़ोन करेगी। पुष्टि तक क़ीमत बदल सकती है।'
+        : (isPI ? 'This is a Proforma Invoice from the seller. ' : 'This is a Purchase Order (buyer’s request). ') + esc(gstFoot(pi)) + 'Payment via UPI / bank transfer as agreed. Prices valid till ' + esc(pi.validTill) + '. | ' + (isPI ? 'यह प्रोफ़ॉर्मा इनवॉइस है (विक्रेता से)।' : 'यह परचेज़ ऑर्डर है (ख़रीदार का अनुरोध)।') + ' ' + esc(gstFootHi(pi))
+      ) + '</div>' +
       // the document gets printed and forwarded far past this screen — a quiet credit
       // travels with it. Platform, not seller: the seller is named at the top.
       '<div class="pi-brand"><img src="brand/logo-64.png" alt="" width="22" height="22">'+
@@ -4475,7 +4629,7 @@
       };
     });
     $("auth-btn").onclick = doSignOut; // attached once here; updateAuthButton() only toggles visibility
-    ["eu-name","eu-phone","eu-offer","eu-addr","eu-pin"].forEach(function(id){
+    ["eu-name","eu-phone","eu-addr","eu-pin"].forEach(function(id){
       var el = $(id); if (el) el.addEventListener("input", saveEuContact);
     });
     if ($("eu-pin")) $("eu-pin").addEventListener("input", function(){
@@ -4547,12 +4701,6 @@
             $("eu-pin").focus(); return;
           }
         }
-        // min="0" is inert without a <form>, so a typed -500 was reaching the shop as an offer
-        var euOff = (($("eu-offer") || {}).value || "").trim();
-        if (euOff !== "" && !(Number(euOff) > 0)){
-          showToast("Your price offer must be more than ₹0 / क़ीमत ₹0 से ज़्यादा हो");
-          $("eu-offer").focus(); return;
-        }
       }
       // a signed-in buyer with no delivery address cannot be shipped to — ask for it at the
       // exact moment it matters instead of letting a parcel become undeliverable later
@@ -4593,6 +4741,7 @@
                  lineCount + " part" + (lineCount === 1 ? "" : "s") + " · " + inr(preview.grand) + " total\n" +
                  // the last moment a wrong address is cheap to fix
                  "Deliver to: " + (euShipTo() || "—") + "\n" +
+                 (state.stalePrices ? "\n⚠ These prices could not be confirmed with the shop just now.\n" : "") +
                  "No payment now — the shop will confirm.\n\n" +
                  "यह ऑर्डर भेजें? अभी भुगतान नहीं — दुकान पुष्टि करेगी।",
                  { okLabel: "Send order / ऑर्डर भेजें" }).then(function(go){ if (go) submit(); });
@@ -4728,6 +4877,8 @@
     paintHindi(); // the static shell is bilingual too — nav, headings, cart labels
     paintIcons();
     refreshInstallCta();   // login screen's install button; re-runs when the browser offers a prompt
+    applyLang();
+    if ($("lang-btn")) $("lang-btn").onclick = cycleLang;
     wireStatic();
     sb = window.__sb; // set by the deferred module bootstrap; ready by DOMContentLoaded
     if (!sb){ loadCart(); showLogin(); showLoginError("App not configured — add supabase/config.js. / ऐप कॉन्फ़िगर नहीं है।"); return; }
