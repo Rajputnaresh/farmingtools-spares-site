@@ -102,7 +102,7 @@
     display:flex; align-items:center; justify-content:space-between;
     padding:10px 12px; gap:8px;
   }
-  header.app-header h1{ font-size:16px; margin:0; font-weight:700; line-height:1.2; }
+  header.app-header h1{ font-size:15px; margin:0; font-weight:700; line-height:1.2; }
   header.app-header .sub{ display:block; font-size:11px; opacity:.85; font-weight:400; }
   header.app-header.authed .sub{ display:none; }
   header.app-header.authed .brand-btn{ min-height:44px; }
@@ -111,6 +111,14 @@
   .brand-btn{ background:none; border:none; padding:0; margin:0; text-align:left; color:#fff;
     min-height:44px; min-width:0; overflow:hidden; display:flex; align-items:center; gap:9px; }
   .brand-btn h1{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* On a phone the header carries the mark, the product name and two controls, and the name is
+     what loses — it ellipsised to "FarmingTools.in Sp…" on every screen. The authed header
+     already hides .sub, so the 44px brand button has the vertical room the name needs: wrap it
+     onto two lines rather than cutting the product's own name. Two lines at 1.15 fit in 44px,
+     so the header does not grow. */
+  @media (max-width: 430px){
+    header.app-header.authed .brand-btn h1{ white-space:normal; overflow:visible; line-height:1.15; }
+  }
   .brand-mark{ width:34px; height:34px; flex:none; display:block; }
   .brand-txt{ min-width:0; }
   .header-actions{ display:flex; align-items:center; gap:6px; flex-shrink:0; }
@@ -139,13 +147,15 @@
   .logout-link{ background:none; border:1px solid rgba(255,255,255,.35); color:#fff; border-radius:var(--r-md); min-height:44px; min-width:44px; padding:4px 10px; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
   .logout-link .lo-label{ display:flex; flex-direction:column; align-items:flex-start; line-height:1.15; }
   .logout-link .lo-label .nl{ font-size:12px; font-weight:700; }
-  .logout-link .lo-label .nl-hi{ font-size:10px; font-weight:600; opacity:.9; }
+  .logout-link .lo-label .nl-hi{ font-size:11px; font-weight:600; opacity:.9; }
   /* very narrow phones: the brand needs the room, so the label folds away and the icon stands alone */
   @media (max-width: 359px){ .logout-link .lo-label{ display:none; } }
 
   main{ padding:10px 10px 90px; max-width:640px; margin:0 auto; }
   /* one shared per-view heading — was an identical inline style on Cart/Orders/Requests/More */
-  .view-title{ color:var(--green-dark); font-size:17px; margin:4px 0 10px; }
+  /* 17px was an undocumented step between Headline (18) and Title (15). These ARE the view
+     headlines, so they take the Headline step. */
+  .view-title{ color:var(--green-dark); font-size:18px; margin:4px 0 10px; }
 
   /* login */
   .login-wrap{ padding:28px 20px 40px; max-width:420px; margin:0 auto; }
@@ -167,7 +177,11 @@
     background:var(--green); color:#fff; border:none; font-size:14px; font-weight:700; }
   .install-cta.show{ display:inline-flex; }
   .install-cta .ico svg{ width:18px; height:18px; }
-  .login-wrap h2{ color:var(--green-dark); text-align:center; margin-bottom:4px; }
+  /* This never set a size, so the UA default made "Sign In" 24px — bigger than the brand name
+     and every heading in the app, on the one screen where the dealer login is the SECONDARY
+     path. It is a form section title (DESIGN.md Title, 700/15px); the public entrance above it
+     carries the Headline step. Hierarchy now matches which door most visitors should take. */
+  .login-wrap h2{ color:var(--green-dark); text-align:center; margin-bottom:4px; font-size:15px; font-weight:700; }
   .login-wrap p.tag{ text-align:center; color:var(--muted); margin-top:0; font-size:13px; }
   .field-label{ display:block; font-size:13px; font-weight:600; margin:14px 0 4px; color:var(--text); }
   /* `tel` was missing, so the one phone field in the request modal rendered UA-black on a page
@@ -209,7 +223,7 @@
   .pub-card{ background:var(--green-light); border:1px solid var(--green); border-radius:var(--r-lg);
     padding:14px; margin-bottom:4px; }
   .pub-card .btn-primary{ margin-top:0; }
-  .pub-lead{ text-align:center; margin:0 0 10px; font-size:15px; font-weight:800; color:var(--green-dark); line-height:1.4; }
+  .pub-lead{ text-align:center; margin:0 0 10px; font-size:18px; font-weight:700; color:var(--green-dark); line-height:1.3; text-wrap:balance; }
   .pub-sub{ text-align:center; margin:10px 0 0; font-size:12px; color:var(--muted); line-height:1.5; }
   .pw-wrap{ position:relative; }
   .pw-wrap input{ padding-right:64px; }
@@ -476,7 +490,7 @@
     position:absolute; top:2px; right:6px; left:auto;
     min-width:17px; height:17px; padding:0 5px;
     background:var(--danger); color:#fff; border-radius:var(--r-pill);
-    font-size:10.5px; font-weight:700; line-height:17px; text-align:center;
+    font-size:11px; font-weight:700; line-height:17px; text-align:center;
     font-variant-numeric:tabular-nums;
   }
   /* nav labels: English over Hindi, uniformly two lines so nothing wraps raggedly */
@@ -659,7 +673,7 @@
   .more-tab[aria-selected="true"]{ background:var(--green); border-color:var(--green); color:#fff; }
   .more-tab[aria-selected="true"] .mt-hi{ opacity:.9; }
   .mt-dot{ position:absolute; top:4px; right:6px; min-width:16px; height:16px; padding:0 4px;
-    border-radius:var(--r-pill); background:var(--danger); color:#fff; font-size:10px; font-weight:700;
+    border-radius:var(--r-pill); background:var(--danger); color:#fff; font-size:11px; font-weight:700;
     display:flex; align-items:center; justify-content:center; }
   @media (prefers-reduced-motion: reduce){ .more-tab{ transition:none; } }
   .ms-hint{ display:block; font-size:12px; font-weight:400; color:var(--muted); margin-top:2px; }
@@ -760,13 +774,13 @@
   .pi-grand{ display:flex; justify-content:space-between; font-weight:800; font-size:15px; margin-top:6px; border-top:1px solid var(--border); padding-top:8px; }
   /* platform credit under the document — deliberately quieter than every seller field */
   .pi-brand{ display:flex; align-items:center; justify-content:center; gap:6px;
-    margin-top:10px; font-size:10.5px; color:var(--muted); }
+    margin-top:10px; font-size:11px; color:var(--muted); }
   .pi-brand img{ width:22px; height:22px; object-fit:contain; flex:none; }
   /* The failure screen is deliberately not a document: no table, no totals block, no letterhead.
      It is a card with one action, because a farmer in a field needs a next step, not a receipt. */
   .pi-fail{ background:#fff; border:1px solid var(--danger-border); border-radius:var(--r-lg);
     padding:18px 16px; margin-top:12px; text-align:center; }
-  .pi-fail .pf-title{ font-size:17px; font-weight:800; color:var(--danger); margin-bottom:8px; }
+  .pi-fail .pf-title{ font-size:18px; font-weight:800; color:var(--danger); margin-bottom:8px; }
   .pi-fail .pf-body{ font-size:13.5px; color:var(--text); line-height:1.6; margin:0 0 12px; }
   .pi-fail .pf-sum{ font-size:14px; font-weight:700; color:var(--text);
     background:var(--green-light); border-radius:var(--r-md); padding:10px; margin-bottom:14px; }
@@ -958,7 +972,7 @@
     <h2 id="login-title">Sign In / साइन इन</h2>
 
     <div id="signin-box">
-      <p class="tag">Enter your email and password / साइन इन</p>
+      <p class="tag">Enter your email and password / ईमेल और पासवर्ड डालें</p>
       <label class="field-label" for="login-id">Email / ईमेल</label>
       <input type="email" id="login-id" placeholder="you@example.com" autocomplete="username" autocapitalize="none">
       <label class="field-label" for="login-password">Password / पासवर्ड</label>
@@ -983,7 +997,7 @@
     </div>
 
     <div id="register-box" class="hidden">
-      <p class="tag">The importer will approve it before you can order / नया खाता बनाएँ</p>
+      <p class="tag">The importer will approve it before you can order / मंज़ूरी के बाद ऑर्डर कर सकेंगे</p>
       <label class="field-label" for="reg-business">Business name / दुकान का नाम</label>
       <input type="text" id="reg-business" placeholder="e.g. Sharma Agro" autocomplete="organization">
       <label class="field-label" for="reg-phone">Phone / फ़ोन</label>
@@ -2418,7 +2432,7 @@
         var amt = (l.rate||0)*(l.qty||0);
         // if the fulfiller already countered, keep the buyer's original asked rate visible ("both prices")
         var wasNote = (l.list_rate!=null && Number(l.list_rate)!==Number(l.rate))
-          ? '<div style="font-size:10px;color:var(--muted);text-decoration:line-through;">'+inr(l.list_rate)+'</div>' : '';
+          ? '<div style="font-size:11px;color:var(--muted);text-decoration:line-through;">'+inr(l.list_rate)+'</div>' : '';
         return '<tr>'+
         '<td class="ln-thumb">'+lineThumb(l.sku)+'</td>'+
         '<td>'+esc(skuName(l.sku))+'</td>'+
@@ -3735,10 +3749,16 @@
       if (!c.classList.contains("stale-note")) c.remove();
     });
     if (state.enduser){
+      // On a dealer's shop link the name is the point — it tells the customer whose shop this
+      // is. On our own public storefront it just repeats the header word for word, and both
+      // columns then wrap to two lines on a 360px phone. Drop the echo and let the strip say
+      // the one thing that is actually news: what these prices are.
       el.innerHTML = state.badLink
         ? '<span class="name">Shop not found / दुकान नहीं मिली</span>'
-        : '<span class="name">' + esc(state.supplierName || (state.publicMode ? PUBLIC_SELLER_NAME : "Shop")) + '</span>' +
-          '<span>Retail price (MRP) / खुदरा मूल्य</span>';
+        : state.publicMode
+          ? '<span class="name">Retail price (MRP) / खुदरा मूल्य</span>'
+          : '<span class="name">' + esc(state.supplierName || "Shop") + '</span>' +
+            '<span>Retail price (MRP) / खुदरा मूल्य</span>';
       return;
     }
     var role = state.session ? state.session.role : "enduser";
@@ -3865,7 +3885,7 @@
     var body = $("catalog-body");
     if (state.badLink){
       body.innerHTML = '<div class="empty-state" style="text-align:left;">' +
-        '<div style="font-weight:800;font-size:16px;color:var(--danger);margin-bottom:8px;">' +
+        '<div style="font-weight:800;font-size:18px;color:var(--danger);margin-bottom:8px;">' +
           'This shop link is not working / यह दुकान लिंक काम नहीं कर रहा</div>' +
         '<p style="margin:0 0 12px;">The link may have been typed wrong, cut short when it was ' +
           'forwarded, or the shop may have closed it.<br>' +
