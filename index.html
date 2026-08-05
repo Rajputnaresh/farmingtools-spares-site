@@ -734,6 +734,14 @@
   .more-sec > .pp-step{ margin:20px 14px 2px; padding-top:14px; border-top:1px solid var(--border);
     font-weight:700; font-size:14px; line-height:1.3; }
   .more-sec > .pp-step:first-of-type{ border-top:0; padding-top:0; margin-top:14px; }
+  /* A merged section's sub-parts. An .ms-part is a whole JOB inside one section; a .pp-step is one
+     step within a form. They now appear in the same box, so the sub-part gets a full-bleed tinted
+     band rather than a rule, and it is an h3 to .pp-step's h4 — which also keeps the two
+     :first-of-type rules from fighting, since those match per element type. */
+  .more-sec > .ms-part{ margin:16px 0 0; padding:9px 14px; background:var(--bg);
+    border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+    font-size:14px; font-weight:800; color:var(--green-dark); line-height:1.3; }
+  .more-sec > .ms-part:first-of-type{ margin-top:0; border-top:0; }
   .more-sec > .pp-meter{ margin:12px 14px 0; }
   .pp-meter{ font-size:12px; color:var(--muted); }
   /* .m-btn is width:100%, so inside a .row2 it claimed the whole row and squeezed the photo
@@ -2877,8 +2885,10 @@
     // The whole shelf, browsable and fixable. The worklist below answers "what should I do
     // next"; this answers "what have I actually got, and what is wrong with it" — the question
     // you cannot answer from a 1,746-option <select>.
-    var secAll = !isImporter ? '' : '<details class="more-sec" id="m-cat-sec"><summary>All parts — the full shelf / पूरी सूची'+
-      '<span class="ms-hint">Search, check and fix any part / कोई भी पुर्ज़ा देखें और सुधारें</span></summary>'+
+    // Five boxes did three jobs: two of them both meant "fill many at once", two more both meant
+    // "one part", and the entry point sat third. Now: what to do next, fill many, fix one — in
+    // that order, with the sub-parts of the merged boxes carried by .ms-part bands.
+    var shelfHead = '<h3 class="ms-part">The full shelf / पूरी सूची</h3>'+
       '<div id="m-cat-stats" class="cat-stats"></div>'+
       '<input type="search" id="m-cat-q" class="m-input" placeholder="Search code, name or section" autocomplete="off" aria-label="Search parts">'+
       '<select id="m-cat-filter" class="m-input" aria-label="Show which parts">'+
@@ -2886,12 +2896,11 @@
           return '<option value="'+c[0]+'">'+esc(c[1])+'</option>'; }).join("")+
       '</select>'+
       '<div id="m-cat-list" class="cat-list"></div>'+
-      '<button class="btn-outline m-btn" id="m-cat-new">+ Add a brand-new part / नया पुर्ज़ा जोड़ें</button></details>';
+      '<button class="btn-outline m-btn" id="m-cat-new">+ Add a brand-new part / नया पुर्ज़ा जोड़ें</button>';
 
     // 1,746 parts and not one of them described. Nobody fills a form 1,746 times — importers
     // live in Excel. Export what is there, edit it in the tool they already use, bring it back.
-    var secCsv = !isImporter ? '' : '<details class="more-sec" id="m-csv-sec"><summary>Bulk edit by file (CSV) / फ़ाइल से भरें'+
-      '<span class="ms-hint">Export, edit in Excel, upload back / एक्सेल में भरकर वापस डालें</span></summary>'+
+    var csvBody = '<h3 class="ms-part">By file — a spreadsheet / फ़ाइल से</h3>'+
       '<p class="more-hint">Download every part as a spreadsheet, fill the empty columns in Excel or Google Sheets, then upload it back. '+
         '<b>Nothing is saved until you have seen exactly what will change and pressed Apply.</b></p>'+
       '<p class="more-hint">Leave the <code>sku</code> column alone — it is how each row finds its part. '+
@@ -2903,16 +2912,17 @@
       '</div>'+
       '<label class="m-lbl" for="m-csv-file">Upload a filled file / भरी फ़ाइल डालें</label>'+
       '<input type="file" id="m-csv-file" class="m-input" accept=".csv,text/csv">'+
-      '<div id="m-csv-out"></div></details>';
+      '<div id="m-csv-out"></div>';
 
-    var secWork = !isImporter ? '' : '<details class="more-sec" id="m-wk-sec"><summary>Describe parts — start here / पहले ये भरें'+
+    // The entry point. Open by default: it already renders eagerly, and it is the answer to the
+    // only question an importer looking at 1,746 blank parts actually has.
+    var secWork = !isImporter ? '' : '<details class="more-sec" id="m-wk-sec" open><summary>Start here — what to describe first / पहले ये भरें'+
       '<span class="ms-hint">The parts people actually ask for / जो लोग माँगते हैं</span></summary>'+
       '<div id="m-wk-prog" class="wk-prog"></div>'+
       '<p class="more-hint">You do not have to describe all '+(state.catalog||[]).length+' parts. Start with the ones people have already ordered or asked you for — the rest can wait.</p>'+
       '<div id="m-wk-list"><div style="color:var(--muted);font-size:13px;margin:0 14px;">Loading… / लोड हो रहा है…</div></div></details>';
 
-    var secBulk = !isImporter ? '' : '<details class="more-sec"><summary>Fill a whole section at once / पूरा सेक्शन एक साथ'+
-      '<span class="ms-hint">Same brand, HSN and GST for every part in it</span></summary>'+
+    var bulkBody = '<h3 class="ms-part">A whole section at once / पूरा सेक्शन एक साथ</h3>'+
       '<p class="more-hint">Every part in one section normally shares the same brand, HSN code, GST and unit. Fill them once here instead of hundreds of times. <b>Prices, part codes and names are never touched.</b></p>'+
       '<label class="m-lbl">Which section</label><select id="m-bk-sec" class="m-input">'+bkOpts+'</select>'+
       '<div class="row2"><div><label class="m-lbl">Brand / make</label><input type="text" id="m-bk-brand" class="m-input" maxlength="60" placeholder="leave blank to skip"></div>'+
@@ -2923,10 +2933,10 @@
         '<div><label class="m-lbl">Smallest order</label><input type="number" id="m-bk-moq" class="m-input" min="1" max="9999" inputmode="numeric"></div></div>'+
       '<label class="m-lbl" style="display:flex;align-items:center;gap:8px;margin:12px 14px 0;">'+
         '<input type="checkbox" id="m-bk-blanks" checked style="width:18px;height:18px;flex:none;"> Only fill blanks — never change what I set by hand</label>'+
-      '<button class="btn-primary m-btn" id="m-bk-apply">Apply to this section / लागू करें</button><div class="req-msg" id="m-bk-msg" role="status"></div></details>';
+      '<button class="btn-primary m-btn" id="m-bk-apply">Apply to this section / लागू करें</button><div class="req-msg" id="m-bk-msg" role="status"></div>';
 
-    var secProduct = !isImporter ? '' : '<details class="more-sec" id="m-pp-sec"><summary>One part, in full / एक पुर्ज़ा पूरा'+
-      '<span class="ms-hint">Add a new part, or complete an old one / नया पुर्ज़ा जोड़ें</span></summary>'+
+    // m-pp-anchor is what openPartEditor scrolls to now that the editor is not its own <details>
+    var productBody = '<h3 class="ms-part" id="m-pp-anchor">One part, in full / एक पुर्ज़ा पूरा</h3>'+
       '<p class="more-hint">Whatever you write here is what every dealer, shopkeeper and farmer below you will see. Fill it once, properly, and nobody has to phone you to ask.</p>'+
       '<label class="m-lbl">Which part? / कौन सा पुर्ज़ा</label>'+
       '<input type="search" id="m-pp-find" class="m-input" placeholder="Type a code or name to open an old part…" autocomplete="off">'+
@@ -2975,7 +2985,18 @@
       '<label class="m-lbl" for="m-pp-notes">Note for buyers / ख़रीदार के लिए नोट</label>'+'<input type="text" id="m-pp-notes" class="m-input" placeholder="e.g. comes with bolts" maxlength="200">'+
       '<label class="m-lbl" style="display:flex;align-items:center;gap:8px;margin:12px 14px 0;">'+
         '<input type="checkbox" id="m-pp-active" checked style="width:18px;height:18px;flex:none;"> Show this part in the shop / दुकान में दिखाएँ</label>'+
-      '<button class="btn-primary m-btn" id="m-pp-save">Save part / सहेजें</button><div class="req-msg" id="m-pp-msg" role="status"></div></details>';
+      '<button class="btn-primary m-btn" id="m-pp-save">Save part / सहेजें</button><div class="req-msg" id="m-pp-msg" role="status"></div>';
+
+    // job 2 of 3 — the two ways to fill many parts at once, which were two separate boxes
+    var secFill = !isImporter ? '' : '<details class="more-sec" id="m-bulk-sec"><summary>Fill many at once / एक साथ भरें'+
+      '<span class="ms-hint">A spreadsheet, or one whole section / फ़ाइल से, या पूरा सेक्शन</span></summary>'+
+      csvBody + bulkBody + '</details>';
+
+    // job 3 of 3 — finding a part and fixing it is one job, so the list and the form share a box
+    // and clicking a row scrolls instead of jumping you to a different accordion
+    var secShelf = !isImporter ? '' : '<details class="more-sec" id="m-cat-sec"><summary>Find a part and fix it / पुर्ज़ा ढूँढें और सुधारें'+
+      '<span class="ms-hint">Search the shelf, then edit what you find / सूची में से चुनकर सुधारें</span></summary>'+
+      shelfHead + productBody + '</details>';
 
     var secApprovals = !isImporter ? '' : '<details class="more-sec"><summary>Pending registrations — पंजीकरण<span class="ms-badge hidden" id="m-badge-appr">0</span>'+
       '<span class="ms-hint">Approve new signups / नए पंजीकरण स्वीकृत करें</span></summary>'+
@@ -2994,7 +3015,7 @@
       // Order is the order of the job: see the shelf, fix it in bulk, then the two ways to fix
       // one thing at a time. The worklist used to be first because it was the only entry point;
       // it is a shortcut into the shelf, not the shelf itself.
-      { id:"parts", en:"Parts",   hi:"पुर्ज़े",  ico:"page",    html: isImporter ? (secAll + secCsv + secWork + secBulk + secProduct) : "" }
+      { id:"parts", en:"Parts",   hi:"पुर्ज़े",  ico:"page",    html: isImporter ? (secWork + secFill + secShelf) : "" }
     ].filter(function(t){ return t.html; });
 
     if (!state.moreTab || !tabs.some(function(t){ return t.id === state.moreTab; })) state.moreTab = tabs[0].id;
@@ -3386,12 +3407,15 @@
   }
 
   // open the full editor on a part, wherever the request came from (list row, worklist, + New)
+  // The editor lives inside the shelf section now, so open that and scroll to the editor's own
+  // band rather than to the top of the box — otherwise picking a part parks you at the list you
+  // just picked it from.
   function openPartEditor(sku){
-    var sec = $("m-pp-sec"); if (!sec) return;
+    var sec = $("m-cat-sec"); if (!sec) return;
     sec.open = true;
     var pick = ensurePpOptions(); if (pick) pick.value = sku || "";
     if (_ppFill) _ppFill(sku || "");
-    sec.scrollIntoView({ block: "start", behavior: "smooth" });
+    ($("m-pp-anchor") || sec).scrollIntoView({ block: "start", behavior: "smooth" });
   }
 
   async function renderProductList(){
@@ -3667,12 +3691,7 @@
     markHindi(list);
     list.onclick = function(e){
       var b = e.target.closest("[data-wk]"); if (!b) return;
-      var sku = b.getAttribute("data-wk");
-      var sec = $("m-pp-sec"); if (!sec) return;
-      sec.open = true;
-      var pick = ensurePpOptions(); if (pick) pick.value = sku;
-      if (_ppFill) _ppFill(sku);
-      sec.scrollIntoView({ block: "start", behavior: "smooth" });
+      openPartEditor(b.getAttribute("data-wk"));   // same jump as the shelf list makes
     };
   }
 
