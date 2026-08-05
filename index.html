@@ -748,14 +748,10 @@
   /* ---- product manager: the full shelf, its filters, and the CSV round-trip ---- */
   .cat-stats{ margin:0 14px 10px; font-size:13px; color:var(--muted); }
   .cat-stats b{ color:var(--text); }
-  .cat-chips{ display:flex; gap:6px; overflow-x:auto; padding:8px 14px 10px; margin:0 -0px;
-    scrollbar-width:none; }
-  .cat-chips::-webkit-scrollbar{ display:none; }
-  .cat-chip{ flex:0 0 auto; min-height:44px; padding:8px 12px; border-radius:var(--r-pill);
-    border:1px solid var(--border); background:#fff; color:var(--text); font:inherit; font-size:12.5px;
-    font-weight:600; white-space:nowrap; cursor:pointer; }
-  .cat-chip.on{ background:var(--green); border-color:var(--green); color:#fff; }
-  .cat-chip .cc-n{ opacity:.75; font-weight:700; }
+  /* This was a row of 7 chips. Measured at 360px they came to 894px against 332px of content,
+     so 5 of the 7 sat off-screen behind a hidden scrollbar at EVERY width, and wrapping them
+     cost 4 rows before the list began. A native select is one row, shows every option and its
+     count when opened, and on Android opens as a full-screen list. */
   .cat-list{ margin-top:2px; }
   /* the row is the record: code and name read first, what is MISSING reads second — that is
      the whole reason for opening this list */
@@ -2885,13 +2881,10 @@
       '<span class="ms-hint">Search, check and fix any part / कोई भी पुर्ज़ा देखें और सुधारें</span></summary>'+
       '<div id="m-cat-stats" class="cat-stats"></div>'+
       '<input type="search" id="m-cat-q" class="m-input" placeholder="Search code, name or section" autocomplete="off" aria-label="Search parts">'+
-      '<div class="cat-chips" id="m-cat-chips" role="group" aria-label="Filter parts">'+
-        [["all","Everything"],["nocode","No part code"],["noprice","No price"],
-         ["notax","No HSN / GST"],["nohindi","No Hindi name"],["hidden","Hidden"],
-         ["ready","Ready to sell"]].map(function(c){
-          return '<button type="button" class="cat-chip'+(c[0]==="all"?" on":"")+'" data-cf="'+c[0]+'">'+
-            esc(c[1])+' <span class="cc-n"></span></button>'; }).join("")+
-      '</div>'+
+      '<select id="m-cat-filter" class="m-input" aria-label="Show which parts">'+
+        CAT_FILTERS.map(function(c){
+          return '<option value="'+c[0]+'">'+esc(c[1])+'</option>'; }).join("")+
+      '</select>'+
       '<div id="m-cat-list" class="cat-list"></div>'+
       '<button class="btn-outline m-btn" id="m-cat-new">+ Add a brand-new part / नया पुर्ज़ा जोड़ें</button></details>';
 
@@ -3325,6 +3318,10 @@
     return _adminRows;
   }
 
+  // one list, used for the options and for relabelling them with live counts
+  var CAT_FILTERS = [["all","Everything"],["nocode","No part code"],["noprice","No price"],
+    ["notax","No HSN / GST"],["nohindi","No Hindi name"],["hidden","Hidden"],["ready","Ready to sell"]];
+
   var CAT_TESTS = {
     all:     function(){ return true; },
     nocode:  function(p){ return p._noCode; },
@@ -3344,12 +3341,15 @@
               (p.section || "") + " " + (p.brand || "") + " " + p.sku).toLowerCase().indexOf(q) !== -1;
     });
 
-    // live counts on every chip, so the filter row doubles as the health report
-    Array.prototype.forEach.call(document.querySelectorAll("#m-cat-chips .cat-chip"), function(b){
-      var k = b.getAttribute("data-cf"), n = _adminRows.filter(CAT_TESTS[k]).length;
-      var s = b.querySelector(".cc-n"); if (s) s.textContent = n;
-      b.classList.toggle("on", k === _catFilter);
-    });
+    // live count on every option, so opening the picker doubles as the health report
+    var sel = $("m-cat-filter");
+    if (sel){
+      CAT_FILTERS.forEach(function(c, ix){
+        var o = sel.options[ix]; if (!o) return;
+        o.textContent = c[1] + " (" + _adminRows.filter(CAT_TESTS[c[0]]).length + ")";
+      });
+      sel.value = _catFilter;
+    }
 
     var stats = $("m-cat-stats");
     if (stats){
@@ -3407,10 +3407,9 @@
     var q = $("m-cat-q"); if (!q) return;
     var t = null;
     q.oninput = function(){ clearTimeout(t); t = setTimeout(function(){ _catShown = 40; drawProductList(); }, 150); };
-    var chips = $("m-cat-chips");
-    if (chips) chips.onclick = function(e){
-      var b = e.target.closest("[data-cf]"); if (!b) return;
-      _catFilter = b.getAttribute("data-cf"); _catShown = 40; drawProductList();
+    var sel = $("m-cat-filter");
+    if (sel) sel.onchange = function(){
+      _catFilter = this.value; _catShown = 40; drawProductList();
     };
     var list = $("m-cat-list");
     if (list) list.onclick = function(e){
