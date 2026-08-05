@@ -3316,7 +3316,10 @@
       p._noTax   = !p.hsn || p.gst_pct === null || p.gst_pct === undefined;
       p._noHindi = !String(p.hindi_name || "").trim();
       p._hidden  = p.active === false;
-      p._ready   = !p._noCode && !p._noPrice && !p._hidden && !!String(p.particular || "").trim();
+      // "Ready to sell" has to mean ready to BILL. Without an HSN and a GST rate the part cannot
+      // go on an invoice, so leaving tax out of this made the header say "ready" on 1,333 rows
+      // that each carried an amber "no HSN/GST" chip two lines below it.
+      p._ready   = !p._noCode && !p._noPrice && !p._noTax && !p._hidden && !!String(p.particular || "").trim();
       return p;
     });
     return _adminRows;
@@ -3476,6 +3479,10 @@
       if (ch === '\n'){ row.push(cur); rows.push(row); row = []; cur = ""; i++; continue; }
       cur += ch; i++;
     }
+    // A quote that is never closed swallows the rest of the file. Silently returning the few rows
+    // that survived is the worst outcome: every dropped part reads as a part the file did not
+    // mention, so nothing is flagged and nothing is updated.
+    if (inQ) throw new Error("CSV_UNTERMINATED_QUOTE");
     if (cur !== "" || row.length){ row.push(cur); rows.push(row); }
     return rows.filter(function(r){ return r.some(function(c){ return String(c).trim() !== ""; }); });
   }
@@ -3513,7 +3520,14 @@
       var text = "";
       try { text = await f.text(); } catch(e){ say("Could not read that file. / फ़ाइल पढ़ी नहीं जा सकी।", true); return; }
 
-      var grid = parseCsv(text);
+      var grid;
+      try { grid = parseCsv(text); }
+      catch(e){
+        say('There is a stray <b>"</b> quote mark in that file, so it could not be read past that ' +
+            'point. Open it in Excel, save it again as CSV, and upload it once more. Nothing has ' +
+            'been saved. / फ़ाइल में एक अधूरा " चिह्न है — दोबारा सहेजकर भेजें।', true);
+        return;
+      }
       if (grid.length < 2){ say("That file has a heading row but no parts under it. / उसमें कोई पुर्ज़ा नहीं है।", true); return; }
       var head = grid[0].map(function(h){ return String(h).trim().toLowerCase(); });
       var known = head.filter(function(h){ return CSV_COLS.indexOf(h) !== -1; });
@@ -3526,9 +3540,12 @@
 
       // Only columns the file actually carries are sent, so a two-column file updates two
       // things and leaves the rest of every part exactly as it was.
+      // A cell that is PRESENT and empty clears that field on purpose. A row that simply stops
+      // short has no cell there at all, so the key is left off entirely — otherwise a short row
+      // silently wiped every column it never mentioned, and the dry run called it a clean update.
       var rows = grid.slice(1).map(function(r){
         var o = {};
-        head.forEach(function(h, ix){ if (CSV_COLS.indexOf(h) !== -1) o[h] = (r[ix] === undefined ? "" : r[ix]); });
+        head.forEach(function(h, ix){ if (CSV_COLS.indexOf(h) !== -1 && r[ix] !== undefined) o[h] = r[ix]; });
         return o;
       });
 
@@ -3574,7 +3591,10 @@
         this.disabled = false;
         if (res.error){ msg.className = "req-msg err"; msg.textContent = friendlyErr(res.error); return; }
         var r2 = res.data || {};
-        pending = null; invalidateProducts(); _ppCost = null;
+        pending = null; invalidateProducts();
+        // costs just moved for up to 1,746 parts — reload them rather than dropping the map, or
+        // the next part opened by hand reads a price that is no longer true
+        await refreshCosts().catch(function(){ _ppCostLoaded = false; });
         // the shelf, the search index and this list must all agree the moment this returns
         await loadData(); populateFilters(); renderCatalogBody();
         await renderProductList();
@@ -3669,19 +3689,25 @@
   var PP_NUM  = ["m-pp-base","m-pp-mrp","m-pp-pack","m-pp-moq","m-pp-weight"];
   var PP_SEL  = ["m-pp-group","m-pp-gst","m-pp-uom"];
   var PP_ALL  = PP_TEXT.concat(PP_NUM, PP_SEL);
-  var _ppPhoto = null, _ppCost = null, _ppFill = null;
+  var _ppPhoto = null, _ppCost = {}, _ppCostLoaded = false, _ppFill = null;
+
+  // The base price must be the raw dealer_rate, NOT netRate(): the importer's own prices are
+  // already marked up by their chain multiplier, so prefilling from netRate would re-inflate
+  // the stored base by that multiple on every single edit.
+  // Never leave _ppCost null: fill() and the price-change guard both index it, and a CSV import
+  // used to blank it from outside this form's scope — the next part opened threw, and the guard
+  // that warns before re-pricing the whole network was skipped along with it.
+  async function refreshCosts(){
+    var cr = await sb.rpc("my_costs_json"); // .range() cannot beat the API row cap — see loadData
+    var m = {};
+    ((cr && cr.data) || []).forEach(function(c){ m[c.sku] = c.dealer_rate; });
+    _ppCost = m; _ppCostLoaded = true;
+  }
 
   async function wireProductForm(){
     var pick = $("m-pp-pick"); if (!pick) return;
     _ppPhoto = null;
-    // The base price must be the raw dealer_rate, NOT netRate(): the importer's own prices are
-    // already marked up by their chain multiplier, so prefilling from netRate would re-inflate
-    // the stored base by that multiple on every single edit.
-    if (!_ppCost){
-      _ppCost = {};
-      var cr = await sb.rpc("my_costs_json"); // .range() cannot beat the API row cap — see loadData
-      ((cr && cr.data) || []).forEach(function(c){ _ppCost[c.sku] = c.dealer_rate; });
-    }
+    if (!_ppCostLoaded) await refreshCosts();
 
     function drawPhoto(){
       var w = $("m-pp-photo-wrap"); if (!w) return;
@@ -3689,10 +3715,14 @@
         ? '<img src="'+esc(_ppPhoto)+'" alt="Photo of this part" style="height:46px;width:46px;object-fit:cover;border-radius:var(--r-md);border:1px solid var(--border);display:block;">'
         : '<span style="color:var(--muted);font-size:12px;">No photo yet / फ़ोटो नहीं</span>';
     }
-    var PP_REQUIRED = ["m-pp-code","m-pp-name","m-pp-section","m-pp-base"];
+    // HSN and GST belong here, not under "Extra detail": the list calls a part ready to sell only
+    // when it can be billed, and this meter must use the same definition or the two screens
+    // contradict each other.
+    var PP_REQUIRED = ["m-pp-code","m-pp-name","m-pp-section","m-pp-base","m-pp-hsn","m-pp-gst"];
     // name the missing field rather than making the importer hunt for it
     var PP_LABEL = { "m-pp-code":"part code", "m-pp-name":"name in English",
-                     "m-pp-section":"section", "m-pp-base":"base price" };
+                     "m-pp-section":"section", "m-pp-base":"base price",
+                     "m-pp-hsn":"HSN code", "m-pp-gst":"GST %" };
     function firstEmpty(){
       var miss = PP_REQUIRED.filter(function(id){ var e = $(id); return !e || !String(e.value||"").trim(); });
       return miss.length ? miss[0] : null;
