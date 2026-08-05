@@ -745,6 +745,49 @@
   .pp-bar > i{ display:block; height:100%; width:100%; border-radius:var(--r-pill); background:var(--green);
     transform:scaleX(0); transform-origin:left;
     transition:transform .3s cubic-bezier(.2,.8,.25,1); }
+  /* ---- product manager: the full shelf, its filters, and the CSV round-trip ---- */
+  .cat-stats{ margin:0 14px 10px; font-size:13px; color:var(--muted); }
+  .cat-stats b{ color:var(--text); }
+  .cat-chips{ display:flex; gap:6px; overflow-x:auto; padding:8px 14px 10px; margin:0 -0px;
+    scrollbar-width:none; }
+  .cat-chips::-webkit-scrollbar{ display:none; }
+  .cat-chip{ flex:0 0 auto; min-height:44px; padding:8px 12px; border-radius:var(--r-pill);
+    border:1px solid var(--border); background:#fff; color:var(--text); font:inherit; font-size:12.5px;
+    font-weight:600; white-space:nowrap; cursor:pointer; }
+  .cat-chip.on{ background:var(--green); border-color:var(--green); color:#fff; }
+  .cat-chip .cc-n{ opacity:.75; font-weight:700; }
+  .cat-list{ margin-top:2px; }
+  /* the row is the record: code and name read first, what is MISSING reads second — that is
+     the whole reason for opening this list */
+  .cat-row{ display:flex; align-items:center; gap:10px; width:calc(100% - 28px); margin:0 14px 6px;
+    padding:10px 12px; min-height:52px; text-align:left; background:#fff; border:1px solid var(--border);
+    border-radius:var(--r-md); font:inherit; cursor:pointer; }
+  .cat-row:hover{ background:var(--green-light); }
+  .cat-row > span:first-child{ min-width:0; flex:1 1 auto; }
+  .cat-code{ font-weight:700; font-size:13px; color:var(--green-dark); }
+  .cat-code.none{ color:var(--danger); }
+  .cat-name{ font-size:13px; color:var(--text); }
+  .cat-sub{ display:block; font-size:11.5px; color:var(--muted); margin-top:2px; }
+  .cat-gaps{ display:block; margin-top:4px; }
+  .cat-gap{ display:inline-block; font-size:11px; font-weight:700; padding:2px 7px; margin:2px 4px 0 0;
+    border-radius:var(--r-pill); background:var(--warn-tint); color:var(--warn-ink); border:1px solid var(--warn-border); }
+  .cat-gap.ok{ background:var(--green-light); color:var(--green-dark); border-color:var(--border); }
+  .cat-gap.off{ background:var(--calm-tint); color:var(--muted); border-color:var(--border); }
+  .cat-go{ flex:none; color:var(--muted); font-size:20px; }
+  .csv-row{ display:flex; gap:8px; flex-wrap:wrap; margin:0 14px 12px; }
+  /* .btn-outline carries only colour — its size comes from .btn, which these do not have.
+     Without this the two export buttons rendered 24px tall: readable, but half a tap target. */
+  .csv-btn{ width:auto; margin-top:0; flex:1 1 auto; min-width:160px; font-size:13px;
+    padding:12px 14px; min-height:48px; border-radius:var(--r-md); font-weight:700; }
+  .csv-sum{ margin:12px 14px 0; padding:12px; border-radius:var(--r-md); border:1px solid var(--border);
+    background:var(--green-light); font-size:13px; line-height:1.6; }
+  .csv-sum.bad{ background:var(--danger-tint); border-color:var(--danger-border); }
+  .csv-sum b{ font-size:15px; }
+  .csv-errs{ margin:8px 14px 0; max-height:260px; overflow:auto; border:1px solid var(--danger-border);
+    border-radius:var(--r-md); background:#fff; }
+  .csv-err{ display:flex; gap:8px; padding:8px 10px; font-size:12.5px; border-bottom:1px solid var(--border); }
+  .csv-err:last-child{ border-bottom:none; }
+  .csv-err .ce-row{ flex:none; font-weight:700; color:var(--danger); min-width:64px; }
   .wk-prog{ margin:0 14px 10px; font-size:12.5px; color:var(--muted); }
   .wk-prog b{ color:var(--text); }
   .wk-bar{ height:6px; border-radius:var(--r-pill); background:var(--border); overflow:hidden; margin:5px 0 6px; }
@@ -2835,6 +2878,40 @@
     var bkOpts = Object.keys(bkSecs).sort().map(function(k){
       return '<option value="'+esc(k)+'">'+esc(k)+' ('+bkSecs[k]+' parts)</option>'; }).join("");
 
+    // The whole shelf, browsable and fixable. The worklist below answers "what should I do
+    // next"; this answers "what have I actually got, and what is wrong with it" — the question
+    // you cannot answer from a 1,746-option <select>.
+    var secAll = !isImporter ? '' : '<details class="more-sec" id="m-cat-sec"><summary>All parts — the full shelf / पूरी सूची'+
+      '<span class="ms-hint">Search, check and fix any part / कोई भी पुर्ज़ा देखें और सुधारें</span></summary>'+
+      '<div id="m-cat-stats" class="cat-stats"></div>'+
+      '<input type="search" id="m-cat-q" class="m-input" placeholder="Search code, name or section" autocomplete="off" aria-label="Search parts">'+
+      '<div class="cat-chips" id="m-cat-chips" role="group" aria-label="Filter parts">'+
+        [["all","Everything"],["nocode","No part code"],["noprice","No price"],
+         ["notax","No HSN / GST"],["nohindi","No Hindi name"],["hidden","Hidden"],
+         ["ready","Ready to sell"]].map(function(c){
+          return '<button type="button" class="cat-chip'+(c[0]==="all"?" on":"")+'" data-cf="'+c[0]+'">'+
+            esc(c[1])+' <span class="cc-n"></span></button>'; }).join("")+
+      '</div>'+
+      '<div id="m-cat-list" class="cat-list"></div>'+
+      '<button class="btn-outline m-btn" id="m-cat-new">+ Add a brand-new part / नया पुर्ज़ा जोड़ें</button></details>';
+
+    // 1,746 parts and not one of them described. Nobody fills a form 1,746 times — importers
+    // live in Excel. Export what is there, edit it in the tool they already use, bring it back.
+    var secCsv = !isImporter ? '' : '<details class="more-sec" id="m-csv-sec"><summary>Bulk edit by file (CSV) / फ़ाइल से भरें'+
+      '<span class="ms-hint">Export, edit in Excel, upload back / एक्सेल में भरकर वापस डालें</span></summary>'+
+      '<p class="more-hint">Download every part as a spreadsheet, fill the empty columns in Excel or Google Sheets, then upload it back. '+
+        '<b>Nothing is saved until you have seen exactly what will change and pressed Apply.</b></p>'+
+      '<p class="more-hint">Leave the <code>sku</code> column alone — it is how each row finds its part. '+
+        'A column you delete is left untouched; a cell you empty is cleared. '+
+        'To add new parts, leave <code>sku</code> blank and fill <code>product_code</code>, <code>name</code>, <code>group</code> and <code>base_price</code>.</p>'+
+      '<div class="csv-row">'+
+        '<button class="btn-outline csv-btn" id="m-csv-dl">Download all parts / सब उतारें</button>'+
+        '<button class="btn-outline csv-btn" id="m-csv-tpl">Blank template / ख़ाली नमूना</button>'+
+      '</div>'+
+      '<label class="m-lbl" for="m-csv-file">Upload a filled file / भरी फ़ाइल डालें</label>'+
+      '<input type="file" id="m-csv-file" class="m-input" accept=".csv,text/csv">'+
+      '<div id="m-csv-out"></div></details>';
+
     var secWork = !isImporter ? '' : '<details class="more-sec" id="m-wk-sec"><summary>Describe parts — start here / पहले ये भरें'+
       '<span class="ms-hint">The parts people actually ask for / जो लोग माँगते हैं</span></summary>'+
       '<div id="m-wk-prog" class="wk-prog"></div>'+
@@ -2921,7 +2998,10 @@
       { id:"sell",  en:"My shop", hi:"दुकान",   ico:"shop",    html: secCustOrder + secLink + secPrice + secAddress + secPay,
         alert: detailsMissing },
       { id:"team",  en:"Network", hi:"नेटवर्क", ico:"people",  html: secAddDealer + secApprovals },
-      { id:"parts", en:"Parts",   hi:"पुर्ज़े",  ico:"page",    html: isImporter ? (secWork + secBulk + secProduct) : "" }
+      // Order is the order of the job: see the shelf, fix it in bulk, then the two ways to fix
+      // one thing at a time. The worklist used to be first because it was the only entry point;
+      // it is a shortcut into the shelf, not the shelf itself.
+      { id:"parts", en:"Parts",   hi:"पुर्ज़े",  ico:"page",    html: isImporter ? (secAll + secCsv + secWork + secBulk + secProduct) : "" }
     ].filter(function(t){ return t.html; });
 
     if (!state.moreTab || !tabs.some(function(t){ return t.id === state.moreTab; })) state.moreTab = tabs[0].id;
@@ -3210,10 +3290,299 @@
     };
     if (isImporter){ renderMoreApprovals(); var ac = $("m-approvals-card"); if (ac) ac.addEventListener("click", onApprovalsClick); }
     // async: a failed cost fetch must not take the rest of the More tab down with it
-    if (isImporter){ renderWorklist(); wireBulkDescribe(); }
+    // The shelf list and the CSV panel are wired eagerly but fetch nothing until opened —
+    // 1,746 rows is not something to pull before anyone has asked to look at them.
+    if (isImporter){ wireProductList(); wireCsv(); renderWorklist(); wireBulkDescribe(); }
     if (isImporter) wireProductForm().catch(function(e){
       var m = $("m-pp-msg"); if (m){ m.className = "req-msg err"; m.textContent = friendlyErr(e); }
     });
+  }
+
+  // ---------- the product manager: the whole shelf ----------
+  // admin_products_json() is the one read that carries dealer_rate (cost) as well as identity,
+  // so it is importer-only server-side. Cached for the session because it is 1,746 rows and
+  // every filter/search redraw would otherwise re-fetch it; invalidated on any write.
+  var _adminRows = null, _catFilter = "all", _catShown = 40;
+  function invalidateProducts(){ _adminRows = null; }
+
+  async function loadAdminProducts(force){
+    if (_adminRows && !force) return _adminRows;
+    var r = await sb.rpc("admin_products_json");
+    if (r.error) throw r.error;
+    _adminRows = (r.data || []).map(function(p){
+      // what is missing IS the data here — compute it once rather than in every redraw
+      p._noCode  = !String(p.product_code || "").trim();
+      p._noPrice = !(Number(p.base_price) > 0);
+      p._noTax   = !p.hsn || p.gst_pct === null || p.gst_pct === undefined;
+      p._noHindi = !String(p.hindi_name || "").trim();
+      p._hidden  = p.active === false;
+      p._ready   = !p._noCode && !p._noPrice && !p._hidden && !!String(p.particular || "").trim();
+      return p;
+    });
+    return _adminRows;
+  }
+
+  var CAT_TESTS = {
+    all:     function(){ return true; },
+    nocode:  function(p){ return p._noCode; },
+    noprice: function(p){ return p._noPrice; },
+    notax:   function(p){ return p._noTax; },
+    nohindi: function(p){ return p._noHindi; },
+    hidden:  function(p){ return p._hidden; },
+    ready:   function(p){ return p._ready; }
+  };
+
+  function drawProductList(){
+    var list = $("m-cat-list"); if (!list || !_adminRows) return;
+    var q = (($("m-cat-q") || {}).value || "").trim().toLowerCase();
+    var rows = _adminRows.filter(CAT_TESTS[_catFilter] || CAT_TESTS.all);
+    if (q) rows = rows.filter(function(p){
+      return ((p.product_code || "") + " " + (p.particular || "") + " " + (p.hindi_name || "") + " " +
+              (p.section || "") + " " + (p.brand || "") + " " + p.sku).toLowerCase().indexOf(q) !== -1;
+    });
+
+    // live counts on every chip, so the filter row doubles as the health report
+    Array.prototype.forEach.call(document.querySelectorAll("#m-cat-chips .cat-chip"), function(b){
+      var k = b.getAttribute("data-cf"), n = _adminRows.filter(CAT_TESTS[k]).length;
+      var s = b.querySelector(".cc-n"); if (s) s.textContent = n;
+      b.classList.toggle("on", k === _catFilter);
+    });
+
+    var stats = $("m-cat-stats");
+    if (stats){
+      var ready = _adminRows.filter(CAT_TESTS.ready).length;
+      stats.innerHTML = '<b>' + _adminRows.length + '</b> parts on the shelf &middot; <b>' + ready +
+        '</b> ready to sell &middot; <b>' + (_adminRows.length - ready) + '</b> still need work';
+    }
+
+    if (!rows.length){
+      list.innerHTML = '<div class="empty-state" style="margin:0 14px;">Nothing matches that. / कुछ नहीं मिला।</div>';
+      return;
+    }
+    var shown = rows.slice(0, _catShown);
+    list.innerHTML = shown.map(function(p){
+      var gaps = [];
+      if (p._noCode)  gaps.push('<span class="cat-gap">no code</span>');
+      if (p._noPrice) gaps.push('<span class="cat-gap">no price</span>');
+      if (p._noTax)   gaps.push('<span class="cat-gap">no HSN/GST</span>');
+      if (p._noHindi) gaps.push('<span class="cat-gap">no Hindi</span>');
+      if (p._hidden)  gaps.push('<span class="cat-gap off">hidden</span>');
+      if (!gaps.length) gaps.push('<span class="cat-gap ok">&check; complete</span>');
+      return '<button type="button" class="cat-row" data-cat="' + esc(p.sku) + '"><span>' +
+        '<span class="cat-code' + (p._noCode ? ' none' : '') + '">' + esc(p._noCode ? "no code" : p.product_code) + '</span> ' +
+        '<span class="cat-name">' + esc(nice(p.particular || "(no name)")) + '</span>' +
+        '<span class="cat-sub">' + esc(p.section || "no section") +
+          (p._noPrice ? "" : " &middot; base " + inr(Number(p.base_price))) + '</span>' +
+        '<span class="cat-gaps">' + gaps.join("") + '</span>' +
+      '</span><span class="cat-go" aria-hidden="true">&rsaquo;</span></button>';
+    }).join("") + (rows.length > shown.length
+      ? '<button class="show-more" id="m-cat-more" type="button">Show ' +
+          Math.min(40, rows.length - shown.length) + ' more of ' + rows.length + ' / और दिखाएँ</button>'
+      : '');
+    if ($("m-cat-more")) $("m-cat-more").onclick = function(){ _catShown += 40; drawProductList(); };
+  }
+
+  // open the full editor on a part, wherever the request came from (list row, worklist, + New)
+  function openPartEditor(sku){
+    var sec = $("m-pp-sec"); if (!sec) return;
+    sec.open = true;
+    var pick = ensurePpOptions(); if (pick) pick.value = sku || "";
+    if (_ppFill) _ppFill(sku || "");
+    sec.scrollIntoView({ block: "start", behavior: "smooth" });
+  }
+
+  async function renderProductList(){
+    var list = $("m-cat-list"); if (!list || !sb) return;
+    list.innerHTML = '<div style="color:var(--muted);font-size:13px;margin:0 14px;">Loading… / लोड हो रहा है…</div>';
+    try { await loadAdminProducts(); } catch(e){
+      list.innerHTML = '<div class="req-msg err">' + esc(friendlyErr(e)) + '</div>'; return;
+    }
+    _catShown = 40; drawProductList();
+  }
+
+  function wireProductList(){
+    var q = $("m-cat-q"); if (!q) return;
+    var t = null;
+    q.oninput = function(){ clearTimeout(t); t = setTimeout(function(){ _catShown = 40; drawProductList(); }, 150); };
+    var chips = $("m-cat-chips");
+    if (chips) chips.onclick = function(e){
+      var b = e.target.closest("[data-cf]"); if (!b) return;
+      _catFilter = b.getAttribute("data-cf"); _catShown = 40; drawProductList();
+    };
+    var list = $("m-cat-list");
+    if (list) list.onclick = function(e){
+      var b = e.target.closest("[data-cat]"); if (!b) return;
+      openPartEditor(b.getAttribute("data-cat"));
+    };
+    if ($("m-cat-new")) $("m-cat-new").onclick = function(){ openPartEditor(""); };
+    var sec = $("m-cat-sec");
+    // 1,746 rows is not something to fetch before anyone has asked to see them
+    if (sec) sec.addEventListener("toggle", function(){ if (sec.open && !_adminRows) renderProductList(); });
+  }
+
+  // ---------- CSV round-trip ----------
+  // These are the column names import_products() reads. Order is the order an importer wants to
+  // fill them in: what the part IS, then what it costs, then the tax and logistics detail.
+  var CSV_COLS = ["sku","product_code","name","hindi_name","group","section","brand","fits","oem_refs",
+                  "base_price","mrp","hsn","gst_pct","uom","pack_size","moq","weight_g","dims_cm",
+                  "origin","photo_url","notes","active"];
+
+  function csvCell(v){
+    if (v === null || v === undefined) return "";
+    var s = String(v);
+    // A part name can contain a comma, a quote or (rarely) a newline. Quote-and-double is the
+    // only escaping CSV has, and Excel/Sheets both read it.
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  function toCsv(rows){
+    var out = [CSV_COLS.join(",")];
+    rows.forEach(function(p){
+      out.push(CSV_COLS.map(function(c){
+        if (c === "name")   return csvCell(p.particular);
+        if (c === "group")  return csvCell(p.group);
+        if (c === "active") return csvCell(p.active === false ? "no" : "yes");
+        return csvCell(p[c]);
+      }).join(","));
+    });
+    return out.join("\r\n");
+  }
+  function downloadCsv(name, text){
+    // The BOM is not decoration: without it Excel opens UTF-8 as Latin-1 and every Hindi name
+    // in the file turns to mojibake the moment the importer double-clicks it.
+    var blob = new Blob(["﻿" + text], { type: "text/csv;charset=utf-8;" });
+    var url = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+  }
+
+  // A real CSV parser, because a split(",") loses every part name with a comma in it and every
+  // quoted field. Handles quoted fields, doubled quotes inside them, and CRLF or LF line ends.
+  function parseCsv(text){
+    text = String(text).replace(/^﻿/, "");
+    var rows = [], row = [], cur = "", inQ = false, i = 0;
+    while (i < text.length){
+      var ch = text[i];
+      if (inQ){
+        if (ch === '"'){
+          if (text[i+1] === '"'){ cur += '"'; i += 2; continue; }
+          inQ = false; i++; continue;
+        }
+        cur += ch; i++; continue;
+      }
+      if (ch === '"'){ inQ = true; i++; continue; }
+      if (ch === ','){ row.push(cur); cur = ""; i++; continue; }
+      if (ch === '\r'){ i++; continue; }
+      if (ch === '\n'){ row.push(cur); rows.push(row); row = []; cur = ""; i++; continue; }
+      cur += ch; i++;
+    }
+    if (cur !== "" || row.length){ row.push(cur); rows.push(row); }
+    return rows.filter(function(r){ return r.some(function(c){ return String(c).trim() !== ""; }); });
+  }
+
+  function wireCsv(){
+    var dl = $("m-csv-dl"); if (!dl) return;
+    var out = $("m-csv-out"), file = $("m-csv-file");
+    var pending = null;   // rows parsed and dry-run-checked, waiting for Apply
+
+    function say(html, bad){
+      out.innerHTML = '<div class="csv-sum' + (bad ? " bad" : "") + '">' + html + '</div>';
+    }
+
+    dl.onclick = async function(){
+      this.disabled = true;
+      try {
+        var rows = await loadAdminProducts(true);
+        downloadCsv("farmingtools-parts.csv", toCsv(rows));
+        showToast(rows.length + " parts downloaded ✓ / फ़ाइल उतर गई");
+      } catch(e){ say(esc(friendlyErr(e)), true); }
+      this.disabled = false;
+    };
+    $("m-csv-tpl").onclick = function(){
+      // one worked example beats a paragraph explaining the columns
+      downloadCsv("farmingtools-parts-template.csv", CSV_COLS.join(",") + "\r\n" +
+        ',NEW-001,Example new part,उदाहरण पुर्ज़ा,1,Brush Cutter Accessories & Part,,,,250,750,84329010,18,pcs,1,1,,,,,,yes');
+      showToast("Template downloaded ✓ / नमूना उतर गया");
+    };
+
+    file.onchange = async function(){
+      var f = this.files && this.files[0]; this.value = ""; pending = null;
+      if (!f) return;
+      if (f.size > 8 * 1024 * 1024){ say("That file is too big (max 8 MB). / फ़ाइल बहुत बड़ी है।", true); return; }
+      say("Reading the file… / फ़ाइल पढ़ी जा रही है…");
+      var text = "";
+      try { text = await f.text(); } catch(e){ say("Could not read that file. / फ़ाइल पढ़ी नहीं जा सकी।", true); return; }
+
+      var grid = parseCsv(text);
+      if (grid.length < 2){ say("That file has a heading row but no parts under it. / उसमें कोई पुर्ज़ा नहीं है।", true); return; }
+      var head = grid[0].map(function(h){ return String(h).trim().toLowerCase(); });
+      var known = head.filter(function(h){ return CSV_COLS.indexOf(h) !== -1; });
+      if (!known.length){
+        say("None of the column headings match. The first row must name the columns, like:<br><code>" +
+            esc(CSV_COLS.slice(0, 6).join(",")) + "…</code><br>Download the blank template above to see the exact format. / नमूना फ़ाइल देखें।", true);
+        return;
+      }
+      var unknown = head.filter(function(h){ return h && CSV_COLS.indexOf(h) === -1; });
+
+      // Only columns the file actually carries are sent, so a two-column file updates two
+      // things and leaves the rest of every part exactly as it was.
+      var rows = grid.slice(1).map(function(r){
+        var o = {};
+        head.forEach(function(h, ix){ if (CSV_COLS.indexOf(h) !== -1) o[h] = (r[ix] === undefined ? "" : r[ix]); });
+        return o;
+      });
+
+      say("Checking " + rows.length + " rows… / जाँच हो रही है…");
+      var chk = await sb.rpc("import_products", { p_rows: rows, p_commit: false });
+      if (chk.error){ say(esc(friendlyErr(chk.error)), true); return; }
+      var d = chk.data || {};
+      var errs = d.errors || [];
+      var head1 = '<b>' + (d.create || 0) + ' new</b> and <b>' + (d.update || 0) + ' updated</b> from ' +
+        (d.checked || 0) + ' rows &middot; columns used: ' + esc(known.join(", ")) +
+        (unknown.length ? '<br><span style="color:var(--warn-ink);">Ignored unknown columns: ' + esc(unknown.join(", ")) + '</span>' : '');
+
+      if (errs.length){
+        // Nothing is applied while a single row is wrong — a 1,746-row file that half-lands is
+        // worse than one that does not land, because you cannot tell which half.
+        out.innerHTML = '<div class="csv-sum bad">' + head1 +
+          '<br><br><b>' + errs.length + ' row' + (errs.length === 1 ? "" : "s") + ' need fixing first.</b> ' +
+          'Nothing has been saved. Fix these in the file and upload it again. / कुछ भी सहेजा नहीं गया।</div>' +
+          '<div class="csv-errs">' + errs.slice(0, 200).map(function(e){
+            return '<div class="csv-err"><span class="ce-row">row ' + e.row + '</span><span>' +
+              (e.ref ? '<b>' + esc(e.ref) + '</b> — ' : '') + esc(e.msg) + '</span></div>';
+          }).join("") + '</div>' +
+          (errs.length > 200 ? '<p class="more-hint">…and ' + (errs.length - 200) + ' more.</p>' : '');
+        return;
+      }
+
+      pending = rows;
+      out.innerHTML = '<div class="csv-sum">' + head1 +
+        '<br><br>Everything checks out. Nothing is saved yet. / सब ठीक है — अभी सहेजा नहीं गया।</div>' +
+        '<button class="btn-primary m-btn" id="m-csv-apply">Apply to ' + (d.checked || 0) +
+          ' parts / लागू करें</button><div class="req-msg" id="m-csv-msg" role="status"></div>';
+
+      $("m-csv-apply").onclick = async function(){
+        if (!pending) return;
+        var ok = await askConfirm(
+          "Apply this file?\n\n" + (d.create || 0) + " new parts, " + (d.update || 0) + " updated.\n\n" +
+          "Prices and details change for every dealer, shopkeeper and farmer below you straight away.\n\n" +
+          "यह फ़ाइल लागू करें? नीचे सबको तुरंत नया दिखेगा।", { okLabel: "Apply / लागू करें" });
+        if (!ok) return;
+        this.disabled = true;
+        var msg = $("m-csv-msg"); msg.className = "req-msg"; msg.textContent = "Saving… / सहेजा जा रहा है…";
+        var res = await sb.rpc("import_products", { p_rows: pending, p_commit: true });
+        this.disabled = false;
+        if (res.error){ msg.className = "req-msg err"; msg.textContent = friendlyErr(res.error); return; }
+        var r2 = res.data || {};
+        pending = null; invalidateProducts(); _ppCost = null;
+        // the shelf, the search index and this list must all agree the moment this returns
+        await loadData(); populateFilters(); renderCatalogBody();
+        await renderProductList();
+        say('&check; <b>Done.</b> ' + (r2.create || 0) + ' new and ' + (r2.update || 0) +
+            ' updated — live for everyone now. / हो गया, सब जगह लागू।');
+        showToast("File applied ✓ / फ़ाइल लागू हुई");
+      };
+    };
   }
 
   // ---------- worklist: what to describe first ----------
@@ -3286,7 +3655,9 @@
       if (r.error){ m.className = "req-msg err"; m.textContent = friendlyErr(r.error); return; }
       m.textContent = "✓ " + r.data + " parts updated in “" + sec + "”. / " + r.data + " पुर्ज़े अपडेट हुए।";
       showToast(r.data + " parts described ✓ / अपडेट हुए");
+      invalidateProducts();
       await loadData(); populateFilters(); renderCatalogBody(); renderWorklist();
+      if (_adminRows === null && $("m-cat-sec") && $("m-cat-sec").open) renderProductList();
     };
   }
 
@@ -3448,8 +3819,12 @@
 
       var sku = r.data;
       _ppCost[sku] = num("m-pp-base");
-      // pull the master back so the shop, the search index and this form all agree immediately
-      await loadData(); populateFilters(); renderCatalogBody();
+      // pull the master back so the shop, the search index, the shelf list and this form all
+      // agree immediately — a stale "no HSN" chip next to a part you just gave an HSN is the
+      // kind of small lie that stops people trusting the screen
+      invalidateProducts();
+      await loadData(); populateFilters(); renderCatalogBody(); renderWorklist();
+      if ($("m-cat-sec") && $("m-cat-sec").open) renderProductList();
       pick.innerHTML = '<option value="">➕ Add a brand-new part / नया पुर्ज़ा</option>' + skuOptionsHtml(state.catalog || []);
       pick.value = sku; fill(sku);
       m.className = "req-msg";
