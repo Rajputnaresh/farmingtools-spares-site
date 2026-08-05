@@ -723,6 +723,24 @@
   .m-input{ width:100%; box-sizing:border-box; padding:11px; min-height:46px; font-size:16px; border:1px solid var(--border); border-radius:var(--r-md); background:#fff; }
   .m-btn{ width:100%; margin-top:12px; min-height:46px; border-radius:var(--r-md); font-weight:600; }
   .m-input.err{ border-color:var(--danger); background:var(--danger-tint); }
+  /* Search-and-tap part picker, shared by every stock and order form. It replaces a filter box
+     sitting above a native <select> of all 1,746 parts: Android's picker has no search — which is
+     why the filter box existed — and rebuilding the <select> on every keystroke silently repointed
+     the choice at whatever now sorted first. On these forms that is a ledger movement or a customer
+     order against the wrong part, so nothing counts as chosen until it is tapped. */
+  .pk .pk-q{ margin:0; }
+  .pk-hits:not(:empty){ margin-top:6px; border:1px solid var(--border);
+    border-radius:var(--r-md); overflow:hidden; }
+  .pk-hit{ display:block; width:100%; text-align:left; padding:11px 12px; min-height:48px;
+    background:#fff; border:0; border-bottom:1px solid var(--border); font:inherit; font-size:13px;
+    line-height:1.3; color:var(--text); cursor:pointer; }
+  .pk-hit:last-child{ border-bottom:0; }
+  .pk-hit b{ color:var(--green-dark); }
+  .pk-none, .pk-more{ padding:10px 12px; background:#fff; font-size:12px; color:var(--muted); }
+  .pk-chosen{ margin-top:8px; padding:10px 12px; border-radius:var(--r-md); background:var(--bg);
+    border:1px solid var(--border); font-size:13px; line-height:1.35; color:var(--text); }
+  .pk-chosen.none{ color:var(--muted); }
+  .pk-chosen b{ color:var(--green-dark); }
   /* every checkbox in the app rendered OS-blue against a green brand */
   input[type=checkbox], input[type=radio]{ accent-color:var(--green); }
   .row2{ display:flex; gap:10px; }
@@ -2029,8 +2047,8 @@
       // offline / fetch failure: keep whatever we hydrated from cache rather than blanking it
       if (res[0] === null){ if (!state._hydrated) { state.loadError = true; state.catalog = []; } }
       else { state.catalog = Array.isArray(res[0]) ? res[0] : []; }
-      // catalog.json carries no sku (it is the row position), but skuOptionsHtml and the
-      // product form both read row.sku — without this stamp every part <select> in the More
+      // catalog.json carries no sku (it is the row position), but the part picker, the shelf list
+      // and the product form all read row.sku — without this stamp every part chosen in the More
       // tab submits an empty sku and the RPC behind it fails.
       state.catalog.forEach(function(r, i){ if (r && !r.sku) r.sku = skuOf(i); });
       // Overlay by sku, which IS the array index — so every existing photo, price and saved
@@ -2735,8 +2753,65 @@
         '<td class="num">'+l.qty+'</td><td class="num"><button class="line-x" data-co-del="'+esc(l.sku)+'" aria-label="Remove">✕</button></td></tr>'; }).join("")+
       '</tbody></table></div>';
   }
-  function skuOptionsHtml(list){
-    return list.map(function(c){ return '<option value="'+esc(c.sku)+'">'+esc(c.product_code||c.sku)+' — '+esc((c.particular||"").slice(0,40))+'</option>'; }).join("");
+  // ---------- one part picker, shared by every stock and order form ----------
+  // You type, you TAP a result, and only then is a part chosen. The value lives here rather than
+  // in the DOM so that redrawing the results can never change what is selected.
+  var _pk = {};
+  function partPickerHtml(id){
+    return '<div class="pk" id="'+id+'">'+
+      '<input type="search" class="m-input pk-q" autocomplete="off" aria-label="Search for a part" '+
+        'placeholder="Type a code or name / कोड या नाम" data-ph-en="Type a code or name">'+
+      '<div class="pk-hits"></div>'+
+      '<div class="pk-chosen none" role="status"></div></div>';
+  }
+  function pkValue(id){ return _pk[id] || ""; }
+  function pkDrawChosen(id){
+    var box = $(id); if (!box) return;
+    var el = box.querySelector(".pk-chosen"), sku = _pk[id];
+    var r = sku ? state.catalog[skuToIndex(sku)] : null;
+    el.innerHTML = r
+      ? '<b>' + esc(r.product_code || sku) + '</b> ' + esc(nice(r.particular || "(no name)"))
+      : 'No part chosen yet — search above / अभी कोई पुर्ज़ा नहीं चुना';
+    el.classList.toggle("none", !r);
+    markHindi(el);
+  }
+  function pkClear(id){
+    var box = $(id); if (!box) return;
+    _pk[id] = "";
+    box.querySelector(".pk-q").value = "";
+    box.querySelector(".pk-hits").innerHTML = "";
+    pkDrawChosen(id);
+  }
+  function wirePartPicker(id){
+    var box = $(id); if (!box) return;
+    var q = box.querySelector(".pk-q"), hits = box.querySelector(".pk-hits"), t = null;
+    _pk[id] = "";
+    pkDrawChosen(id);
+    q.oninput = function(){
+      clearTimeout(t);
+      var v = this.value.trim().toLowerCase();
+      // an empty box shows nothing, not all 1,746 — that list was never useful and never quick
+      if (!v){ hits.innerHTML = ""; return; }
+      t = setTimeout(function(){
+        var list = (state.catalog || []).filter(function(c){
+          return ((c.product_code||"") + " " + (c.particular||"") + " " + (c.hindi_name||"") + " " + (c.sku||""))
+                 .toLowerCase().indexOf(v) !== -1;
+        });
+        if (!list.length){ hits.innerHTML = '<div class="pk-none">Nothing matches that. / कुछ नहीं मिला।</div>'; markHindi(hits); return; }
+        hits.innerHTML = list.slice(0, 8).map(function(c){
+          return '<button type="button" class="pk-hit" data-pk="' + esc(c.sku) + '"><b>' +
+            esc(c.product_code || c.sku) + '</b> ' + esc(nice(c.particular || "(no name)")) + '</button>';
+        }).join("") + (list.length > 8
+          ? '<div class="pk-more">' + (list.length - 8) + ' more — type a little more to narrow it down</div>'
+          : '');
+      }, 150);
+    };
+    hits.onclick = function(e){
+      var b = e.target.closest("[data-pk]"); if (!b) return;
+      _pk[id] = b.getAttribute("data-pk");
+      hits.innerHTML = ""; q.value = "";
+      pkDrawChosen(id);
+    };
   }
   function renderMore(){
     if (!isSupplier()) return;
@@ -2747,11 +2822,9 @@
     var partyOpts = (state.parties || []).filter(function(p){ return mine.has(p.id); })
       .map(function(p){ return '<option value="'+p.id+'">'+esc(p.name)+' ('+esc(p.role)+')</option>'; }).join("") || '<option value="">— no downstream parties yet —</option>';
     // Built EMPTY on purpose, then filled on first focus by fillSkuSelect(). Interpolating all
-    // 1,746 parts into the five part-pickers here meant ~534 KB of HTML and 8,730 <option> nodes
-    // parsed synchronously in one innerHTML — a visible freeze on the ₹6,000 Android this tab is
-    // used on, for a control nobody can operate anyway (Android's native picker has no search,
-    // which is exactly why each of these already has a "type code or name to filter" box above it).
-    var skuOpts = "";
+    // The <select>s these forms used to carry are gone entirely — see partPickerHtml. Keeping them
+    // empty kept 8,730 <option> nodes out of the initial paint, but the control was still one
+    // nobody could operate on a phone.
 
     var html = '<div class="more-card"><div style="font-weight:700;">'+esc(name)+'</div><div style="color:var(--muted);font-size:13px;">'+esc(role)+'</div></div>';
 
@@ -2790,23 +2863,20 @@
     var secTransfer = !below.length ? '' : '<details class="more-sec"><summary>Bill / transfer stock — ट्रांसफर<span class="ms-hint">Billing moves stock down to a party / बिल = स्टॉक ट्रांसफर</span></summary>'+
       '<p class="more-hint">Billing moves stock: it leaves you and lands on the receiving party.</p>'+
       '<label class="m-lbl">Bill to</label><select id="m-t-to" class="m-input">'+partyOpts+'</select>'+
-      '<label class="m-lbl">Part</label><input type="text" id="m-t-search" class="m-input" placeholder="Type code or name to filter…" autocomplete="off">'+
-      '<select id="m-t-sku" class="m-input">'+skuOpts+'</select>'+
+      '<label class="m-lbl">Part</label>'+ partPickerHtml("m-t-pk")+
       '<div class="row2"><div><label class="m-lbl">Qty</label><input type="number" id="m-t-qty" class="m-input" min="1" value="1" inputmode="numeric"></div>'+
         '<div><label class="m-lbl">PI (optional)</label><input type="text" id="m-t-pi" class="m-input" placeholder="PI-…"></div></div>'+
       '<button class="btn-primary m-btn" id="m-t-btn">Record transfer / ट्रांसफर करें</button><div class="req-msg" id="m-t-msg"></div></details>';
 
     var secExternal = !isImporter ? '' : '<details class="more-sec"><summary>Add external stock — नया स्टॉक<span class="ms-hint">New imports land on your balance / नया आयात आपके खाते में</span></summary>'+
       '<p class="more-hint">Bring newly-imported stock into the network at your own balance.</p>'+
-      '<label class="m-lbl">Part</label><input type="text" id="m-o-search" class="m-input" placeholder="Type code or name to filter…" autocomplete="off">'+
-      '<select id="m-o-sku" class="m-input">'+skuOpts+'</select>'+
+      '<label class="m-lbl">Part</label>'+ partPickerHtml("m-o-pk")+
       '<label class="m-lbl">Qty</label><input type="number" id="m-o-qty" class="m-input" min="1" value="1" inputmode="numeric">'+
       '<button class="btn-primary m-btn" id="m-o-btn">Add stock / जोड़ें</button><div class="req-msg" id="m-o-msg"></div></details>';
 
     var secCorrect = !isImporter ? '' : '<details class="more-sec"><summary>Correct stock (physical count) — स्टॉक सुधारें<span class="ms-hint">Fix the ledger after counting / गिनती के बाद सुधार</span></summary>'+
       '<p class="more-hint">After a physical count: enter the change, + to add or − to remove (breakage, miscount). Keeps the ledger honest.</p>'+
-      '<label class="m-lbl">Part</label><input type="text" id="m-adj-search" class="m-input" placeholder="Type code or name to filter…" autocomplete="off">'+
-      '<select id="m-adj-sku" class="m-input">'+skuOpts+'</select>'+
+      '<label class="m-lbl">Part</label>'+ partPickerHtml("m-adj-pk")+
       '<div class="row2"><div><label class="m-lbl">Change (+ / −)</label><input type="number" id="m-adj-delta" class="m-input" value="-1" inputmode="numeric"></div>'+
         '<div><label class="m-lbl">Reason</label><input type="text" id="m-adj-note" class="m-input" placeholder="e.g. breakage"></div></div>'+
       '<button class="btn-primary m-btn" id="m-adj-btn">Apply correction / लागू करें</button><div class="req-msg" id="m-adj-msg"></div></details>';
@@ -2816,8 +2886,7 @@
       '<label class="m-lbl">Customer name / ग्राहक</label><input type="text" id="m-co-name" class="m-input" placeholder="e.g. Ramesh">'+
       '<div class="row2"><div><label class="m-lbl">Phone / फ़ोन</label><input type="text" id="m-co-phone" class="m-input" inputmode="tel"></div>'+
         '<div><label class="m-lbl">Deliver to / पता</label><input type="text" id="m-co-addr" class="m-input" placeholder="village / town"></div></div>'+
-      '<label class="m-lbl">Part / पुर्ज़ा</label><input type="text" id="m-co-search" class="m-input" placeholder="Type code or name to filter…" autocomplete="off">'+
-      '<select id="m-co-sku" class="m-input">'+skuOpts+'</select>'+
+      '<label class="m-lbl">Part / पुर्ज़ा</label>'+ partPickerHtml("m-co-pk")+
       '<div class="row2"><div><label class="m-lbl">Qty</label><input type="number" id="m-co-qty" class="m-input" min="1" value="1" inputmode="numeric"></div>'+
         '<div style="align-self:end;"><button class="btn-soft m-btn" id="m-co-add" style="margin-top:0;">Add part / जोड़ें</button></div></div>'+
       '<div id="m-co-lines"></div>'+
@@ -3157,15 +3226,7 @@
       var pr = e.target.closest("[data-nav-party]"); if (pr){ _stockStack.push({ t:'party', val:pr.getAttribute("data-nav-party") }); drawMoreStock(); return; }
       var pt = e.target.closest("[data-nav-part]"); if (pt){ _stockStack.push({ t:'part', val:pt.getAttribute("data-nav-part"), label:pt.getAttribute("data-nav-label") }); drawMoreStock(); return; }
     });
-    // sku search filters — and the lazy fill that keeps 8,730 <option> nodes out of the initial paint
-    [["m-t-search","m-t-sku"],["m-o-search","m-o-sku"],["m-adj-search","m-adj-sku"],["m-co-search","m-co-sku"]].forEach(function(pair){
-      var s = $(pair[0]), sel = $(pair[1]); if (!s || !sel) return;
-      s.oninput = function(){ var q = this.value.trim().toLowerCase();
-        var list = q ? (state.catalog||[]).filter(function(c){ return ((c.product_code||"")+" "+(c.particular||"")).toLowerCase().indexOf(q) !== -1; }).slice(0,200) : (state.catalog||[]);
-        sel.innerHTML = skuOptionsHtml(list); };
-      // one list, built once, only for the picker actually being opened
-      sel.addEventListener("focus", function(){ if (!sel.options.length) sel.innerHTML = skuOptionsHtml(state.catalog || []); });
-    });
+    ["m-t-pk","m-o-pk","m-adj-pk","m-co-pk"].forEach(wirePartPicker);
     // add downstream
     if ($("m-d-add")) $("m-d-add").onclick = async function(){
       var name = $("m-d-name").value.trim(), email = $("m-d-email").value.trim(), role = $("m-d-role").value;
@@ -3180,41 +3241,50 @@
     };
     // transfer
     if ($("m-t-btn")) $("m-t-btn").onclick = async function(){
-      var to = $("m-t-to").value, sku = $("m-t-sku").value, qty = parseInt($("m-t-qty").value,10);
+      var to = $("m-t-to").value, sku = pkValue("m-t-pk"), qty = parseInt($("m-t-qty").value,10);
       var m = $("m-t-msg"); m.className="req-msg";
       if (!to){ m.className="req-msg err"; m.textContent = "No party to bill."; return; }
+      if (!sku){ m.className="req-msg err"; m.textContent = "Search for the part and tap it first. / पहले पुर्ज़ा चुनें।"; return; }
       if (qty > 100 && !(await askConfirm("Transfer "+qty+" units to this party?\nThis is a large quantity — please confirm.\n\nबड़ी मात्रा — पक्का करें?", { okLabel:"Transfer / ट्रांसफर" }))) return;
       var r = await sb.rpc("transfer", { p_to:to, p_sku:sku, p_qty:qty, p_pi:$("m-t-pi").value.trim()||null });
       if (r.error){ m.className="req-msg err"; m.textContent = friendlyErr(r.error); return; }
-      m.textContent = "Transferred "+qty+" ✓"; $("m-t-pi").value=""; showToast("Transferred "+qty+" ✓ / ट्रांसफर हुआ");
+      m.textContent = "Transferred "+qty+" ✓"; $("m-t-pi").value=""; pkClear("m-t-pk");
+      showToast("Transferred "+qty+" ✓ / ट्रांसफर हुआ");
       renderMoreStock();
     };
     // add external stock
     if ($("m-o-btn")) $("m-o-btn").onclick = async function(){
-      var sku = $("m-o-sku").value, qty = parseInt($("m-o-qty").value,10);
+      var sku = pkValue("m-o-pk"), qty = parseInt($("m-o-qty").value,10);
       var m = $("m-o-msg"); m.className="req-msg";
+      if (!sku){ m.className="req-msg err"; m.textContent = "Search for the part and tap it first. / पहले पुर्ज़ा चुनें।"; return; }
       var r = await sb.rpc("open_stock", { p_sku:sku, p_qty:qty });
       if (r.error){ m.className="req-msg err"; m.textContent = friendlyErr(r.error); return; }
-      m.textContent = "Added "+qty+" ✓"; showToast("Stock added ✓ / स्टॉक जोड़ा"); renderMoreStock();
+      m.textContent = "Added "+qty+" ✓"; pkClear("m-o-pk"); showToast("Stock added ✓ / स्टॉक जोड़ा"); renderMoreStock();
     };
     // correct stock (physical count) — signed delta, importer only
     if ($("m-adj-btn")) $("m-adj-btn").onclick = async function(){
-      var sku = $("m-adj-sku").value, delta = parseInt($("m-adj-delta").value,10), note = $("m-adj-note").value.trim() || "adjustment";
+      var sku = pkValue("m-adj-pk"), delta = parseInt($("m-adj-delta").value,10), note = $("m-adj-note").value.trim() || "adjustment";
       var m = $("m-adj-msg"); m.className="req-msg";
+      if (!sku){ m.className="req-msg err"; m.textContent = "Search for the part and tap it first. / पहले पुर्ज़ा चुनें।"; return; }
       if (!delta){ m.className="req-msg err"; m.textContent = "Enter a non-zero change (+ or −)."; return; }
-      if (!(await askConfirm((delta>0?"Add ":"Remove ")+Math.abs(delta)+" unit(s) of this part?\nReason: "+note+"\n\nपक्का करें?", { danger: delta<0, okLabel:"Apply / लागू करें" }))) return;
+      // "this part" was all the old dialog could say — the picker below it could have been
+      // repointed since. Name the part being corrected.
+      if (!(await askConfirm((delta>0?"Add ":"Remove ")+Math.abs(delta)+" unit(s) of "+skuName(sku)+"?\nReason: "+note+"\n\nपक्का करें?", { danger: delta<0, okLabel:"Apply / लागू करें" }))) return;
       var r = await sb.rpc("adjust_stock", { p_sku:sku, p_delta:delta, p_note:note });
       if (r.error){ m.className="req-msg err"; m.textContent = friendlyErr(r.error); return; }
-      m.textContent = "Corrected ✓"; $("m-adj-note").value=""; showToast("Stock corrected ✓ / स्टॉक सुधरा"); renderMoreStock();
+      m.textContent = "Corrected ✓"; $("m-adj-note").value=""; pkClear("m-adj-pk");
+      showToast("Stock corrected ✓ / स्टॉक सुधरा"); renderMoreStock();
     };
     // new customer order — build a line list, then place it as an enduser order on MY shop
     _coLines = [];
     if ($("m-co-add")) $("m-co-add").onclick = function(){
-      var sku = $("m-co-sku").value, qty = Math.max(1, Math.min(500, parseInt($("m-co-qty").value,10)||0));
-      if (!sku || !qty) return;
+      var sku = pkValue("m-co-pk"), qty = Math.max(1, Math.min(500, parseInt($("m-co-qty").value,10)||0));
+      var m = $("m-co-msg"); m.className = "req-msg";
+      if (!sku){ m.className="req-msg err"; m.textContent = "Search for the part and tap it first. / पहले पुर्ज़ा चुनें।"; return; }
+      if (!qty) return;
       var ex = _coLines.filter(function(l){ return l.sku === sku; })[0];
       if (ex) ex.qty = Math.min(500, ex.qty + qty); else _coLines.push({ sku:sku, qty:qty });
-      $("m-co-qty").value = "1"; drawCoLines();
+      $("m-co-qty").value = "1"; pkClear("m-co-pk"); drawCoLines();
     };
     if ($("m-co-lines")) $("m-co-lines").onclick = function(e){
       var x = e.target.closest("[data-co-del]"); if (!x) return;
