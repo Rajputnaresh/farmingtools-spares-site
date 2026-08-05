@@ -1,7 +1,7 @@
 // Shell precache now includes the vendored Supabase lib + catalog so the app boots
 // fully offline. Catalog images (pages/**) are cached on first view (cache-first runtime),
 // not precached — 1800 files / 37MB is far too much to push on install.
-const CACHE = 'kg-spares-v111';
+const CACHE = 'kg-spares-v112';
 const IMG_CACHE = 'kg-img-v1';
 // Brand assets belong in the shell rather than the runtime image cache: the header mark and the
 // login logo are chrome, and a logo that only shows up once you are online is worse than none.
