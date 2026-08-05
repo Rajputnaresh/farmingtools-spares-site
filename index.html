@@ -2941,7 +2941,7 @@
       // Was a 1,746-option <select> plus its own search box. The shelf list sits directly above
       // this in the same section now and is a better finder than either, so the form just states
       // which part it is on. One mis-scroll can no longer silently repoint the whole form.
-      '<div class="pp-who" id="m-pp-who" role="status"></div>'+
+      '<div class="pp-who" id="m-pp-who" role="status">Getting your prices… / क़ीमतें आ रही हैं…</div>'+
       '<div class="pp-meter"><div class="pp-ready no" id="m-pp-ready"></div>'+
         '<div class="pp-bar" aria-hidden="true"><i id="m-pp-fill"></i></div>'+
         '<span id="m-pp-count" aria-live="polite"></span></div>'+
@@ -3330,11 +3330,12 @@
       p._noPrice = !(Number(p.base_price) > 0);
       p._noTax   = !p.hsn || p.gst_pct === null || p.gst_pct === undefined;
       p._noHindi = !String(p.hindi_name || "").trim();
+      p._noName  = !String(p.particular || "").trim();
       p._hidden  = p.active === false;
       // "Ready to sell" has to mean ready to BILL. Without an HSN and a GST rate the part cannot
       // go on an invoice, so leaving tax out of this made the header say "ready" on 1,333 rows
       // that each carried an amber "no HSN/GST" chip two lines below it.
-      p._ready   = !p._noCode && !p._noPrice && !p._noTax && !p._hidden && !!String(p.particular || "").trim();
+      p._ready   = !p._noCode && !p._noPrice && !p._noTax && !p._hidden && !p._noName;
       return p;
     });
     return _adminRows;
@@ -3387,6 +3388,10 @@
     var shown = rows.slice(0, _catShown);
     list.innerHTML = shown.map(function(p){
       var gaps = [];
+      // 10 rows on the live shelf have no name at all. _ready checks for one; this chip list did
+      // not, so once the HSN gap is filled those rows would have claimed "✓ complete" while the
+      // header count above still excluded them — the same contradiction, one field over.
+      if (p._noName)  gaps.push('<span class="cat-gap">no name</span>');
       if (p._noCode)  gaps.push('<span class="cat-gap">no code</span>');
       if (p._noPrice) gaps.push('<span class="cat-gap">no price</span>');
       if (p._noTax)   gaps.push('<span class="cat-gap">no HSN/GST</span>');
@@ -3414,7 +3419,10 @@
   function openPartEditor(sku){
     var sec = $("m-cat-sec"); if (!sec) return;
     sec.open = true;
-    if (_ppFill) _ppFill(sku || "");
+    // wireProductForm awaits the cost fetch before it publishes _ppFill, so a tap in that window
+    // used to open the editor on nothing and then quietly reset to "a brand-new part". Remember
+    // the request instead and let the form pick it up when it is ready.
+    if (_ppFill) _ppFill(sku || ""); else _ppPending = sku || "";
     ($("m-pp-anchor") || sec).scrollIntoView({ block: "start", behavior: "smooth" });
   }
 
@@ -3599,9 +3607,14 @@
       // The server counts rows of the list it was handed; the importer counts lines in Excel.
       // Those differ by every blank line and every quoted newline above the row, so translate
       // before anything is shown — including inside a raised message like `row 3: … `.
-      var lineOf = function(n){ return (grid.lines && grid.lines[n]) || n; };
+      // row 0 is the server's "not about any particular row" marker. Mapping it would land on
+      // grid.lines[0] — the heading — and blame a line the importer cannot fix.
+      var lineOf = function(n){ return (n > 0 && grid.lines && grid.lines[n]) || null; };
       var toLines = function(s){
-        return String(s).replace(/\brow (\d+)/gi, function(_, n){ return "line " + lineOf(Number(n)); });
+        return String(s).replace(/\brow (\d+)/gi, function(whole, n){
+          var L = lineOf(Number(n));
+          return L ? "line " + L : whole;
+        });
       };
 
       say("Checking " + rows.length + " rows… / जाँच हो रही है…");
@@ -3739,7 +3752,7 @@
   var PP_NUM  = ["m-pp-base","m-pp-mrp","m-pp-pack","m-pp-moq","m-pp-weight"];
   var PP_SEL  = ["m-pp-group","m-pp-gst","m-pp-uom"];
   var PP_ALL  = PP_TEXT.concat(PP_NUM, PP_SEL);
-  var _ppPhoto = null, _ppCost = {}, _ppCostLoaded = false, _ppFill = null;
+  var _ppPhoto = null, _ppCost = {}, _ppCostLoaded = false, _ppFill = null, _ppPending = null;
 
   // The base price must be the raw dealer_rate, NOT netRate(): the importer's own prices are
   // already marked up by their chain multiplier, so prefilling from netRate would re-inflate
@@ -3920,7 +3933,8 @@
       showToast(isNew ? "Part added ✓ / पुर्ज़ा जुड़ा" : "Part updated ✓ / अपडेट हुआ");
     };
 
-    fill("");
+    fill(_ppPending || "");   // honour a row tapped while the cost fetch was still in flight
+    _ppPending = null;
   }
 
   var _moreStock = [];
@@ -4441,10 +4455,13 @@
     // including the retail revalidate that repaints without rebuilding the strip.
     var noticeEl = $("notice-area");
     if (noticeEl){
+      // ...but not on the broken-link screen below, which shows no prices at all. Warning that
+      // prices might be out of date there points at figures that are not on the page.
       var staleEl = noticeEl.querySelector(".stale-note");
-      if (state.stalePrices && !staleEl){
+      var wantStale = state.stalePrices && !state.badLink;
+      if (wantStale && !staleEl){
         noticeEl.insertAdjacentHTML("beforeend", '<div class="stale-note" role="status">' + staleText() + '</div>');
-      } else if (!state.stalePrices && staleEl) staleEl.remove();
+      } else if (!wantStale && staleEl) staleEl.remove();
     }
     var body = $("catalog-body");
     if (state.badLink){
