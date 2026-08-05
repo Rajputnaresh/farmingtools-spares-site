@@ -3429,13 +3429,23 @@
                   "base_price","mrp","hsn","gst_pct","uom","pack_size","moq","weight_g","dims_cm",
                   "origin","photo_url","notes","active"];
 
+  // Excel and Sheets treat a cell opening with = + - @ tab or CR as a FORMULA, not text. A part
+  // name someone typed as "=cmd|'/C calc'!A0" would execute when the exported file is opened.
+  // A leading apostrophe makes the cell literal text and is not displayed; csvUnsafe undoes it on
+  // the way back in, so the round trip stays lossless. A plain negative number is left alone —
+  // "-5" is a number to Excel, not a formula, and quoting it would turn a weight into text.
+  var CSV_FORMULA = /^[=+\-@\t\r]/, CSV_PLAIN_NUM = /^-?\d+(\.\d+)?$/;
   function csvCell(v){
     if (v === null || v === undefined) return "";
     var s = String(v);
+    if (CSV_FORMULA.test(s) && !CSV_PLAIN_NUM.test(s)) s = "'" + s;
     // A part name can contain a comma, a quote or (rarely) a newline. Quote-and-double is the
     // only escaping CSV has, and Excel/Sheets both read it.
     return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   }
+  // strip the guard apostrophe ONLY where it is doing that job, so a name that genuinely starts
+  // with one survives
+  function csvUncell(s){ return String(s).replace(/^'(?=[=+\-@\t\r])/, ""); }
   function toCsv(rows){
     var out = [CSV_COLS.join(",")];
     rows.forEach(function(p){
@@ -3462,7 +3472,10 @@
   // quoted field. Handles quoted fields, doubled quotes inside them, and CRLF or LF line ends.
   function parseCsv(text){
     text = String(text).replace(/^﻿/, "");
-    var rows = [], row = [], cur = "", inQ = false, i = 0;
+    // Every row also remembers which line of the FILE it started on. A blank line, or a newline
+    // inside a quoted name, makes the row index drift from what the importer sees in Excel — and
+    // "fix row 900" is useless when row 900 is line 947.
+    var rows = [], lines = [], row = [], cur = "", inQ = false, i = 0, line = 1, rowLine = 1;
     while (i < text.length){
       var ch = text[i];
       if (inQ){
@@ -3470,20 +3483,31 @@
           if (text[i+1] === '"'){ cur += '"'; i += 2; continue; }
           inQ = false; i++; continue;
         }
+        if (ch === '\n') line++;   // a newline inside a quoted field still advances the file
         cur += ch; i++; continue;
       }
       if (ch === '"'){ inQ = true; i++; continue; }
       if (ch === ','){ row.push(cur); cur = ""; i++; continue; }
       if (ch === '\r'){ i++; continue; }
-      if (ch === '\n'){ row.push(cur); rows.push(row); row = []; cur = ""; i++; continue; }
+      if (ch === '\n'){
+        row.push(cur); rows.push(row); lines.push(rowLine);
+        row = []; cur = ""; i++; line++; rowLine = line; continue;
+      }
       cur += ch; i++;
     }
     // A quote that is never closed swallows the rest of the file. Silently returning the few rows
     // that survived is the worst outcome: every dropped part reads as a part the file did not
     // mention, so nothing is flagged and nothing is updated.
     if (inQ) throw new Error("CSV_UNTERMINATED_QUOTE");
-    if (cur !== "" || row.length){ row.push(cur); rows.push(row); }
-    return rows.filter(function(r){ return r.some(function(c){ return String(c).trim() !== ""; }); });
+    if (cur !== "" || row.length){ row.push(cur); rows.push(row); lines.push(rowLine); }
+    // drop blank lines, keeping each surviving row paired with its own file line
+    var keep = [], keepLines = [];
+    rows.forEach(function(r, ix){
+      if (!r.some(function(c){ return String(c).trim() !== ""; })) return;
+      keep.push(r); keepLines.push(lines[ix]);
+    });
+    keep.lines = keepLines;   // a property on the array: callers that only want the grid ignore it
+    return keep;
   }
 
   function wireCsv(){
@@ -3544,13 +3568,21 @@
       // silently wiped every column it never mentioned, and the dry run called it a clean update.
       var rows = grid.slice(1).map(function(r){
         var o = {};
-        head.forEach(function(h, ix){ if (CSV_COLS.indexOf(h) !== -1 && r[ix] !== undefined) o[h] = r[ix]; });
+        head.forEach(function(h, ix){ if (CSV_COLS.indexOf(h) !== -1 && r[ix] !== undefined) o[h] = csvUncell(r[ix]); });
         return o;
       });
 
+      // The server counts rows of the list it was handed; the importer counts lines in Excel.
+      // Those differ by every blank line and every quoted newline above the row, so translate
+      // before anything is shown — including inside a raised message like `row 3: … `.
+      var lineOf = function(n){ return (grid.lines && grid.lines[n]) || n; };
+      var toLines = function(s){
+        return String(s).replace(/\brow (\d+)/gi, function(_, n){ return "line " + lineOf(Number(n)); });
+      };
+
       say("Checking " + rows.length + " rows… / जाँच हो रही है…");
       var chk = await sb.rpc("import_products", { p_rows: rows, p_commit: false });
-      if (chk.error){ say(esc(friendlyErr(chk.error)), true); return; }
+      if (chk.error){ say(esc(toLines(friendlyErr(chk.error))), true); return; }
       var d = chk.data || {};
       var errs = d.errors || [];
       var head1 = '<b>' + (d.create || 0) + ' new</b> and <b>' + (d.update || 0) + ' updated</b> from ' +
@@ -3564,7 +3596,7 @@
           '<br><br><b>' + errs.length + ' row' + (errs.length === 1 ? "" : "s") + ' need fixing first.</b> ' +
           'Nothing has been saved. Fix these in the file and upload it again. / कुछ भी सहेजा नहीं गया।</div>' +
           '<div class="csv-errs">' + errs.slice(0, 200).map(function(e){
-            return '<div class="csv-err"><span class="ce-row">row ' + e.row + '</span><span>' +
+            return '<div class="csv-err"><span class="ce-row">line ' + lineOf(e.row) + '</span><span>' +
               (e.ref ? '<b>' + esc(e.ref) + '</b> — ' : '') + esc(e.msg) + '</span></div>';
           }).join("") + '</div>' +
           (errs.length > 200 ? '<p class="more-hint">…and ' + (errs.length - 200) + ' more.</p>' : '');
@@ -3588,7 +3620,7 @@
         var msg = $("m-csv-msg"); msg.className = "req-msg"; msg.textContent = "Saving… / सहेजा जा रहा है…";
         var res = await sb.rpc("import_products", { p_rows: pending, p_commit: true });
         this.disabled = false;
-        if (res.error){ msg.className = "req-msg err"; msg.textContent = friendlyErr(res.error); return; }
+        if (res.error){ msg.className = "req-msg err"; msg.textContent = toLines(friendlyErr(res.error)); return; }
         var r2 = res.data || {};
         pending = null; invalidateProducts();
         // costs just moved for up to 1,746 parts — reload them rather than dropping the map, or
