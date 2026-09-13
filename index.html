@@ -338,6 +338,57 @@
   html[data-lang="hi"] nav.bottom-nav button .nl{ display:none; }
   html[data-lang="en"] .logout-link .nl-hi{ display:none; }
   html[data-lang="hi"] .logout-link .nl{ display:none; }
+  /* segmented language toggle */
+  .lang-switch-wrap{
+    display:inline-flex; align-items:center; background:rgba(0,0,0,.24);
+    border:1px solid rgba(255,255,255,.24); border-radius:var(--r-pill);
+    padding:2px; flex:none;
+  }
+  .lang-pill{
+    background:none; border:none; color:rgba(255,255,255,.82); font-size:12px; font-weight:700;
+    padding:4px 9px; min-height:36px; min-width:38px; border-radius:var(--r-pill);
+    cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+    transition:background-color .15s ease, color .15s ease;
+  }
+  .lang-pill.active{ background:#fff; color:var(--green-dark); box-shadow:var(--shadow-xs); }
+  @media (hover:hover){ .lang-pill:not(.active):hover{ background:rgba(255,255,255,.16); color:#fff; } }
+
+  /* 3-tier parts finder */
+  .parts-finder-wrap{
+    background:#fff; border:1px solid var(--border); border-radius:var(--r-lg);
+    padding:12px 14px; margin-bottom:12px; box-shadow:var(--shadow-xs);
+  }
+  .pf-title{
+    font-size:12.5px; font-weight:700; color:var(--muted); text-transform:uppercase;
+    letter-spacing:0.5px; margin-bottom:8px; display:flex; align-items:center; gap:6px;
+  }
+  .pf-title .ico svg{ width:15px; height:15px; color:var(--green-dark); }
+  .pf-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; }
+  .pf-field{ display:flex; flex-direction:column; min-width:0; }
+  .pf-label{ font-size:11px; font-weight:700; color:var(--muted); margin-bottom:3px; }
+  .pf-select{
+    width:100%; min-height:44px; padding:8px 10px; border:1px solid var(--border);
+    border-radius:var(--r-md); background:#fff; font-size:13px; font-weight:600; color:var(--text);
+  }
+  .pf-select:focus{ border-color:var(--green); outline:none; box-shadow:0 0 0 3px var(--green-light); }
+  .pf-chips{
+    display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; padding-top:8px;
+    border-top:1px dashed var(--border);
+  }
+  .subsystem-chip{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--r-pill);
+    padding:5px 12px; font-size:12px; font-weight:700; color:var(--text); cursor:pointer;
+    min-height:36px; display:inline-flex; align-items:center; justify-content:center;
+    transition:all .15s ease;
+  }
+  .subsystem-chip.active{
+    background:var(--green-light); border-color:var(--green-mid); color:var(--green-dark);
+  }
+  .pf-reset-btn{
+    background:none; border:none; color:var(--green-dark); font-size:12px; font-weight:700;
+    cursor:pointer; padding:6px 10px; margin-left:auto; display:inline-flex; align-items:center; gap:4px;
+  }
+  .pf-reset-btn:hover{ text-decoration:underline; }
   .lang-btn{
     flex:none; min-width:44px; min-height:44px; padding:0 12px;
     background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.24); color:#fff;
@@ -1123,7 +1174,11 @@
       <span class="sub">Spare parts ordering / स्पेयर पार्ट्स ऑर्डर</span>
     </span>
   </button>
-  <button class="lang-btn" id="lang-btn" type="button"></button>
+  <div class="lang-switch-wrap" id="lang-switch-wrap" role="group" aria-label="Select language / भाषा चुनें">
+    <button type="button" class="lang-pill active" data-lang-set="both" title="Both languages / दोनों भाषाएँ">A+अ</button>
+    <button type="button" class="lang-pill" data-lang-set="en" title="English only">EN</button>
+    <button type="button" class="lang-pill" data-lang-set="hi" title="हिन्दी">हिन्दी</button>
+  </div>
   <div class="header-actions hidden" id="header-actions">
     <button class="logout-link" id="auth-btn" aria-label="Sign out / साइन आउट" title="Sign out / साइन आउट"><span class="ico" data-ico="logout" aria-hidden="true"></span><span class="lo-label"><span class="nl">Sign out</span><span class="nl-hi">साइन आउट</span></span></button>
   </div>
@@ -1239,9 +1294,32 @@
       <input type="search" id="search-box" enterkeyhint="search" autocomplete="off" aria-label="Search parts / पुर्जे खोजें" aria-controls="catalog-body" placeholder="Search / खोजें — code, name, sr no." data-ph-en="Search — code, name, sr no.">
       <button class="search-clear hidden" id="search-clear" type="button" aria-label="Clear search / खोज साफ़ करें">&times;</button>
     </div>
-    <div class="filter-row hidden" id="filter-row">
-      <!-- group/section selects stay as HIDDEN state stores — the browse tiles + breadcrumb write/read
-           them (renderList scopes off their values). Visually the tiles + search ARE the filter UI. -->
+    <!-- 3-Tier Parts Finder & Filters -->
+    <div class="parts-finder-wrap" id="parts-finder-wrap">
+      <div class="pf-title">
+        <span class="ico" data-ico="spares"></span>
+        <span>3-Tier Parts Finder / पुर्ज़ा चयन प्रणाली</span>
+        <button type="button" class="pf-reset-btn hidden" id="pf-reset-btn">&times; Reset / रीसेट</button>
+      </div>
+      <div class="pf-grid">
+        <div class="pf-field">
+          <label class="pf-label" for="pf-tier-machine">1. Machine / मशीन</label>
+          <select class="pf-select" id="pf-tier-machine">
+            <option value="">All Machinery / सभी मशीनें</option>
+          </select>
+        </div>
+        <div class="pf-field">
+          <label class="pf-label" for="pf-tier-model">2. Model / मॉडल</label>
+          <select class="pf-select" id="pf-tier-model" disabled>
+            <option value="">All Models / सभी मॉडल</option>
+          </select>
+        </div>
+      </div>
+      <div class="pf-chips" id="pf-subsystems-wrap">
+        <!-- dynamic subsystem chips like Carburetor, Starter, etc. -->
+      </div>
+    </div>
+    <div class="filter-row" id="filter-row" style="margin-top:2px;margin-bottom:10px;">
       <select id="filter-group" class="state-only" aria-hidden="true" tabindex="-1"><option value="">All Groups</option></select>
       <select id="filter-section" class="state-only" aria-hidden="true" tabindex="-1"><option value="">All Sections</option></select>
       <button type="button" id="filter-stock" value="" class="stock-chip" aria-pressed="false">✓ Ready today / आज तैयार</button>
@@ -1663,18 +1741,18 @@
   // header has ~19px of slack at 360px once a dealer is signed in — a segmented control does
   // not fit, and the effect is visible instantly, which is what makes a cycle acceptable here.
   var LANG_KEY = "kg_lang";
-  // "hi" is DELIBERATELY not offered. The marker can hide the English half, but the catalogue has
-  // no Hindi to fall back on: the four machine-group tiles, every section name, "Rate on request"
-  // on all 1,746 rows and the whole login screen are English-only strings. Choosing Hindi made the
-  // screen MORE English, not less — a promise the content cannot keep. The mode still works in
-  // CSS; re-add it here once those strings have real Hindi twins, not glosses.
-  var LANG_MODES = ["both", "en"];
-  var LANG_LABEL = { both: "A+अ", en: "A" };
-  var LANG_NEXT_HINT = { both: "Hide the Hindi / हिन्दी छिपाएँ", en: "Show both languages / दोनों दिखाएँ" };
+  var LANG_MODES = ["both", "en", "hi"];
+  var LANG_LABEL = { both: "A+अ", en: "EN", hi: "हिन्दी" };
+  var LANG_NEXT_HINT = { both: "Switch to English", en: "Switch to Hindi / हिन्दी", hi: "Show both / दोनों भाषाएँ" };
   function langMode(){
-    // a stored "hi" from the previous build is no longer a valid mode — fall back, don't strand
     try { var v = localStorage.getItem(LANG_KEY); return LANG_MODES.indexOf(v) >= 0 ? v : "both"; }
     catch(e){ return "both"; }
+  }
+  function setLanguage(m){
+    if (LANG_MODES.indexOf(m) === -1) m = "both";
+    try { localStorage.setItem(LANG_KEY, m); } catch(e){}
+    applyLang();
+    paintHindi();
   }
   // markHindi() walks text nodes, so a placeholder — an ATTRIBUTE — can never be wrapped in
   // .l-en/.l-hi and is invisible to the toggle. Four user-facing ones carried Devanagari,
@@ -1703,6 +1781,9 @@
       b.setAttribute("aria-label", "Language: " + m + ". Next: " + LANG_NEXT_HINT[m]);
       b.title = LANG_NEXT_HINT[m];
     }
+    document.querySelectorAll(".lang-pill").forEach(function(pill){
+      pill.classList.toggle("active", pill.getAttribute("data-lang-set") === m);
+    });
   }
   function cycleLang(){
     var next = LANG_MODES[(LANG_MODES.indexOf(langMode()) + 1) % LANG_MODES.length];
@@ -1719,7 +1800,7 @@
         if (!DEVANAGARI.test(t.nodeValue)) return NodeFilter.FILTER_REJECT;
         var p = t.parentNode;
         if (!p || /^(SCRIPT|STYLE|TEXTAREA|OPTION)$/.test(p.tagName)) return NodeFilter.FILTER_REJECT;
-        if (p.id === "lang-btn") return NodeFilter.FILTER_REJECT;   // its label IS "A+अ"; leave it alone
+        if (p.id === "lang-btn" || (p.closest && p.closest("#lang-switch-wrap"))) return NodeFilter.FILTER_REJECT;   // its label IS "A+अ"; leave it alone
         if (p.getAttribute && p.getAttribute("lang") === "hi") return NodeFilter.FILTER_REJECT;
         return NodeFilter.FILTER_ACCEPT;
       }
@@ -5479,6 +5560,7 @@
     }).join("");
     groupSel.value = prevGroup;
     refreshSectionOptions();
+    populatePartsFinder();
   }
   function refreshSectionOptions(){
     var sectionSel = $("filter-section"), prevSection = sectionSel.value;
@@ -5518,6 +5600,65 @@
     var s = stockClass(idx);
     return sv === "in" ? s === "here" : s === "none";
   }
+  var COMMON_SUBSYSTEMS = [
+    { id: "carburetor", label: "Carburetor / कार्बोरेटर", tokens: ["carburetor","carb","carbu","carbutor"] },
+    { id: "starter", label: "Starter / स्टार्टर", tokens: ["starter","recoil","dori","pull"] },
+    { id: "piston", label: "Piston/Cyl / पिस्टन", tokens: ["piston","cylinder","ring"] },
+    { id: "clutch", label: "Clutch / क्लच", tokens: ["clutch","shoe","drum"] },
+    { id: "gear", label: "Gears/Shaft / गियर", tokens: ["gear","pinion","shaft","spindle"] },
+    { id: "blade", label: "Blade/Cutter / ब्लेड", tokens: ["blade","cutter","chakki","trimmer"] },
+    { id: "filter", label: "Filter / फ़िल्टर", tokens: ["filter","air"] },
+    { id: "seal", label: "Seals / सील-बेयरिंग", tokens: ["seal","oil seal","bearing","gasket"] }
+  ];
+  var _selectedSubsystem = null;
+
+  function populatePartsFinder(){
+    var mSel = $("pf-tier-machine"); if (!mSel) return;
+    var curM = mSel.value;
+    var groups = Array.from(new Set(state.catalog.filter(listable).map(function(r){ return r.group; }))).sort();
+    mSel.innerHTML = '<option value="">All Machinery / सभी मशीनें</option>' + groups.map(function(g){
+      return '<option value="' + esc(g) + '">' + esc(g + " · " + (GROUP_LABELS[g] || ("Group " + g))) + '</option>';
+    }).join("");
+    mSel.value = curM;
+    refreshModelOptions();
+    renderSubsystemChips();
+  }
+
+  function refreshModelOptions(){
+    var modSel = $("pf-tier-model"); if (!modSel) return;
+    var mVal = ($("pf-tier-machine") || {}).value;
+    var prevMod = modSel.value;
+    if (!mVal){
+      modSel.innerHTML = '<option value="">All Models / सभी मॉडल</option>';
+      modSel.disabled = true;
+      return;
+    }
+    modSel.disabled = false;
+    var rows = state.catalog.filter(function(r){ return listable(r) && String(r.group) === mVal; });
+    var sections = Array.from(new Set(rows.map(function(r){ return r.section; }))).sort();
+    modSel.innerHTML = '<option value="">All Models / सभी मॉडल</option>' + sections.map(function(s){
+      return '<option value="' + esc(s) + '">' + esc(s) + '</option>';
+    }).join("");
+    if (sections.indexOf(prevMod) !== -1) modSel.value = prevMod;
+    else modSel.value = "";
+  }
+
+  function renderSubsystemChips(){
+    var box = $("pf-subsystems-wrap"); if (!box) return;
+    box.innerHTML = COMMON_SUBSYSTEMS.map(function(sub){
+      var active = _selectedSubsystem === sub.id ? " active" : "";
+      return '<button type="button" class="subsystem-chip' + active + '" data-sub="' + sub.id + '">' +
+        esc(sub.label) + '</button>';
+    }).join("");
+    updatePfResetBtn();
+  }
+
+  function updatePfResetBtn(){
+    var btn = $("pf-reset-btn"); if (!btn) return;
+    var active = !!(($("pf-tier-machine")||{}).value || ($("pf-tier-model")||{}).value || _selectedSubsystem);
+    btn.classList.toggle("hidden", !active);
+  }
+
   function filteredRows(){
     var q = ($("search-box").value || "").trim().toLowerCase();
     // a search term searches the WHOLE catalogue, ignoring any group/section picked earlier —
@@ -5557,7 +5698,10 @@
           return matchAll && passesStock(o.idx);
         });
     }
-    var groupVal = $("filter-group").value, sectionVal = $("filter-section").value;
+    var groupVal = ($("pf-tier-machine") && $("pf-tier-machine").value) || $("filter-group").value;
+    var sectionVal = ($("pf-tier-model") && $("pf-tier-model").value) || $("filter-section").value;
+    var subDef = _selectedSubsystem ? COMMON_SUBSYSTEMS.filter(function(s){ return s.id === _selectedSubsystem; })[0] : null;
+
     return state.catalog
       .map(function(row, idx){ return {row: row, idx: idx}; })
       .filter(function(o){
@@ -5565,6 +5709,11 @@
         if (!listable(r)) return false;
         if (groupVal && String(r.group) !== groupVal) return false;
         if (sectionVal && r.section !== sectionVal) return false;
+        if (subDef){
+          var hay = ((r.particular||"") + " " + (r.hindi_name||"") + " " + (r.product_code||"")).toLowerCase();
+          var hasToken = subDef.tokens.some(function(tok){ return hay.indexOf(tok) !== -1; });
+          if (!hasToken) return false;
+        }
         return passesStock(o.idx);
       });
   }
@@ -5825,6 +5974,10 @@
   }
   function resetToBrowse(){
     $("search-box").value = ""; $("filter-group").value = ""; $("filter-section").value = ""; $("filter-stock").value = "";
+    if ($("pf-tier-machine")) $("pf-tier-machine").value = "";
+    if ($("pf-tier-model")) { $("pf-tier-model").value = ""; $("pf-tier-model").disabled = true; }
+    _selectedSubsystem = null;
+    renderSubsystemChips(); updatePfResetBtn();
     $("search-clear").classList.add("hidden");
     refreshSectionOptions();
     state.mode = "browse"; state.browseGroup = null; state.renderLimit = RENDER_CHUNK;
@@ -6910,6 +7063,64 @@
     refreshInstallCta();   // login screen's install button; re-runs when the browser offers a prompt
     applyLang();
     if ($("lang-btn")) $("lang-btn").onclick = cycleLang;
+    var langWrap = $("lang-switch-wrap");
+    if (langWrap){
+      langWrap.addEventListener("click", function(e){
+        var btn = e.target.closest(".lang-pill");
+        if (btn){
+          var lang = btn.getAttribute("data-lang-set");
+          if (lang) setLanguage(lang);
+        }
+      });
+    }
+    if ($("pf-tier-machine")){
+      $("pf-tier-machine").addEventListener("change", function(){
+        $("filter-group").value = this.value;
+        refreshModelOptions();
+        $("filter-section").value = "";
+        if ($("pf-tier-model")) $("pf-tier-model").value = "";
+        state.browseGroup = this.value ? Number(this.value) : null;
+        state.mode = (this.value || $("search-box").value.trim() || _selectedSubsystem) ? "list" : "browse";
+        state.renderLimit = RENDER_CHUNK;
+        updatePfResetBtn();
+        renderCatalogBody();
+      });
+    }
+    if ($("pf-tier-model")){
+      $("pf-tier-model").addEventListener("change", function(){
+        $("filter-section").value = this.value;
+        state.mode = (this.value || $("pf-tier-machine").value || $("search-box").value.trim() || _selectedSubsystem) ? "list" : "browse";
+        state.renderLimit = RENDER_CHUNK;
+        updatePfResetBtn();
+        renderCatalogBody();
+      });
+    }
+    if ($("pf-subsystems-wrap")){
+      $("pf-subsystems-wrap").addEventListener("click", function(e){
+        var chip = e.target.closest(".subsystem-chip");
+        if (chip){
+          var subId = chip.getAttribute("data-sub");
+          _selectedSubsystem = (_selectedSubsystem === subId) ? null : subId;
+          renderSubsystemChips();
+          state.mode = "list";
+          state.renderLimit = RENDER_CHUNK;
+          updatePfResetBtn();
+          renderCatalogBody();
+        }
+      });
+    }
+    if ($("pf-reset-btn")){
+      $("pf-reset-btn").addEventListener("click", function(){
+        if ($("pf-tier-machine")) $("pf-tier-machine").value = "";
+        if ($("pf-tier-model")) { $("pf-tier-model").value = ""; $("pf-tier-model").disabled = true; }
+        _selectedSubsystem = null;
+        $("filter-group").value = "";
+        $("filter-section").value = "";
+        renderSubsystemChips();
+        updatePfResetBtn();
+        resetToBrowse();
+      });
+    }
     wireStatic();
     sb = window.__sb; // set by the deferred module bootstrap; ready by DOMContentLoaded
     if (!sb){ loadCart(); showLogin(); showLoginError("App not configured — add supabase/config.js. / ऐप कॉन्फ़िगर नहीं है।"); return; }
