@@ -1093,7 +1093,6 @@
         <span class="ico" data-ico="download" aria-hidden="true"></span>Install the app / ऐप इंस्टॉल करें
       </button>
       <p class="site-foot">
-        <a href="https://farmingtools.in" target="_blank" rel="noopener">farmingtools.in</a><br>
         Genuine spares, delivered. / असली पुर्ज़े, घर तक।
       </p>
     </div>
@@ -3116,8 +3115,7 @@
         // last screen before signing out — the other place someone goes looking for who we are
         '<button class="install-cta" id="install-more" type="button">'+
           '<span class="ico" data-ico="download" aria-hidden="true"></span>Install the app / ऐप इंस्टॉल करें</button>'+
-        '<p class="site-foot"><a href="https://farmingtools.in" target="_blank" rel="noopener">farmingtools.in</a><br>'+
-          'Genuine spares, delivered. / असली पुर्ज़े, घर तक।</p>'+
+        '<p class="site-foot">Genuine spares, delivered. / असली पुर्ज़े, घर तक।</p>'+
       '</div></div>';
     $("more-body").innerHTML = html;
     wireLabels($("more-body"));
@@ -3371,12 +3369,12 @@
       this.textContent = "Copied ✓"; var b = this; setTimeout(function(){ b.textContent = "Copy link / कॉपी"; }, 1500);
     };
     if ($("m-store-wa")) $("m-store-wa").onclick = function(){
-      window.open("https://wa.me/?text="+encodeURIComponent("Order farm spare parts here: "+$("m-store-link").value+"\n\nfarmingtools.in"), "_blank");
+      window.open("https://wa.me/?text="+encodeURIComponent("Order farm spare parts here: "+$("m-store-link").value), "_blank");
     };
     // one-tap share from the closed row — don't let the tap also toggle the accordion
     if ($("ms-share-wa")) $("ms-share-wa").onclick = function(e){
       e.preventDefault(); e.stopPropagation();
-      window.open("https://wa.me/?text="+encodeURIComponent("Order farm spare parts here: "+storeLink()+"\n\nfarmingtools.in"), "_blank");
+      window.open("https://wa.me/?text="+encodeURIComponent("Order farm spare parts here: "+storeLink()), "_blank");
     };
     if (isImporter){ renderMoreApprovals(); var ac = $("m-approvals-card"); if (ac) ac.addEventListener("click", onApprovalsClick); }
     // async: a failed cost fetch must not take the rest of the More tab down with it
@@ -5032,7 +5030,7 @@
       // the document gets printed and forwarded far past this screen — a quiet credit
       // travels with it. Platform, not seller: the seller is named at the top.
       '<div class="pi-brand"><img src="brand/logo-64.png" alt="" width="22" height="22">'+
-        '<span>Created on <b>FarmingTools.in</b> &middot; order spares at farmingtools.in</span></div>' +
+        '<span>Spares Order Management Platform</span></div>' +
       '<div class="pi-actions">' +
         '<button class="btn btn-outline btn-ico" id="pi-print-btn" style="margin-top:0;">' + svgIco("print") + 'Print</button>' +
         '<button class="btn wa-btn btn-ico" id="pi-wa-btn" style="margin-top:0;">' + svgIco("whatsapp") + 'Share PDF on WhatsApp</button>' +
@@ -5146,7 +5144,7 @@
     // This PDF is the artifact that actually leaves the app — forwarded on WhatsApp, printed,
     // handed across a counter. It should say where it came from. pdfSafe() strips non-ASCII,
     // so this stays English-only by construction.
-    y -= 6; txt(M, y, 8, false, "Created on FarmingTools.in  |  Order spares at farmingtools.in");
+    y -= 6; txt(M, y, 8, false, "Spares Order Management Platform");
     pages.push(s);
 
     var objs = [], kidsIds = [], fontId1 = 3 + pages.length * 2, fontId2 = fontId1 + 1, imgIdStart = fontId2 + 1;
@@ -5186,8 +5184,7 @@
     var docName = pi.docType === "PI" ? "Proforma Invoice " : (isRetail ? "Order " : "Purchase Order ");
     if (navigator.canShare && navigator.canShare({ files: [file] })){
       navigator.share({ files: [file], title: pi.number,
-        text: pi.dealerName + " — " + docName + pi.number + " — Grand Total Rs." + pi.grand +
-              "\nOrder spares at farmingtools.in" })
+        text: pi.dealerName + " — " + docName + pi.number + " — Grand Total Rs." + pi.grand })
         .catch(function(){});
     } else {
       var url = URL.createObjectURL(blob);
