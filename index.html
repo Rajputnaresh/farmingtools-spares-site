@@ -3004,12 +3004,10 @@
         '<input type="checkbox" id="m-bk-blanks" checked style="width:18px;height:18px;flex:none;"> Only fill blanks — never change what I set by hand</label>'+
       '<button class="btn-primary m-btn" id="m-bk-apply">Apply to this section / लागू करें</button><div class="req-msg" id="m-bk-msg" role="status"></div>';
 
-    // m-pp-anchor is what openPartEditor scrolls to now that the editor is not its own <details>
-    var productBody = '<h3 class="ms-part" id="m-pp-anchor">One part, in full / एक पुर्ज़ा पूरा</h3>'+
-      '<p class="more-hint">Whatever you write here is what every dealer, shopkeeper and farmer below you will see. Fill it once, properly, and nobody has to phone you to ask.</p>'+
-      // Was a 1,746-option <select> plus its own search box. The shelf list sits directly above
-      // this in the same section now and is a better finder than either, so the form just states
-      // which part it is on. One mis-scroll can no longer silently repoint the whole form.
+    // One part master form: adding a new part or editing an existing one in full.
+    // Kept as its own dedicated section so an importer adding new items can go straight
+    // to work without having to expand or browse the entire 1,746-part shelf first.
+    var productBody = '<p class="more-hint" id="m-pp-anchor">Whatever you write here is what every dealer, shopkeeper and farmer below you will see. Fill it once, properly, and nobody has to phone you to ask.</p>'+
       '<div class="pp-who" id="m-pp-who" role="status">Getting your prices… / क़ीमतें आ रही हैं…</div>'+
       '<div class="pp-meter"><div class="pp-ready no" id="m-pp-ready"></div>'+
         '<div class="pp-bar" aria-hidden="true"><i id="m-pp-fill"></i></div>'+
@@ -3057,16 +3055,20 @@
         '<input type="checkbox" id="m-pp-active" checked style="width:18px;height:18px;flex:none;"> Show this part in the shop / दुकान में दिखाएँ</label>'+
       '<button class="btn-primary m-btn" id="m-pp-save">Save part / सहेजें</button><div class="req-msg" id="m-pp-msg" role="status"></div>';
 
-    // job 2 of 3 — the two ways to fill many parts at once, which were two separate boxes
+    // Dedicated Product Addition Section for the importer
+    var secAddPart = !isImporter ? '' : '<details class="more-sec" id="m-part-editor-sec"><summary>Add or edit a part / नया पुर्ज़ा जोड़ें या सुधारें'+
+      '<span class="ms-hint">Single part master form / एक पुर्ज़ा पूरा</span></summary>'+
+      productBody + '</details>';
+
+    // job 2 of 4 — the two ways to fill many parts at once
     var secFill = !isImporter ? '' : '<details class="more-sec" id="m-bulk-sec"><summary>Fill many at once / एक साथ भरें'+
       '<span class="ms-hint">A spreadsheet, or one whole section / फ़ाइल से, या पूरा सेक्शन</span></summary>'+
       csvBody + bulkBody + '</details>';
 
-    // job 3 of 3 — finding a part and fixing it is one job, so the list and the form share a box
-    // and clicking a row scrolls instead of jumping you to a different accordion
-    var secShelf = !isImporter ? '' : '<details class="more-sec" id="m-cat-sec"><summary>Find a part and fix it / पुर्ज़ा ढूँढें और सुधारें'+
-      '<span class="ms-hint">Search the shelf, then edit what you find / सूची में से चुनकर सुधारें</span></summary>'+
-      shelfHead + productBody + '</details>';
+    // job 3 of 4 — shelf search & inspection
+    var secShelf = !isImporter ? '' : '<details class="more-sec" id="m-cat-sec"><summary>The full shelf / पूरी सूची'+
+      '<span class="ms-hint">Search the shelf, inspect gaps, or edit / सूची में से खोजें और सुधारें</span></summary>'+
+      shelfHead + '</details>';
 
     var secApprovals = !isImporter ? '' : '<details class="more-sec"><summary>Pending registrations — पंजीकरण<span class="ms-badge hidden" id="m-badge-appr">0</span>'+
       '<span class="ms-hint">Approve new signups / नए पंजीकरण स्वीकृत करें</span></summary>'+
@@ -3082,10 +3084,12 @@
       { id:"sell",  en:"My shop", hi:"दुकान",   ico:"shop",    html: secCustOrder + secLink + secPrice + secAddress + secPay,
         alert: detailsMissing },
       { id:"team",  en:"Network", hi:"नेटवर्क", ico:"people",  html: secAddDealer + secApprovals },
-      // Order is the order of the job: see the shelf, fix it in bulk, then the two ways to fix
-      // one thing at a time. The worklist used to be first because it was the only entry point;
-      // it is a shortcut into the shelf, not the shelf itself.
-      { id:"parts", en:"Parts",   hi:"पुर्ज़े",  ico:"page",    html: isImporter ? (secWork + secFill + secShelf) : "" }
+      // Product addition & shelf workflows in natural order:
+      // 1. Add or edit a single part directly
+      // 2. Start here (priority worklist - parts people ask for)
+      // 3. The full shelf (search and browse)
+      // 4. Fill many at once (CSV spreadsheet & bulk section fill)
+      { id:"parts", en:"Parts",   hi:"पुर्ज़े",  ico:"page",    html: isImporter ? (secAddPart + secWork + secShelf + secFill) : "" }
     ].filter(function(t){ return t.html; });
 
     if (!state.moreTab || !tabs.some(function(t){ return t.id === state.moreTab; })) state.moreTab = tabs[0].id;
@@ -3487,7 +3491,8 @@
   // band rather than to the top of the box — otherwise picking a part parks you at the list you
   // just picked it from.
   function openPartEditor(sku){
-    var sec = $("m-cat-sec"); if (!sec) return;
+    var sec = $("m-part-editor-sec"); if (!sec) sec = $("m-cat-sec");
+    if (!sec) return;
     sec.open = true;
     // wireProductForm awaits the cost fetch before it publishes _ppFill, so a tap in that window
     // used to open the editor on nothing and then quietly reset to "a brand-new part". Remember
@@ -3857,6 +3862,7 @@
           '<button type="button" class="pw-pick" id="m-pp-back">Open an existing part instead / पुराना पुर्ज़ा खोलें</button>';
       markHindi(w);
       $("m-pp-back").onclick = function(){
+        var catSec = $("m-cat-sec"); if (catSec) catSec.open = true;
         var q = $("m-cat-q"); if (!q) return;
         q.scrollIntoView({ block: "center", behavior: "smooth" });
         q.focus({ preventScroll: true });
@@ -3900,6 +3906,31 @@
     }
     PP_ALL.forEach(function(id){ var e = $(id); if (e){ e.oninput = score; e.onchange = score; } });
 
+    function updateSectionDatalist(grp){
+      var dl = $("m-pp-sections"); if (!dl) return;
+      var secList = Array.from(new Set((state.catalog||[]).filter(function(r){
+        return !grp || String(r.group) === String(grp);
+      }).map(function(r){ return r.section; }))).filter(Boolean).sort();
+      if (!secList.length){
+        secList = Array.from(new Set((state.catalog||[]).map(function(r){ return r.section; }))).filter(Boolean).sort();
+      }
+      dl.innerHTML = secList.map(function(s){ return '<option value="'+esc(s)+'"></option>'; }).join("");
+    }
+
+    var grpEl = $("m-pp-group");
+    if (grpEl){
+      grpEl.addEventListener("change", function(){
+        updateSectionDatalist(this.value);
+        // If adding a new part and HSN/GST are unset, provide standard default
+        if (!ppSku){
+          var hsnEl = $("m-pp-hsn"), gstEl = $("m-pp-gst");
+          if (hsnEl && !hsnEl.value) hsnEl.value = "84329010";
+          if (gstEl && !gstEl.value) gstEl.value = "18";
+          score();
+        }
+      });
+    }
+
     function fill(sku){
       ppSku = sku || "";
       var r = sku ? state.catalog[skuToIndex(sku)] : null;
@@ -3909,14 +3940,19 @@
       // a blank <select> would post group 0 and file the part where nobody browses — a brand-new
       // part starts on the first real category instead, and the importer changes it if wrong
       if (r && r.group) set("m-pp-group", r.group); else $("m-pp-group").selectedIndex = 0;
+      updateSectionDatalist($("m-pp-group").value);
       set("m-pp-section", r && r.section);
       set("m-pp-fits", r && r.fits);         set("m-pp-oem", r && r.oem_refs);
       set("m-pp-base", r ? _ppCost[sku] : "");
-      set("m-pp-mrp", r && r.mrp);           set("m-pp-hsn", r && r.hsn);
-      set("m-pp-gst", r && r.gst_pct);       set("m-pp-uom", r && r.uom);
-      set("m-pp-pack", r && r.pack_size);    set("m-pp-moq", r && r.moq);
+      set("m-pp-mrp", r && r.mrp);
+      set("m-pp-hsn", (r && r.hsn) || (!r ? "84329010" : ""));
+      set("m-pp-gst", (r && r.gst_pct != null) ? r.gst_pct : (!r ? "18" : ""));
+      set("m-pp-uom", (r && r.uom) || (!r ? "Piece" : ""));
+      set("m-pp-pack", (r && r.pack_size) || (!r ? 1 : ""));
+      set("m-pp-moq", (r && r.moq) || (!r ? 1 : ""));
       set("m-pp-weight", r && r.weight_g);   set("m-pp-dims", r && r.dims_cm);
-      set("m-pp-origin", r && r.origin);     set("m-pp-notes", r && r.notes);
+      set("m-pp-origin", (r && r.origin) || (!r ? "India" : ""));
+      set("m-pp-notes", r && r.notes);
       $("m-pp-active").checked = !r || r.active !== false;
       _ppPhoto = (r && r.photo_url) || null;
       drawWho(); drawPhoto(); score();
