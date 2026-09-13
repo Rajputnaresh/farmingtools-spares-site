@@ -1791,7 +1791,6 @@
     if (upstreamOf(idx)) return "chain";
     return here === null ? "unknown" : "none";
   }
-  function isOrderable(idx){ var s = stockClass(idx); return s !== "none"; }
   // Which stock state is so common in THIS list that saying it adds nothing. "none" is never
   // ordinary — an unorderable part is news however many of them there are — and a short list
   // has no "ordinary" worth inferring, so it keeps every chip.
@@ -2799,8 +2798,9 @@
         });
         if (!list.length){ hits.innerHTML = '<div class="pk-none">Nothing matches that. / कुछ नहीं मिला।</div>'; markHindi(hits); return; }
         hits.innerHTML = list.slice(0, 8).map(function(c){
+          var secBadge = c.section ? ' <span style="font-size:11px;opacity:.75;font-weight:normal;">(' + esc(c.section) + ')</span>' : '';
           return '<button type="button" class="pk-hit" data-pk="' + esc(c.sku) + '"><b>' +
-            esc(c.product_code || c.sku) + '</b> ' + esc(nice(c.particular || "(no name)")) + '</button>';
+            esc(c.product_code || c.sku) + '</b> ' + esc(nice(c.particular || "(no name)")) + secBadge + '</button>';
         }).join("") + (list.length > 8
           ? '<div class="pk-more">' + (list.length - 8) + ' more — type a little more to narrow it down</div>'
           : '');
@@ -4464,10 +4464,6 @@
     return '<div class="item-spec">' + bits.join(' &middot; ') + '</div>';
   }
 
-  function stockState(idx){
-    var s = stockClass(idx);
-    return s === "unknown" ? null : (s !== "none");
-  }
   // the chip now means "ships from my supplier today", the one thing a buyer in a hurry wants
   function passesStock(idx){
     var sv = $("filter-stock").value;
