@@ -353,11 +353,28 @@
   .lang-pill.active{ background:#fff; color:var(--green-dark); box-shadow:var(--shadow-xs); }
   @media (hover:hover){ .lang-pill:not(.active):hover{ background:rgba(255,255,255,.16); color:#fff; } }
 
-  /* 3-tier parts finder */
+  /* 3-tier parts finder & filter bar */
+  .pf-toggle-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:#fff; border:1px solid var(--border); border-radius:var(--r-md);
+    padding:8px 12px; margin-bottom:10px; box-shadow:var(--shadow-xs); cursor:pointer;
+    user-select:none;
+  }
+  .pf-toggle-left{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:var(--text); }
+  .pf-toggle-left .ico svg{ width:16px; height:16px; color:var(--green); }
+  .pf-active-badge{
+    background:var(--green-light); color:var(--green-dark); border:1px solid var(--green-mid);
+    border-radius:var(--r-pill); font-size:11px; font-weight:800; padding:2px 8px;
+  }
+  .pf-toggle-icon{ font-size:12px; color:var(--muted); transition:transform .2s ease; }
+  .pf-toggle-bar.open .pf-toggle-icon{ transform:rotate(180deg); }
+
   .parts-finder-wrap{
     background:#fff; border:1px solid var(--border); border-radius:var(--r-lg);
     padding:12px 14px; margin-bottom:12px; box-shadow:var(--shadow-xs);
+    transition:all .2s ease;
   }
+  .parts-finder-wrap.pf-collapsed{ display:none; }
   .pf-title{
     font-size:12.5px; font-weight:700; color:var(--muted); text-transform:uppercase;
     letter-spacing:0.5px; margin-bottom:8px; display:flex; align-items:center; gap:6px;
@@ -1052,6 +1069,9 @@
     display:flex; align-items:center; justify-content:center; padding:10px;
   }
   .modal-box{ background:#fff; border-radius:var(--r-lg); width:100%; max-width:520px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; }
+  .modal-sheet{ max-width:440px; margin:auto; box-shadow:0 8px 30px rgba(0,0,0,0.18); border:1px solid var(--border); }
+  .cb-bill-preview{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:10px 12px; margin-bottom:12px; max-height:160px; overflow-y:auto; font-size:12.5px; }
+  .cb-line-row{ display:flex; justify-content:space-between; margin-bottom:4px; }
   .modal-box.modal-wide{ max-width:min(94vw, 980px); max-height:94vh; }
   @media (orientation: landscape) and (max-height: 500px){
     .modal-box{ max-height:96vh; max-width:96vw; }
@@ -1294,16 +1314,26 @@
       <input type="search" id="search-box" enterkeyhint="search" autocomplete="off" aria-label="Search parts / पुर्जे खोजें" aria-controls="catalog-body" placeholder="Search / खोजें — code, name, sr no." data-ph-en="Search — code, name, sr no.">
       <button class="search-clear hidden" id="search-clear" type="button" aria-label="Clear search / खोज साफ़ करें">&times;</button>
     </div>
-    <!-- 3-Tier Parts Finder & Filters -->
-    <div class="parts-finder-wrap" id="parts-finder-wrap">
+    <!-- Collapsible 3-Tier Filter Bar -->
+    <div class="pf-toggle-bar" id="pf-toggle-bar" role="button" tabindex="0" aria-expanded="false" aria-controls="parts-finder-wrap">
+      <div class="pf-toggle-left">
+        <span class="ico" data-ico="spares"></span>
+        <span>Filter by Machine & Subsystem / मशीन व पुर्ज़ा फ़िल्टर</span>
+        <span class="pf-active-badge hidden" id="pf-active-badge">Active</span>
+      </div>
+      <span class="pf-toggle-icon" id="pf-toggle-icon">▼</span>
+    </div>
+
+    <!-- 3-Tier Parts Finder & Filters (Expandable) -->
+    <div class="parts-finder-wrap pf-collapsed" id="parts-finder-wrap">
       <div class="pf-title">
         <span class="ico" data-ico="spares"></span>
-        <span>3-Tier Parts Finder / पुर्ज़ा चयन प्रणाली</span>
-        <button type="button" class="pf-reset-btn hidden" id="pf-reset-btn">&times; Reset / रीसेट</button>
+        <span>Filter Hierarchy / चयन स्तर</span>
+        <button type="button" class="pf-reset-btn hidden" id="pf-reset-btn">&times; Clear / रीसेट</button>
       </div>
       <div class="pf-grid">
         <div class="pf-field">
-          <label class="pf-label" for="pf-tier-machine">1. Machine / मशीन</label>
+          <label class="pf-label" for="pf-tier-machine">1. Machine Group / मशीन</label>
           <select class="pf-select" id="pf-tier-machine">
             <option value="">All Machinery / सभी मशीनें</option>
           </select>
@@ -1502,7 +1532,29 @@
   </div>
   <div class="counter-drawer-actions">
     <button type="button" class="btn-soft counter-drawer-btn" id="cbd-view-btn">Review / देखें</button>
-    <button type="button" class="btn-primary counter-drawer-btn" id="cbd-wa-btn">⚡ WhatsApp Bill</button>
+    <button type="button" class="btn-primary counter-drawer-btn" id="cbd-wa-btn">⚡ Send WhatsApp Bill</button>
+  </div>
+</div>
+
+<!-- Modal Sheet for Counter Sale WhatsApp Bill -->
+<div id="cb-modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Customer Bill Details">
+  <div class="modal-box modal-sheet">
+    <div class="modal-head">
+      <h3>⚡ Instant WhatsApp Bill / ग्राहक बिल</h3>
+      <button class="modal-close" id="cb-modal-close" type="button" aria-label="Close">&times;</button>
+    </div>
+    <div style="padding:14px;">
+      <div class="cb-bill-preview" id="cb-bill-preview"></div>
+      <label class="m-lbl" for="cb-cust-phone">Customer Phone / ग्राहक का फ़ोन (10 अंक) *</label>
+      <input class="m-input" type="tel" id="cb-cust-phone" placeholder="e.g. 9876543210" maxlength="10" inputmode="numeric" autocomplete="tel">
+      <label class="m-lbl" for="cb-cust-name" style="margin-top:10px;">Customer Name / ग्राहक का नाम (वैकल्पिक)</label>
+      <input class="m-input" type="text" id="cb-cust-name" placeholder="e.g. Ramesh Kumar" autocomplete="name">
+      <div id="cb-modal-error" class="hidden" role="alert" style="color:var(--danger);font-size:12.5px;font-weight:600;margin:10px 0;"></div>
+      <div style="display:flex;gap:10px;margin-top:14px;">
+        <button class="btn btn-outline" id="cb-modal-cancel" type="button" style="flex:1;">Cancel / रद्द</button>
+        <button class="btn btn-primary" id="cb-modal-send" type="button" style="flex:1;">Send Bill ⚡</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -5653,10 +5705,21 @@
     updatePfResetBtn();
   }
 
+  function setPfExpanded(open){
+    var wrap = $("parts-finder-wrap");
+    var bar = $("pf-toggle-bar");
+    if (!wrap || !bar) return;
+    wrap.classList.toggle("pf-collapsed", !open);
+    bar.classList.toggle("open", !!open);
+    bar.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
   function updatePfResetBtn(){
-    var btn = $("pf-reset-btn"); if (!btn) return;
+    var btn = $("pf-reset-btn");
     var active = !!(($("pf-tier-machine")||{}).value || ($("pf-tier-model")||{}).value || _selectedSubsystem);
-    btn.classList.toggle("hidden", !active);
+    if (btn) btn.classList.toggle("hidden", !active);
+    var badge = $("pf-active-badge");
+    if (badge) badge.classList.toggle("hidden", !active);
   }
 
   function filteredRows(){
@@ -5978,6 +6041,7 @@
     if ($("pf-tier-model")) { $("pf-tier-model").value = ""; $("pf-tier-model").disabled = true; }
     _selectedSubsystem = null;
     renderSubsystemChips(); updatePfResetBtn();
+    setPfExpanded(false);
     $("search-clear").classList.add("hidden");
     refreshSectionOptions();
     state.mode = "browse"; state.browseGroup = null; state.renderLimit = RENDER_CHUNK;
@@ -6783,35 +6847,73 @@
         var coSec = $("m-co-sec"); if (coSec) coSec.open = true;
       };
     }
-    if ($("cbd-wa-btn")){
-      $("cbd-wa-btn").onclick = async function(){
-        if (!_coLines.length){ showToast("No items in bill / कोई पुर्ज़ा नहीं"); return; }
-        var phone = prompt("Enter customer phone for WhatsApp receipt / ग्राहक का फ़ोन नंबर दर्ज करें (10 अंक):");
-        if (!phone) return;
-        var cleanPhone = phone.replace(/\D/g, "");
-        if (cleanPhone.length < 10){ showToast("Invalid phone number / गलत नंबर"); return; }
-        var custName = prompt("Customer name / ग्राहक का नाम (वैकल्पिक):") || "Customer";
+    function openCounterBillModal(){
+      if (!_coLines.length){ showToast("No items in bill / कोई पुर्ज़ा नहीं"); return; }
+      var modal = $("cb-modal-overlay"); if (!modal) return;
+      var preview = $("cb-bill-preview");
+      var totAmt = 0;
+      var mult = parseFloat(($("counter-mult-input")||{}).value) || 3;
+      var linesHtml = _coLines.map(function(l){
+        var item = state.catalog[skuToIndex(l.sku)];
+        var r = (item && item.mrp) ? Number(item.mrp) : (netRate(l.sku)||0) * mult;
+        var sub = r * l.qty;
+        totAmt += sub;
+        return '<div class="cb-line-row"><span>' + esc((item ? item.product_code : l.sku) + ' × ' + l.qty) +
+          '</span><b>' + inr(sub) + '</b></div>';
+      }).join("");
+      linesHtml += '<div style="border-top:1px dashed var(--border);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-weight:800;color:var(--green-dark);">' +
+        '<span>Total / कुल:</span><span>' + inr(totAmt) + '</span></div>';
+      if (preview) preview.innerHTML = linesHtml;
+      var err = $("cb-modal-error"); if (err) err.classList.add("hidden");
+      modal.classList.remove("hidden");
+      var phoneInput = $("cb-cust-phone");
+      if (phoneInput){ phoneInput.value = ""; phoneInput.focus(); }
+    }
+
+    function closeCounterBillModal(){
+      var modal = $("cb-modal-overlay");
+      if (modal) modal.classList.add("hidden");
+    }
+
+    if ($("cb-modal-close")) $("cb-modal-close").onclick = closeCounterBillModal;
+    if ($("cb-modal-cancel")) $("cb-modal-cancel").onclick = closeCounterBillModal;
+    if ($("cb-modal-overlay")) $("cb-modal-overlay").addEventListener("click", function(e){
+      if (e.target.id === "cb-modal-overlay") closeCounterBillModal();
+    });
+
+    if ($("cb-modal-send")){
+      $("cb-modal-send").onclick = async function(){
+        if (!_coLines.length){ closeCounterBillModal(); return; }
+        var phone = (($("cb-cust-phone")||{}).value || "").trim().replace(/\D/g, "");
+        var err = $("cb-modal-error");
+        if (phone.length < 10){
+          if (err){ err.textContent = "Please enter valid 10-digit mobile number / 10 अंकों का फ़ोन नंबर डालें"; err.classList.remove("hidden"); }
+          if ($("cb-cust-phone")) $("cb-cust-phone").focus();
+          return;
+        }
+        var custName = (($("cb-cust-name")||{}).value || "").trim() || "Customer";
+        var mult = parseFloat(($("counter-mult-input")||{}).value) || 3;
         var linesText = _coLines.map(function(l){
           var item = state.catalog[skuToIndex(l.sku)];
-          var r = (item && item.mrp) ? Number(item.mrp) : (netRate(l.sku)||0) * (parseFloat(($("counter-mult-input")||{}).value)||3);
+          var r = (item && item.mrp) ? Number(item.mrp) : (netRate(l.sku)||0) * mult;
           return (item ? item.product_code : l.sku) + " x " + l.qty + " = " + inr(r * l.qty);
         }).join("%0A");
         var totAmt = _coLines.reduce(function(acc, l){
           var item = state.catalog[skuToIndex(l.sku)];
-          var r = (item && item.mrp) ? Number(item.mrp) : (netRate(l.sku)||0) * (parseFloat(($("counter-mult-input")||{}).value)||3);
+          var r = (item && item.mrp) ? Number(item.mrp) : (netRate(l.sku)||0) * mult;
           return acc + (r * l.qty);
         }, 0);
         var waMsg = "नमस्ते " + custName + ", " + ((state.account&&state.account.company)||"KrishiGears") + " से आपका बिल:%0A" +
           linesText + "%0A%0Aकुल योग: " + inr(totAmt) + "%0Aधन्यवाद!";
-        var waUrl = "https://wa.me/91" + cleanPhone + "?text=" + encodeURIComponent(decodeURIComponent(waMsg));
+        var waUrl = "https://wa.me/91" + phone + "?text=" + encodeURIComponent(decodeURIComponent(waMsg));
         window.open(waUrl, "_blank", "noopener");
 
-        // Record in enduser_orders backend as billed counter order
+        // Record in enduser_orders backend
         if (state.account && sb){
           sb.rpc("place_enduser_order", {
             p_supplier: state.account.id,
             p_name: custName,
-            p_phone: cleanPhone,
+            p_phone: phone,
             p_addr: "Counter Sale / काउंटर बिक्री",
             p_lines: _coLines.map(function(l){ return { sku:l.sku, qty:l.qty }; }),
             p_client_key: uuid()
@@ -6822,7 +6924,12 @@
             }
           });
         }
+        closeCounterBillModal();
       };
+    }
+
+    if ($("cbd-wa-btn")){
+      $("cbd-wa-btn").onclick = openCounterBillModal;
     }
 
     $("view-requests").addEventListener("click", onRequestsClick);
@@ -7073,6 +7180,20 @@
         }
       });
     }
+    if ($("pf-toggle-bar")){
+      $("pf-toggle-bar").addEventListener("click", function(){
+        var wrap = $("parts-finder-wrap");
+        var isCollapsed = wrap.classList.contains("pf-collapsed");
+        setPfExpanded(isCollapsed);
+      });
+      $("pf-toggle-bar").addEventListener("keydown", function(e){
+        if (e.key === "Enter" || e.key === " "){
+          e.preventDefault();
+          var wrap = $("parts-finder-wrap");
+          setPfExpanded(wrap.classList.contains("pf-collapsed"));
+        }
+      });
+    }
     if ($("pf-tier-machine")){
       $("pf-tier-machine").addEventListener("change", function(){
         $("filter-group").value = this.value;
@@ -7082,6 +7203,7 @@
         state.browseGroup = this.value ? Number(this.value) : null;
         state.mode = (this.value || $("search-box").value.trim() || _selectedSubsystem) ? "list" : "browse";
         state.renderLimit = RENDER_CHUNK;
+        if (this.value) setPfExpanded(true);
         updatePfResetBtn();
         renderCatalogBody();
       });
