@@ -2853,11 +2853,52 @@
           (p.importer_name && p.role !== 'importer' ? ('<div>Importer: <strong>' + esc(p.importer_name) + '</strong></div>') : '') +
           '<div>Margin: <strong>' + esc(marginText) + '</strong></div>' +
           (p.gstin ? ('<div>GSTIN: <strong>' + esc(p.gstin) + '</strong></div>') : '') +
+          '<div><button type="button" class="list-reset gm-edit-party" data-pid="' + esc(p.id) + '" data-pname="' + esc(p.name) + '" data-pphone="' + esc(p.phone||'') + '" data-pcity="' + esc(p.city||'') + '" data-ppin="' + esc(p.pin||'') + '" data-paddr="' + esc(p.address||'') + '" data-pgstin="' + esc(p.gstin||'') + '" style="color:var(--green-dark);font-weight:700;font-size:12px;text-decoration:underline;">✏️ Edit Details / सुधारें</button></div>' +
         '</div>' +
         (p.address ? ('<div style="font-size:11.5px;color:var(--muted);margin-top:4px;">📍 ' + esc(p.address) + '</div>') : '') +
       '</div>';
     }).join("");
+    wireGodPartyEditButtons();
     paintHindi();
+  }
+
+  function wireGodPartyEditButtons(){
+    var body = $("gm-networks-body");
+    if (!body || body._editWired) return;
+    body._editWired = true;
+    body.addEventListener("click", function(e){
+      var btn = e.target.closest(".gm-edit-party");
+      if (!btn) return;
+      var pid = btn.getAttribute("data-pid");
+      var curName = btn.getAttribute("data-pname") || "";
+      var curPhone = btn.getAttribute("data-pphone") || "";
+      var curCity = btn.getAttribute("data-pcity") || "";
+      var curPin = btn.getAttribute("data-ppin") || "";
+      var curAddr = btn.getAttribute("data-paddr") || "";
+      var curGstin = btn.getAttribute("data-pgstin") || "";
+
+      var newName = prompt("Edit Party / Business Name (नाम बदलें):", curName);
+      if (newName === null) return;
+      newName = newName.trim();
+      if (!newName){ showToast("Name cannot be empty / नाम खाली नहीं हो सकता"); return; }
+
+      showToast("Updating… / अपडेट हो रहा है…");
+      sb.rpc("god_mode_rename_party", {
+        p_id: pid,
+        p_name: newName,
+        p_phone: curPhone || null,
+        p_city: curCity || null,
+        p_pin: curPin || null,
+        p_address: curAddr || null,
+        p_gstin: curGstin || null
+      }).then(function(res){
+        if (res.error){ showToast("Error: " + res.error.message); return; }
+        showToast("✓ Details updated / जानकारी बदल गई");
+        loadGodNetworks();
+      }).catch(function(err){
+        showToast("Error: " + (err.message || err));
+      });
+    });
   }
 
   // 2. Stock Locator
