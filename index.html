@@ -1043,7 +1043,7 @@
      visual place (bottom bar on a phone, left rail on desktop) is unchanged. On desktop it
      renders at 0,0 — visually first — and DOM-last meant 458 Tab presses to reach it. -->
 <nav class="bottom-nav hidden" id="bottom-nav">
-  <button id="nav-catalog" class="active" aria-label="Shop / दुकान"><span class="ico" data-ico="home" aria-hidden="true"></span><span class="nl">Shop</span><span class="nl-hi">दुकान</span></button>
+  <button id="nav-catalog" class="active" aria-label="Warehouse / गोदाम"><span class="ico" data-ico="warehouse" aria-hidden="true"></span><span class="nl">Warehouse</span><span class="nl-hi">गोदाम</span></button>
   <button id="nav-cart" aria-label="Cart / कार्ट"><span class="ico" data-ico="cart" aria-hidden="true"></span><span class="nav-badge hidden" id="cart-badge">0</span><span class="nl">Cart</span><span class="nl-hi">कार्ट</span></button>
   <button id="nav-orders" class="hidden" aria-label="My orders / मेरे ऑर्डर"><span class="ico" data-ico="orders" aria-hidden="true"></span><span class="nl">Orders</span><span class="nl-hi">ऑर्डर</span></button>
   <button id="nav-requests" class="hidden" aria-label="Requests / अनुरोध"><span class="ico" data-ico="bell" aria-hidden="true"></span><span class="nav-badge hidden" id="req-badge">0</span><span class="nl">Requests</span><span class="nl-hi">अनुरोध</span></button>
@@ -1132,7 +1132,7 @@
 
   <!-- CATALOG -->
   <section id="view-catalog" class="hidden">
-    <h2 class="sr-only">Shop / दुकान</h2>
+    <h2 class="sr-only">Warehouse / गोदाम</h2>
     <div class="dealer-strip" id="dealer-strip"></div>
     <div id="notice-area"></div>
     <div class="search-row">
@@ -1321,6 +1321,7 @@
   var ICON_PATHS = {
     rupee: '<path d="M6 4h12M6 9h12M16 4c0 5-4 5-10 5l9 10"/>',
     box: '<path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+    warehouse: '<path d="M3 21V9l9-5 9 5v12H3z"/><path d="M9 21v-7a3 3 0 0 1 6 0v7"/><path d="M9 10h6"/>',
     shop: '<path d="M4 9h16l-1 11H5z"/><path d="M3 9l2-5h14l2 5"/><path d="M9 13h6"/>',
     people: '<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 6a3 3 0 0 1 0 6M17 20a6 6 0 0 0-1.5-4"/>',
     home:   '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/>',
@@ -3081,7 +3082,7 @@
     var tabs = [
       { id:"money", en:"Money",   hi:"पैसा",    ico:"rupee",   html: secMoney },
       { id:"stock", en:"Stock",   hi:"स्टॉक",   ico:"box",     html: secStock + secTransfer + (isImporter ? secExternal + secCorrect : "") },
-      { id:"sell",  en:"My shop", hi:"दुकान",   ico:"shop",    html: secCustOrder + secLink + secPrice + secAddress + secPay,
+      { id:"sell",  en:"Warehouse", hi:"गोदाम",   ico:"warehouse", html: secCustOrder + secLink + secPrice + secAddress + secPay,
         alert: detailsMissing },
       { id:"team",  en:"Network", hi:"नेटवर्क", ico:"people",  html: secAddDealer + secApprovals },
       // Product addition & shelf workflows in natural order:
