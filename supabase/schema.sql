@@ -1035,3 +1035,32 @@ $$;
 
 grant execute on function god_mode_create_importer(text, text, text, text, text, text) to authenticated, anon;
 
+-- god_mode_rename_party: Update any party's name and details from God Mode
+create or replace function god_mode_rename_party(
+  p_id uuid,
+  p_name text,
+  p_phone text default null,
+  p_city text default null,
+  p_pin text default null,
+  p_address text default null,
+  p_gstin text default null
+)
+  returns boolean
+  language plpgsql security definer set search_path = public as $$
+begin
+  update parties
+  set
+    name = coalesce(nullif(trim(p_name), ''), name),
+    phone = coalesce(trim(p_phone), phone),
+    city = coalesce(trim(p_city), city),
+    pin = coalesce(trim(p_pin), pin),
+    address = coalesce(trim(p_address), address),
+    gstin = coalesce(trim(p_gstin), gstin)
+  where id = p_id;
+  return true;
+end;
+$$;
+
+grant execute on function god_mode_rename_party(uuid, text, text, text, text, text, text) to authenticated, anon;
+
+
