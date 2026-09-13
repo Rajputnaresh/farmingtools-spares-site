@@ -751,43 +751,51 @@
   input[type=checkbox], input[type=radio]{ accent-color:var(--green); }
   .row2{ display:flex; gap:10px; }
   .row2 > div{ flex:1; min-width:0; }
-  /* product master form: the six steps ARE a sequence (what it is → what it fits → price →
-     how it's sold → parcel → notes), so the numbers carry real order, not decoration. */
-  /* two classes deep on purpose: `.more-sec > *:not(summary)` flattens every child's margin
-     to `0 14px`, which would eat the breathing room between steps. */
-  .more-sec > .pp-step{ margin:20px 14px 2px; padding-top:14px; border-top:1px solid var(--border);
-    font-weight:700; font-size:14px; line-height:1.3; }
-  .more-sec > .pp-step:first-of-type{ border-top:0; padding-top:0; margin-top:14px; }
-  /* A merged section's sub-parts. An .ms-part is a whole JOB inside one section; a .pp-step is one
-     step within a form. They now appear in the same box, so the sub-part gets a full-bleed tinted
-     band rather than a rule, and it is an h3 to .pp-step's h4 — which also keeps the two
-     :first-of-type rules from fighting, since those match per element type. */
-  .more-sec > .ms-part{ margin:16px 0 0; padding:9px 14px; background:var(--bg);
-    border-top:1px solid var(--border); border-bottom:1px solid var(--border);
-    font-size:14px; font-weight:800; color:var(--green-dark); line-height:1.3; }
-  .more-sec > .ms-part:first-of-type{ margin-top:0; border-top:0; }
-  /* the form no longer has a part picker, so it has to say out loud which part it is on */
-  .more-sec > .pp-who{ margin:12px 14px 0; padding:10px 12px; background:var(--bg);
-    border:1px solid var(--border); border-radius:var(--r-md);
-    font-size:13px; line-height:1.35; color:var(--muted); }
-  .pp-who b{ display:block; font-size:14px; font-weight:700; color:var(--text); margin-bottom:2px; }
-  .pp-who .pw-code{ color:var(--green-dark); font-weight:700; }
-  .pp-who .pw-pick{ display:block; margin-top:10px; min-height:44px; padding:10px 14px;
-    border:1px solid var(--green); border-radius:var(--r-md); background:#fff;
-    color:var(--green-dark); font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
-  .more-sec > .pp-meter{ margin:12px 14px 0; }
-  .pp-meter{ font-size:12px; color:var(--muted); }
-  /* .m-btn is width:100%, so inside a .row2 it claimed the whole row and squeezed the photo
-     preview to zero width — the confirmation of the upload sat off the edge of the phone. */
+
+  /* Parts sub-navigation segmented tabs */
+  .parts-subtabs{ display:flex; gap:6px; overflow-x:auto; padding:0 0 12px; margin-bottom:12px; border-bottom:1px solid var(--border); scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .parts-subtabs::-webkit-scrollbar{ display:none; }
+  .parts-subtab{ display:inline-flex; align-items:center; gap:6px; padding:9px 14px; min-height:42px; border-radius:var(--r-md); border:1px solid var(--border); background:#fff; color:var(--muted); font:inherit; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; transition:all .15s ease; }
+  .parts-subtab:hover{ border-color:var(--border-strong); color:var(--text); }
+  .parts-subtab.active{ background:var(--green-dark); border-color:var(--green-dark); color:#fff; }
+  .parts-subtab .ps-count{ display:inline-block; font-size:11px; padding:1px 6px; border-radius:var(--r-pill); background:var(--green-light); color:var(--green-dark); }
+  .parts-subtab.active .ps-count{ background:rgba(255,255,255,0.22); color:#fff; }
+
+  /* Product master card styling */
+  .pp-card{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:16px 14px; margin-bottom:14px; box-shadow:var(--shadow-subtle); }
+  .pp-card-head{ display:flex; align-items:center; gap:8px; font-weight:800; font-size:14.5px; color:var(--green-dark); margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border-light); }
+  .pp-badge-step{ display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:var(--green-light); color:var(--green-dark); font-size:11.5px; font-weight:800; }
+
+  /* Part Identity Banner */
+  .pp-who{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:14px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); margin-bottom:14px; }
+  .pp-who-info b{ display:block; font-size:16px; font-weight:800; color:var(--green-dark); margin-bottom:3px; letter-spacing:-0.01em; }
+  .pp-who-info .pw-sub{ font-size:12.5px; color:var(--muted); line-height:1.4; }
+  .pp-who .pw-code{ color:var(--green); font-weight:800; font-size:13.5px; }
+  .pp-who-actions{ display:flex; gap:8px; flex-shrink:0; }
+  .pw-pick-btn{ display:inline-flex; align-items:center; justify-content:center; padding:8px 12px; min-height:40px; border-radius:var(--r-md); border:1px solid var(--border); background:#fff; color:var(--green-dark); font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; }
+  .pw-pick-btn:hover{ border-color:var(--green); }
+
+  .pp-meter{ margin-bottom:14px; background:#fff; border:1px solid var(--border); border-radius:var(--r-md); padding:10px 12px; }
   #m-pp-photo-btn{ flex:1 1 auto; width:auto; min-width:0; }
   #m-pp-photo-wrap{ flex:0 0 auto; }
   .pp-bar{ height:6px; border-radius:var(--r-pill); background:var(--border); overflow:hidden; margin-bottom:4px; }
-  /* scaleX, not width: animating width invalidates layout every frame on a cheap phone */
-  .pp-bar > i{ display:block; height:100%; width:100%; border-radius:var(--r-pill); background:var(--green);
-    transform:scaleX(0); transform-origin:left;
-    transition:transform .3s cubic-bezier(.2,.8,.25,1); }
+  .pp-bar > i{ display:block; height:100%; width:100%; border-radius:var(--r-pill); background:var(--green); transform:scaleX(0); transform-origin:left; transition:transform .3s cubic-bezier(.2,.8,.25,1); }
+
+  /* Sticky Bottom Action Bar for Product Editor */
+  .pp-actions-bar{ position:sticky; bottom:calc(var(--dock-h) + 8px); z-index:30; background:rgba(255,255,255,0.96); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:1px solid var(--border); border-radius:var(--r-lg); padding:10px 14px; box-shadow:var(--shadow-nav); display:flex; gap:10px; align-items:center; margin-top:14px; }
+  .pp-actions-bar .btn-primary{ margin-top:0; flex:1; }
+  .pp-actions-bar .btn-soft{ margin-top:0; flex:0 0 auto; min-width:90px; }
+
+  /* legacy selectors fallback */
+  .more-sec > .pp-step{ margin:20px 14px 2px; padding-top:14px; border-top:1px solid var(--border); font-weight:700; font-size:14px; line-height:1.3; }
+  .more-sec > .pp-step:first-of-type{ border-top:0; padding-top:0; margin-top:14px; }
+  .more-sec > .ms-part{ margin:16px 0 0; padding:9px 14px; background:var(--bg); border-top:1px solid var(--border); border-bottom:1px solid var(--border); font-size:14px; font-weight:800; color:var(--green-dark); line-height:1.3; }
+  .more-sec > .ms-part:first-of-type{ margin-top:0; border-top:0; }
+  .more-sec > .pp-who{ margin:12px 14px 0; }
+  .more-sec > .pp-meter{ margin:12px 14px 0; }
+
   /* ---- product manager: the full shelf, its filters, and the CSV round-trip ---- */
-  .cat-stats{ margin:0 14px 10px; font-size:13px; color:var(--muted); }
+  .cat-stats{ margin:0 0 10px; font-size:13px; color:var(--muted); }
   .cat-stats b{ color:var(--text); }
   /* This was a row of 7 chips. Measured at 360px they came to 894px against 332px of content,
      so 5 of the 7 sat off-screen behind a hidden scrollbar at EVERY width, and wrapping them
@@ -3579,92 +3587,94 @@
         '<input type="checkbox" id="m-bk-blanks" checked style="width:18px;height:18px;flex:none;"> Only fill blanks — never change what I set by hand</label>'+
       '<button class="btn-primary m-btn" id="m-bk-apply">Apply to this section / लागू करें</button><div class="req-msg" id="m-bk-msg" role="status"></div>';
 
-    // One part master form: adding a new part or editing an existing one in full.
-    // Kept as its own dedicated section so an importer adding new items can go straight
-    // to work without having to expand or browse the entire 1,746-part shelf first.
-    var productBody = '<p class="more-hint" id="m-pp-anchor">Whatever you write here is what every dealer, shopkeeper and farmer below you will see. Fill it once, properly, and nobody has to phone you to ask.</p>'+
+    // Dedicated single-part master form: adding a new part or editing an existing one in full.
+    var productBody = '<div id="m-pp-anchor"></div>'+
       '<div class="pp-who" id="m-pp-who" role="status">Getting your prices… / क़ीमतें आ रही हैं…</div>'+
       '<div class="pp-meter"><div class="pp-ready no" id="m-pp-ready"></div>'+
         '<div class="pp-bar" aria-hidden="true"><i id="m-pp-fill"></i></div>'+
         '<span id="m-pp-count" aria-live="polite"></span></div>'+
 
-      '<h4 class="pp-step">What is it? / यह क्या है</h4>'+
-      '<div class="row2"><div><label class="m-lbl">Part code *</label><input type="text" id="m-pp-code" class="m-input" placeholder="SP-001" autocapitalize="characters" maxlength="40"></div>'+
-        '<div><label class="m-lbl">Brand / make</label><input type="text" id="m-pp-brand" class="m-input" placeholder="e.g. KrishiGears" maxlength="60"></div></div>'+
-      '<label class="m-lbl">Name in English *</label><input type="text" id="m-pp-name" class="m-input" placeholder="GEAR CASE 28MM 9T" maxlength="120">'+
-      '<label class="m-lbl">Name in Hindi / हिंदी नाम</label><input type="text" id="m-pp-hindi" class="m-input" placeholder="गियर केस 28 मिमी" maxlength="120">'+
-      '<div class="row2"><div><label class="m-lbl">Category *</label><select id="m-pp-group" class="m-input">'+grpOpts+'</select></div>'+
-        '<div><label class="m-lbl">Section *</label><input type="text" id="m-pp-section" class="m-input" list="m-pp-sections" placeholder="Brush Cutter Parts" maxlength="80"></div></div>'+
-      '<datalist id="m-pp-sections">'+secDatalist+'</datalist>'+
-      '<div class="row2" style="margin-top:10px;align-items:center;"><button type="button" class="btn-soft m-btn" id="m-pp-photo-btn" style="margin-top:0;">Add a photo / फ़ोटो लगाएँ</button>'+
-        '<div id="m-pp-photo-wrap"></div></div>'+
+      '<div class="pp-card">'+
+        '<div class="pp-card-head"><span class="pp-badge-step">1</span><span>Identity &amp; Classification / पहचान</span></div>'+
+        '<div class="row2"><div><label class="m-lbl">Part code *</label><input type="text" id="m-pp-code" class="m-input" placeholder="e.g. SP-001" autocapitalize="characters" maxlength="40"></div>'+
+          '<div><label class="m-lbl">Brand / make</label><input type="text" id="m-pp-brand" class="m-input" placeholder="e.g. KrishiGears" maxlength="60"></div></div>'+
+        '<label class="m-lbl">Name in English *</label><input type="text" id="m-pp-name" class="m-input" placeholder="GEAR CASE 28MM 9T" maxlength="120">'+
+        '<label class="m-lbl">Name in Hindi / हिंदी नाम</label><input type="text" id="m-pp-hindi" class="m-input" placeholder="गियर केस 28 मिमी" maxlength="120">'+
+        '<div class="row2"><div><label class="m-lbl">Category *</label><select id="m-pp-group" class="m-input">'+grpOpts+'</select></div>'+
+          '<div><label class="m-lbl">Section *</label><input type="text" id="m-pp-section" class="m-input" list="m-pp-sections" placeholder="Brush Cutter Parts" maxlength="80"></div></div>'+
+        '<datalist id="m-pp-sections">'+secDatalist+'</datalist>'+
+        '<div class="row2" style="margin-top:12px;align-items:center;"><button type="button" class="btn-soft m-btn" id="m-pp-photo-btn" style="margin-top:0;">Add a photo / फ़ोटो लगाएँ</button>'+
+          '<div id="m-pp-photo-wrap"></div></div>'+
+      '</div>'+
 
-      '<h4 class="pp-step">What does it fit? / किस मशीन में लगेगा</h4>'+
-      '<p class="more-hint">This is the first thing any shopkeeper asks. Write the machines in plain words.</p>'+
-      '<label class="m-lbl">Fits these machines</label><input type="text" id="m-pp-fits" class="m-input" placeholder="Brush cutter 28mm 9T, BC-520" maxlength="200">'+
-      '<label class="m-lbl">Old / OEM part numbers <span style="color:var(--muted);font-weight:400;">— so it is found by the number on the broken part</span></label>'+
-      '<input type="text" id="m-pp-oem" class="m-input" placeholder="4179-4152, GB-2214" maxlength="200">'+
+      '<div class="pp-card">'+
+        '<div class="pp-card-head"><span class="pp-badge-step">2</span><span>Compatibility &amp; Fitment / किसमें लगेगा</span></div>'+
+        '<p class="more-hint" style="margin-bottom:8px;">Plain words so shopkeepers and mechanics find it immediately.</p>'+
+        '<label class="m-lbl">Fits these machines</label><input type="text" id="m-pp-fits" class="m-input" placeholder="Brush cutter 28mm 9T, BC-520" maxlength="200">'+
+        '<label class="m-lbl">Old / OEM part numbers <span style="color:var(--muted);font-weight:400;">— number on the broken part</span></label>'+
+        '<input type="text" id="m-pp-oem" class="m-input" placeholder="4179-4152, GB-2214" maxlength="200">'+
+      '</div>'+
 
-      '<h4 class="pp-step">Price &amp; tax / क़ीमत और टैक्स</h4>'+
-      '<div class="row2"><div><label class="m-lbl">Your base price ₹ *</label><input type="number" id="m-pp-base" class="m-input" min="1" max="1000000" step="0.01" inputmode="decimal"></div>'+
-        '<div><label class="m-lbl">Printed MRP ₹</label><input type="number" id="m-pp-mrp" class="m-input" min="0" max="1000000" step="0.01" inputmode="decimal"></div></div>'+
-      '<p class="more-hint">Base price is yours. Every tier below adds its own margin on top automatically — you never set their prices.</p>'+
-      '<div class="row2"><div><label class="m-lbl">HSN code</label><input type="text" id="m-pp-hsn" class="m-input" inputmode="numeric" maxlength="8" placeholder="84329010"></div>'+
-        '<div><label class="m-lbl">GST %</label><select id="m-pp-gst" class="m-input"><option value="">— not set —</option>'+gstOpts+'</select></div></div>'+
+      '<div class="pp-card">'+
+        '<div class="pp-card-head"><span class="pp-badge-step">3</span><span>Pricing &amp; Tax / क़ीमत और टैक्स</span></div>'+
+        '<div class="row2"><div><label class="m-lbl">Your base price ₹ *</label><input type="number" id="m-pp-base" class="m-input" min="1" max="1000000" step="0.01" inputmode="decimal"></div>'+
+          '<div><label class="m-lbl">Printed MRP ₹</label><input type="number" id="m-pp-mrp" class="m-input" min="0" max="1000000" step="0.01" inputmode="decimal"></div></div>'+
+        '<p class="more-hint" style="margin-top:4px;">Downline tiers add their network margin on top automatically.</p>'+
+        '<div class="row2"><div><label class="m-lbl">HSN code</label><input type="text" id="m-pp-hsn" class="m-input" inputmode="numeric" maxlength="8" placeholder="84329010"></div>'+
+          '<div><label class="m-lbl">GST %</label><select id="m-pp-gst" class="m-input"><option value="">— not set —</option>'+gstOpts+'</select></div></div>'+
+      '</div>'+
 
-      '<h4 class="pp-step">How is it sold? / कैसे बिकता है</h4>'+
-      '<div class="row2"><div><label class="m-lbl">Sold as</label><select id="m-pp-uom" class="m-input"><option value="">— not set —</option>'+uomOpts+'</select></div>'+
-        '<div><label class="m-lbl">Pieces in one pack</label><input type="number" id="m-pp-pack" class="m-input" min="1" max="9999" inputmode="numeric" placeholder="1"></div></div>'+
-      '<label class="m-lbl">Smallest order allowed</label><input type="number" id="m-pp-moq" class="m-input" min="1" max="9999" inputmode="numeric" placeholder="1">'+
+      '<div class="pp-card">'+
+        '<div class="pp-card-head"><span class="pp-badge-step">4</span><span>Packaging &amp; Logistics / पैकेजिंग</span></div>'+
+        '<div class="row2"><div><label class="m-lbl">Sold as</label><select id="m-pp-uom" class="m-input"><option value="">— not set —</option>'+uomOpts+'</select></div>'+
+          '<div><label class="m-lbl">Pieces per pack</label><input type="number" id="m-pp-pack" class="m-input" min="1" max="9999" inputmode="numeric" placeholder="1"></div></div>'+
+        '<div class="row2"><div><label class="m-lbl">Smallest order (MOQ)</label><input type="number" id="m-pp-moq" class="m-input" min="1" max="9999" inputmode="numeric" placeholder="1"></div>'+
+          '<div><label class="m-lbl">Weight (grams)</label><input type="number" id="m-pp-weight" class="m-input" min="0" max="500000" inputmode="numeric" placeholder="850"></div></div>'+
+        '<div class="row2"><div><label class="m-lbl">Dimensions L×W×H cm</label><input type="text" id="m-pp-dims" class="m-input" placeholder="12x8x8" maxlength="30"></div>'+
+          '<div><label class="m-lbl">Country of origin</label><input type="text" id="m-pp-origin" class="m-input" placeholder="China / India" maxlength="60"></div></div>'+
+        '<label class="m-lbl" for="m-pp-notes">Note for buyers / ख़रीदार के लिए नोट</label><input type="text" id="m-pp-notes" class="m-input" placeholder="e.g. comes with bolts" maxlength="200">'+
+        '<label class="m-lbl" style="display:flex;align-items:center;gap:8px;margin:12px 0 0;">'+
+          '<input type="checkbox" id="m-pp-active" checked style="width:18px;height:18px;flex:none;"> Show this part in the shop / दुकान में दिखाएँ</label>'+
+      '</div>'+
 
-      '<h4 class="pp-step">Parcel details / पार्सल</h4>'+
-      '<p class="more-hint">Used to work out courier charges before anything is packed.</p>'+
-      '<div class="row2"><div><label class="m-lbl">Weight (grams)</label><input type="number" id="m-pp-weight" class="m-input" min="0" max="500000" inputmode="numeric" placeholder="850"></div>'+
-        '<div><label class="m-lbl">Size L×W×H cm</label><input type="text" id="m-pp-dims" class="m-input" placeholder="12x8x8" maxlength="30"></div></div>'+
-      '<label class="m-lbl">Country of origin</label><input type="text" id="m-pp-origin" class="m-input" placeholder="China / India" maxlength="60">'+
+      '<div class="pp-actions-bar">'+
+        '<button class="btn-primary" id="m-pp-save">Save Part / सहेजें</button>'+
+        '<button type="button" class="btn-soft" id="m-pp-reset">Clear / ख़ाली</button>'+
+      '</div>'+
+      '<div class="req-msg" id="m-pp-msg" role="status" style="margin-top:8px;"></div>';
 
-      '<h4 class="pp-step">Anything else / और कुछ</h4>'+
-      '<p class="more-hint">A note for buyers — everyone down the chain can read it, so keep cost or supplier details out of here.</p>'+
-      '<label class="m-lbl" for="m-pp-notes">Note for buyers / ख़रीदार के लिए नोट</label>'+'<input type="text" id="m-pp-notes" class="m-input" placeholder="e.g. comes with bolts" maxlength="200">'+
-      '<label class="m-lbl" style="display:flex;align-items:center;gap:8px;margin:12px 14px 0;">'+
-        '<input type="checkbox" id="m-pp-active" checked style="width:18px;height:18px;flex:none;"> Show this part in the shop / दुकान में दिखाएँ</label>'+
-      '<button class="btn-primary m-btn" id="m-pp-save">Save part / सहेजें</button><div class="req-msg" id="m-pp-msg" role="status"></div>';
-
-    // Dedicated Product Addition Section for the importer
-    var secAddPart = !isImporter ? '' : '<details class="more-sec" id="m-part-editor-sec"><summary>Add or edit a part / नया पुर्ज़ा जोड़ें या सुधारें'+
-      '<span class="ms-hint">Single part master form / एक पुर्ज़ा पूरा</span></summary>'+
-      productBody + '</details>';
-
-    // job 2 of 4 — the two ways to fill many parts at once
-    var secFill = !isImporter ? '' : '<details class="more-sec" id="m-bulk-sec"><summary>Fill many at once / एक साथ भरें'+
-      '<span class="ms-hint">A spreadsheet, or one whole section / फ़ाइल से, या पूरा सेक्शन</span></summary>'+
-      csvBody + bulkBody + '</details>';
-
-    // job 3 of 4 — shelf search & inspection
-    var secShelf = !isImporter ? '' : '<details class="more-sec" id="m-cat-sec"><summary>The full shelf / पूरी सूची'+
-      '<span class="ms-hint">Search the shelf, inspect gaps, or edit / सूची में से खोजें और सुधारें</span></summary>'+
-      shelfHead + '</details>';
+    // Parts Sub-Panels for Importers
+    var partsHubHtml = !isImporter ? '' : (
+      '<div class="parts-subtabs" role="tablist" aria-label="Parts management subtabs">'+
+        '<button type="button" class="parts-subtab active" id="ps-tab-editor" data-sub="editor">➕ Add / Edit Part</button>'+
+        '<button type="button" class="parts-subtab" id="ps-tab-shelf" data-sub="shelf">📦 Full Shelf <span class="ps-count" id="ps-shelf-count">'+(state.catalog||[]).length+'</span></button>'+
+        '<button type="button" class="parts-subtab" id="ps-tab-work" data-sub="work">🔥 Priority Worklist</button>'+
+        '<button type="button" class="parts-subtab" id="ps-tab-bulk" data-sub="bulk">📑 Bulk &amp; CSV</button>'+
+      '</div>'+
+      '<div id="ps-panel-editor" class="ps-panel">'+productBody+'</div>'+
+      '<div id="ps-panel-shelf" class="ps-panel" hidden>'+shelfHead+'</div>'+
+      '<div id="ps-panel-work" class="ps-panel" hidden>'+
+        '<div id="m-wk-prog" class="wk-prog"></div>'+
+        '<p class="more-hint" style="margin-bottom:10px;">Start with parts people have already ordered or asked for — describe these first.</p>'+
+        '<div id="m-wk-list"><div style="color:var(--muted);font-size:13px;padding:8px 0;">Loading… / लोड हो रहा है…</div></div>'+
+      '</div>'+
+      '<div id="ps-panel-bulk" class="ps-panel" hidden>'+
+        '<div class="more-sec" style="margin-bottom:14px;padding:12px;">'+csvBody+'</div>'+
+        '<div class="more-sec" style="padding:12px;">'+bulkBody+'</div>'+
+      '</div>'
+    );
 
     var secApprovals = !isImporter ? '' : '<details class="more-sec"><summary>Pending registrations — पंजीकरण<span class="ms-badge hidden" id="m-badge-appr">0</span>'+
       '<span class="ms-hint">Approve new signups / नए पंजीकरण स्वीकृत करें</span></summary>'+
       '<div id="m-approvals-card"><div style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</div></div></details>';
 
-    // Daily continues with transfer + walk-in order; then shop setup, network admin, importer-only tools
-    // Five headings stacked over fourteen accordions meant every job lived at the bottom of the
-    // same long scroll. These are separate jobs done at separate times — money in the morning,
-    // stock when a parcel lands, parts on a quiet afternoon — so they get separate places.
     var tabs = [
       { id:"money", en:"Money",   hi:"पैसा",    ico:"rupee",   html: secMoney },
       { id:"stock", en:"Stock",   hi:"स्टॉक",   ico:"box",     html: secStock + secTransfer + (isImporter ? secExternal + secCorrect : "") },
       { id:"sell",  en:"Warehouse", hi:"गोदाम",   ico:"warehouse", html: secCustOrder + secLink + secPrice + secAddress + secPay,
         alert: detailsMissing },
       { id:"team",  en:"Network", hi:"नेटवर्क", ico:"people",  html: secMargins + secAddDealer + secApprovals },
-      // Product addition & shelf workflows in natural order:
-      // 1. Add or edit a single part directly
-      // 2. Start here (priority worklist - parts people ask for)
-      // 3. The full shelf (search and browse)
-      // 4. Fill many at once (CSV spreadsheet & bulk section fill)
-      { id:"parts", en:"Parts",   hi:"पुर्ज़े",  ico:"page",    html: isImporter ? (secAddPart + secWork + secShelf + secFill) : "" }
+      { id:"parts", en:"Parts",   hi:"पुर्ज़े",  ico:"page",    html: partsHubHtml }
     ].filter(function(t){ return t.html; });
 
     if (!state.moreTab || !tabs.some(function(t){ return t.id === state.moreTab; })) state.moreTab = tabs[0].id;
@@ -4062,31 +4072,53 @@
     if ($("m-cat-more")) $("m-cat-more").onclick = function(){ _catShown += 40; drawProductList(); };
   }
 
+  function switchPartsSubtab(subId){
+    var tabs = document.querySelectorAll(".parts-subtab");
+    var panels = document.querySelectorAll(".ps-panel");
+    tabs.forEach(function(t){
+      var on = t.getAttribute("data-sub") === subId;
+      if (on) t.classList.add("active"); else t.classList.remove("active");
+    });
+    panels.forEach(function(p){
+      var on = p.id === "ps-panel-" + subId;
+      p.hidden = !on;
+    });
+    if (subId === "shelf" && !_adminRows) renderProductList();
+  }
+
   // open the full editor on a part, wherever the request came from (list row, worklist, + New)
-  // The editor lives inside the shelf section now, so open that and scroll to the editor's own
-  // band rather than to the top of the box — otherwise picking a part parks you at the list you
-  // just picked it from.
   function openPartEditor(sku){
-    var sec = $("m-part-editor-sec"); if (!sec) sec = $("m-cat-sec");
-    if (!sec) return;
-    sec.open = true;
+    // Switch to the editor sub-panel
+    switchPartsSubtab("editor");
     // wireProductForm awaits the cost fetch before it publishes _ppFill, so a tap in that window
     // used to open the editor on nothing and then quietly reset to "a brand-new part". Remember
     // the request instead and let the form pick it up when it is ready.
     if (_ppFill) _ppFill(sku || ""); else _ppPending = sku || "";
-    ($("m-pp-anchor") || sec).scrollIntoView({ block: "start", behavior: "smooth" });
+    var anchor = $("m-pp-anchor") || $("ps-panel-editor");
+    if (anchor) anchor.scrollIntoView({ block: "start", behavior: "smooth" });
   }
 
   async function renderProductList(){
     var list = $("m-cat-list"); if (!list || !sb) return;
-    list.innerHTML = '<div style="color:var(--muted);font-size:13px;margin:0 14px;">Loading… / लोड हो रहा है…</div>';
+    list.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0;">Loading… / लोड हो रहा है…</div>';
     try { await loadAdminProducts(); } catch(e){
       list.innerHTML = '<div class="req-msg err">' + esc(friendlyErr(e)) + '</div>'; return;
     }
+    var countEl = $("ps-shelf-count");
+    if (countEl && _adminRows) countEl.textContent = _adminRows.length;
     _catShown = 40; drawProductList();
   }
 
   function wireProductList(){
+    // Segmented sub-tab switcher
+    var subTabsBar = document.querySelector(".parts-subtabs");
+    if (subTabsBar){
+      subTabsBar.addEventListener("click", function(e){
+        var b = e.target.closest("[data-sub]"); if (!b) return;
+        switchPartsSubtab(b.getAttribute("data-sub"));
+      });
+    }
+
     var q = $("m-cat-q"); if (!q) return;
     var t = null;
     q.oninput = function(){ clearTimeout(t); t = setTimeout(function(){ _catShown = 40; drawProductList(); }, 150); };
@@ -4100,9 +4132,6 @@
       openPartEditor(b.getAttribute("data-cat"));
     };
     if ($("m-cat-new")) $("m-cat-new").onclick = function(){ openPartEditor(""); };
-    var sec = $("m-cat-sec");
-    // 1,746 rows is not something to fetch before anyone has asked to see them
-    if (sec) sec.addEventListener("toggle", function(){ if (sec.open && !_adminRows) renderProductList(); });
   }
 
   // ---------- CSV round-trip ----------
@@ -4391,7 +4420,8 @@
       showToast(r.data + " parts described ✓ / अपडेट हुए");
       invalidateProducts();
       await loadData(); populateFilters(); renderCatalogBody(); renderWorklist();
-      if (_adminRows === null && $("m-cat-sec") && $("m-cat-sec").open) renderProductList();
+      var shelfPanel = $("ps-panel-shelf");
+      if (_adminRows === null && shelfPanel && !shelfPanel.hidden) renderProductList();
     };
   }
 
@@ -4430,19 +4460,29 @@
       var w = $("m-pp-who"); if (!w) return;
       var r = ppSku ? state.catalog[skuToIndex(ppSku)] : null;
       w.innerHTML = r
-        ? '<b>' + esc(r.particular || "(no name yet / नाम नहीं)") + '</b>' +
-          'Editing <span class="pw-code">' + esc(r.product_code || "no part code yet") + '</span> · ' + esc(ppSku) +
-          '<button type="button" class="pw-pick" id="m-pp-back">Choose a different part / दूसरा पुर्ज़ा चुनें</button>'
-        : '<b>A brand-new part / नया पुर्ज़ा</b>' +
-          'Nothing on the shelf yet — fill it in below and save. / नीचे भरकर सहेजें।' +
-          '<button type="button" class="pw-pick" id="m-pp-back">Open an existing part instead / पुराना पुर्ज़ा खोलें</button>';
+        ? '<div class="pp-who-info">' +
+            '<b>' + esc(r.particular || "(no name yet / नाम नहीं)") + '</b>' +
+            '<div class="pw-sub">Editing code <span class="pw-code">' + esc(r.product_code || "no part code yet") + '</span> · SKU ' + esc(ppSku) + '</div>' +
+          '</div>' +
+          '<div class="pp-who-actions">' +
+            '<button type="button" class="pw-pick-btn" id="m-pp-back">Browse shelf / सूची देखें</button>' +
+            '<button type="button" class="pw-pick-btn" id="m-pp-new-btn">+ Add New / नया</button>' +
+          '</div>'
+        : '<div class="pp-who-info">' +
+            '<b>➕ Adding Brand-New Part / नया पुर्ज़ा</b>' +
+            '<div class="pw-sub">Fill out the cards below and click Save Part to add it to the network catalog.</div>' +
+          '</div>' +
+          '<div class="pp-who-actions">' +
+            '<button type="button" class="pw-pick-btn" id="m-pp-back">Browse shelf / सूची देखें</button>' +
+          '</div>';
       markHindi(w);
       $("m-pp-back").onclick = function(){
-        var catSec = $("m-cat-sec"); if (catSec) catSec.open = true;
-        var q = $("m-cat-q"); if (!q) return;
-        q.scrollIntoView({ block: "center", behavior: "smooth" });
-        q.focus({ preventScroll: true });
+        switchPartsSubtab("shelf");
+        var q = $("m-cat-q"); if (q){ q.focus(); }
       };
+      if ($("m-pp-new-btn")){
+        $("m-pp-new-btn").onclick = function(){ fill(""); };
+      }
     }
 
     function drawPhoto(){
@@ -4607,13 +4647,21 @@
       // kind of small lie that stops people trusting the screen
       invalidateProducts();
       await loadData(); populateFilters(); renderCatalogBody(); renderWorklist();
-      if ($("m-cat-sec") && $("m-cat-sec").open) renderProductList();
+      var shelfPanel = $("ps-panel-shelf");
+      if (shelfPanel && !shelfPanel.hidden) renderProductList();
       fill(sku);   // a brand-new part becomes the part this form is now editing
       m.className = "req-msg";
       m.textContent = isNew ? "✓ " + code + " added — it is on the shelf now, at every tier. / जुड़ गया।"
                             : "✓ " + code + " updated everywhere. / सब जगह अपडेट हो गया।";
       showToast(isNew ? "Part added ✓ / पुर्ज़ा जुड़ा" : "Part updated ✓ / अपडेट हुआ");
     };
+
+    if ($("m-pp-reset")){
+      $("m-pp-reset").onclick = function(){
+        fill("");
+        showToast("Form cleared / फ़ॉर्म ख़ाली किया");
+      };
+    }
 
     fill(_ppPending || "");   // honour a row tapped while the cost fetch was still in flight
     _ppPending = null;
