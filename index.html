@@ -786,6 +786,27 @@
   .pp-actions-bar .btn-primary{ margin-top:0; flex:1; }
   .pp-actions-bar .btn-soft{ margin-top:0; flex:0 0 auto; min-width:90px; }
 
+  /* Shelf category filter chips */
+  .shelf-chips{ display:flex; gap:6px; overflow-x:auto; padding:2px 0 10px; margin-bottom:10px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .shelf-chips::-webkit-scrollbar{ display:none; }
+  .shelf-chip{ display:inline-flex; align-items:center; gap:4px; padding:6px 12px; min-height:34px; border-radius:var(--r-pill); border:1px solid var(--border); background:#fff; color:var(--text); font:inherit; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; transition:all .15s ease; }
+  .shelf-chip:hover{ border-color:var(--green); }
+  .shelf-chip.active{ background:var(--green-light); border-color:var(--green); color:var(--green-dark); font-weight:700; }
+
+  /* Multi-item transfer list & table */
+  .tf-table-wrap{ margin-top:10px; border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; background:#fff; }
+  .tf-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  .tf-table th{ background:var(--surface); padding:8px 10px; text-align:left; font-weight:700; color:var(--muted); border-bottom:1px solid var(--border); }
+  .tf-table td{ padding:8px 10px; border-bottom:1px solid var(--border-light); vertical-align:middle; }
+  .tf-table tr:last-child td{ border-bottom:none; }
+  .tf-table .num{ text-align:right; }
+  .tf-table .tf-del{ background:none; border:none; color:var(--danger); font-size:15px; cursor:pointer; padding:4px 8px; }
+
+  /* Counter POS bill summary */
+  .pos-summary-bar{ background:var(--green-light); border:1px solid var(--border); border-radius:var(--r-md); padding:10px 12px; margin-top:10px; display:flex; justify-content:space-between; align-items:center; }
+  .pos-summary-bar b{ color:var(--green-dark); font-size:16px; }
+  .pos-qty-btn{ width:28px; height:28px; border-radius:var(--r-sm); border:1px solid var(--border); background:#fff; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
+
   /* legacy selectors fallback */
   .more-sec > .pp-step{ margin:20px 14px 2px; padding-top:14px; border-top:1px solid var(--border); font-weight:700; font-size:14px; line-height:1.3; }
   .more-sec > .pp-step:first-of-type{ border-top:0; padding-top:0; margin-top:14px; }
@@ -3307,15 +3328,62 @@
   }
   var ROLE_BELOW = { importer:["distributor","dealer","shopkeeper"], distributor:["dealer","shopkeeper"], dealer:["shopkeeper"] };
   function storeLink(){ return location.origin + location.pathname.replace(/[^/]*$/, "index.html") + "?s=" + state.account.id; }
-  // new-customer-order line builder state + renderer
+
+  // multi-item stock transfer line state + renderer
+  var _tfLines = [];
+  function drawTfLines(){
+    var box = $("m-t-lines"); if (!box) return;
+    if (!_tfLines.length){ box.innerHTML = ""; return; }
+    var totalUnits = _tfLines.reduce(function(s,l){ return s + Number(l.qty||0); }, 0);
+    box.innerHTML = '<div class="tf-table-wrap"><table class="tf-table"><thead><tr><th>Part Code &amp; Name</th><th class="num">Qty</th><th></th></tr></thead><tbody>'+
+      _tfLines.map(function(l){
+        var r = state.catalog[skuToIndex(l.sku)];
+        var code = (r && r.product_code) || l.sku;
+        var name = (r && r.particular) || skuName(l.sku);
+        return '<tr><td><b>'+esc(code)+'</b><br><span style="color:var(--muted);font-size:11.5px;">'+esc(name)+'</span></td>'+
+          '<td class="num"><b>'+l.qty+'</b></td><td class="num"><button type="button" class="tf-del" data-tf-del="'+esc(l.sku)+'" aria-label="Remove">✕</button></td></tr>';
+      }).join("")+
+      '</tbody></table></div>'+
+      '<div style="margin:8px 0;font-size:12.5px;color:var(--green-dark);font-weight:700;">Challan Total: '+_tfLines.length+' items · '+totalUnits+' units</div>';
+  }
+
+  // new-customer-order line builder state + renderer with live totals
   var _coLines = [];
   function drawCoLines(){
-    var box = $("m-co-lines"); if (!box) return;
-    if (!_coLines.length){ box.innerHTML = ""; return; }
-    box.innerHTML = '<div class="tscroll"><table><thead><tr><th></th><th>Part</th><th class="num">Qty</th><th></th></tr></thead><tbody>'+
-      _coLines.map(function(l){ return '<tr><td class="ln-thumb">'+lineThumb(l.sku)+'</td><td>'+esc(skuName(l.sku))+'</td>'+
-        '<td class="num">'+l.qty+'</td><td class="num"><button class="line-x" data-co-del="'+esc(l.sku)+'" aria-label="Remove">✕</button></td></tr>'; }).join("")+
+    var box = $("m-co-lines"), sumBox = $("m-co-summary-bar");
+    if (!box) return;
+    if (!_coLines.length){
+      box.innerHTML = "";
+      if (sumBox) sumBox.innerHTML = "";
+      return;
+    }
+    var totalQty = 0, totalAmt = 0;
+    box.innerHTML = '<div class="tscroll"><table class="tf-table"><thead><tr><th></th><th>Part</th><th class="num">Rate</th><th class="num">Qty</th><th class="num">Subtotal</th><th></th></tr></thead><tbody>'+
+      _coLines.map(function(l){
+        var r = state.catalog[skuToIndex(l.sku)];
+        var rate = (r && r.mrp) ? Number(r.mrp) : (netRate(l.sku) || 0);
+        var sub = rate * Number(l.qty||0);
+        totalQty += Number(l.qty||0);
+        totalAmt += sub;
+        return '<tr><td class="ln-thumb">'+lineThumb(l.sku)+'</td>'+
+          '<td><b>'+esc((r&&r.product_code)||l.sku)+'</b><br><span style="font-size:11.5px;color:var(--muted);">'+esc(nice(r&&r.particular||""))+'</span></td>'+
+          '<td class="num">'+inr(rate)+'</td>'+
+          '<td class="num" style="white-space:nowrap;">'+
+            '<button type="button" class="pos-qty-btn" data-co-dec="'+esc(l.sku)+'">−</button> '+
+            '<b>'+l.qty+'</b> '+
+            '<button type="button" class="pos-qty-btn" data-co-inc="'+esc(l.sku)+'">+</button>'+
+          '</td>'+
+          '<td class="num"><b>'+inr(sub)+'</b></td>'+
+          '<td class="num"><button type="button" class="tf-del" data-co-del="'+esc(l.sku)+'" aria-label="Remove">✕</button></td></tr>';
+      }).join("")+
       '</tbody></table></div>';
+
+    if (sumBox){
+      sumBox.innerHTML = '<div class="pos-summary-bar">' +
+        '<div><span>Items: <b>'+_coLines.length+'</b> ('+totalQty+' units)</span></div>' +
+        '<div><span>Estimated Total: <b>'+inr(totalAmt)+'</b></span></div>' +
+      '</div>';
+    }
   }
   // ---------- one part picker, shared by every stock and order form ----------
   // You type, you TAP a result, and only then is a part chosen. The value lives here rather than
@@ -3443,13 +3511,17 @@
       '<p class="more-hint">Change the commission/margin % for any party under your network at any time. When left blank, their role default applies.</p>'+
       '<div id="m-margins-list"><div style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</div></div></details>';
 
-    var secTransfer = !below.length ? '' : '<details class="more-sec"><summary>Bill / transfer stock — ट्रांसफर<span class="ms-hint">Billing moves stock down to a party / बिल = स्टॉक ट्रांसफर</span></summary>'+
-      '<p class="more-hint">Billing moves stock: it leaves you and lands on the receiving party.</p>'+
-      '<label class="m-lbl">Bill to</label><select id="m-t-to" class="m-input">'+partyOpts+'</select>'+
-      '<label class="m-lbl">Part</label>'+ partPickerHtml("m-t-pk")+
-      '<div class="row2"><div><label class="m-lbl">Qty</label><input type="number" id="m-t-qty" class="m-input" min="1" value="1" inputmode="numeric"></div>'+
-        '<div><label class="m-lbl">PI (optional)</label><input type="text" id="m-t-pi" class="m-input" placeholder="PI-…"></div></div>'+
-      '<button class="btn-primary m-btn" id="m-t-btn">Record transfer / ट्रांसफर करें</button><div class="req-msg" id="m-t-msg"></div></details>';
+    var secTransfer = !below.length ? '' : '<details class="more-sec" id="m-transfer-sec"><summary>Bill / transfer stock — ट्रांसफर<span class="ms-hint">Create dispatch challan / बिल = स्टॉक ट्रांसफर</span></summary>'+
+      '<p class="more-hint">Add parts to the transfer list, review quantities, then transfer together.</p>'+
+      '<label class="m-lbl">Bill / dispatch to</label><select id="m-t-to" class="m-input">'+partyOpts+'</select>'+
+      '<label class="m-lbl">PI / Challan (optional)</label><input type="text" id="m-t-pi" class="m-input" placeholder="e.g. TR-2026-001">'+
+      '<div style="margin-top:10px;padding:10px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);">'+
+        '<label class="m-lbl" style="margin-top:0;">Pick a part to add</label>'+ partPickerHtml("m-t-pk")+
+        '<div class="row2" style="margin-top:8px;"><div><label class="m-lbl">Qty</label><input type="number" id="m-t-qty" class="m-input" min="1" value="1" inputmode="numeric"></div>'+
+          '<div style="align-self:end;"><button type="button" class="btn-soft m-btn" id="m-t-add" style="margin-top:0;">+ Add to Challan</button></div></div>'+
+      '</div>'+
+      '<div id="m-t-lines"></div>'+
+      '<button class="btn-primary m-btn" id="m-t-btn">Record Transfer Challan / ट्रांसफर करें</button><div class="req-msg" id="m-t-msg"></div></details>';
 
     var secExternal = !isImporter ? '' : '<details class="more-sec"><summary>Add external stock — नया स्टॉक<span class="ms-hint">New imports land on your balance / नया आयात आपके खाते में</span></summary>'+
       '<p class="more-hint">Bring newly-imported stock into the network at your own balance.</p>'+
@@ -3464,16 +3536,19 @@
         '<div><label class="m-lbl">Reason</label><input type="text" id="m-adj-note" class="m-input" placeholder="e.g. breakage"></div></div>'+
       '<button class="btn-primary m-btn" id="m-adj-btn">Apply correction / लागू करें</button><div class="req-msg" id="m-adj-msg"></div></details>';
 
-    var secCustOrder = '<details class="more-sec"><summary>New customer order — नया ग्राहक ऑर्डर<span class="ms-hint">Walk-in customer, with delivery address / वॉक-इन ग्राहक का ऑर्डर</span></summary>'+
-      '<p class="more-hint">Raise an order for a walk-in customer, with their delivery address. If you’re short, forward the shortfall up — then Bill &amp; ship it from Requests with your own bill.</p>'+
-      '<label class="m-lbl">Customer name / ग्राहक</label><input type="text" id="m-co-name" class="m-input" placeholder="e.g. Ramesh">'+
-      '<div class="row2"><div><label class="m-lbl">Phone / फ़ोन</label><input type="text" id="m-co-phone" class="m-input" inputmode="tel"></div>'+
+    var secCustOrder = '<details class="more-sec" id="m-co-sec"><summary>Walk-in customer sale / Counter POS — नया ग्राहक ऑर्डर<span class="ms-hint">Instant bill, counter sale &amp; WhatsApp / वॉक-इन ग्राहक का ऑर्डर</span></summary>'+
+      '<p class="more-hint">Enter counter customer details, pick items, verify live totals and create order.</p>'+
+      '<label class="m-lbl">Customer name / ग्राहक *</label><input type="text" id="m-co-name" class="m-input" placeholder="e.g. Ramesh Kumar">'+
+      '<div class="row2"><div><label class="m-lbl">Phone / फ़ोन</label><input type="text" id="m-co-phone" class="m-input" inputmode="tel" placeholder="10-digit mobile"></div>'+
         '<div><label class="m-lbl">Deliver to / पता</label><input type="text" id="m-co-addr" class="m-input" placeholder="village / town"></div></div>'+
-      '<label class="m-lbl">Part / पुर्ज़ा</label>'+ partPickerHtml("m-co-pk")+
-      '<div class="row2"><div><label class="m-lbl">Qty</label><input type="number" id="m-co-qty" class="m-input" min="1" value="1" inputmode="numeric"></div>'+
-        '<div style="align-self:end;"><button class="btn-soft m-btn" id="m-co-add" style="margin-top:0;">Add part / जोड़ें</button></div></div>'+
+      '<div style="margin-top:10px;padding:10px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);">'+
+        '<label class="m-lbl" style="margin-top:0;">Select Part / पुर्ज़ा</label>'+ partPickerHtml("m-co-pk")+
+        '<div class="row2" style="margin-top:8px;"><div><label class="m-lbl">Qty</label><input type="number" id="m-co-qty" class="m-input" min="1" value="1" inputmode="numeric"></div>'+
+          '<div style="align-self:end;"><button type="button" class="btn-soft m-btn" id="m-co-add" style="margin-top:0;">+ Add Item</button></div></div>'+
+      '</div>'+
       '<div id="m-co-lines"></div>'+
-      '<button class="btn-primary m-btn" id="m-co-create">Create order / ऑर्डर बनाएँ</button><div class="req-msg" id="m-co-msg"></div></details>';
+      '<div id="m-co-summary-bar"></div>'+
+      '<button class="btn-primary m-btn" id="m-co-create">Create Counter Order / ऑर्डर बनाएँ</button><div class="req-msg" id="m-co-msg"></div></details>';
 
     var secPrice = '<details class="more-sec"><summary>Customer price / markup — ग्राहक मूल्य<span class="ms-hint">What retail customers pay / ग्राहक जो क़ीमत देखते हैं</span></summary>'+
       '<p class="more-hint">What your retail customers see, as a multiple of the base price. 3 = MRP (default). Lower it to sell cheaper.</p>'+
@@ -3525,24 +3600,15 @@
       .map(function(u){ return '<option value="'+u[0]+'">'+esc(u[1])+'</option>'; }).join("");
     var gstOpts = [0,5,12,18,28].map(function(g){ return '<option value="'+g+'">'+g+'%</option>'; }).join("");
 
-    // The catalogue is 1746 parts but only 20 sections, and only a handful of parts are ever
-    // actually asked for. So describing the shelf is three different jobs, not one long form:
-    // start with what people want, fill the shared commercial fields a whole section at a time,
-    // and only then describe an individual part in full.
     var bkSecs = {};
     (state.catalog || []).forEach(function(r){ if (r && r.section) bkSecs[r.section] = (bkSecs[r.section]||0) + 1; });
     var bkOpts = Object.keys(bkSecs).sort().map(function(k){
       return '<option value="'+esc(k)+'">'+esc(k)+' ('+bkSecs[k]+' parts)</option>'; }).join("");
 
-    // The whole shelf, browsable and fixable. The worklist below answers "what should I do
-    // next"; this answers "what have I actually got, and what is wrong with it" — the question
-    // you cannot answer from a 1,746-option <select>.
-    // Five boxes did three jobs: two of them both meant "fill many at once", two more both meant
-    // "one part", and the entry point sat third. Now: what to do next, fill many, fix one — in
-    // that order, with the sub-parts of the merged boxes carried by .ms-part bands.
     var shelfHead = '<h3 class="ms-part">The full shelf / पूरी सूची</h3>'+
       '<div id="m-cat-stats" class="cat-stats"></div>'+
       '<input type="search" id="m-cat-q" class="m-input" placeholder="Search code, name or section" autocomplete="off" aria-label="Search parts">'+
+      '<div class="shelf-chips" id="m-shelf-chips"></div>'+
       '<select id="m-cat-filter" class="m-input" aria-label="Show which parts">'+
         CAT_FILTERS.map(function(c){
           return '<option value="'+c[0]+'">'+esc(c[1])+'</option>'; }).join("")+
@@ -3827,18 +3893,57 @@
       ["m-d-name","m-d-email","m-d-phone","m-d-city","m-d-margin","m-d-address"].forEach(function(id){ $(id).value=""; });
       await loadParty(); showToast("Dealer added ✓ / जोड़ा गया");
     };
-    // transfer
+    // multi-item stock transfer
+    _tfLines = [];
+    if ($("m-t-add")) $("m-t-add").onclick = function(){
+      var sku = pkValue("m-t-pk"), qty = parseInt($("m-t-qty").value, 10) || 0;
+      var m = $("m-t-msg"); m.className = "req-msg";
+      if (!sku){ m.className = "req-msg err"; m.textContent = "Pick a part first. / पहले पुर्ज़ा चुनें।"; return; }
+      if (qty <= 0){ m.className = "req-msg err"; m.textContent = "Quantity must be at least 1. / मात्रा 1 या अधिक हो।"; return; }
+      var ex = _tfLines.filter(function(l){ return l.sku === sku; })[0];
+      if (ex) ex.qty += qty; else _tfLines.push({ sku:sku, qty:qty });
+      $("m-t-qty").value = "1"; pkClear("m-t-pk"); drawTfLines();
+    };
+    if ($("m-t-lines")) $("m-t-lines").onclick = function(e){
+      var x = e.target.closest("[data-tf-del]"); if (!x) return;
+      _tfLines = _tfLines.filter(function(l){ return l.sku !== x.getAttribute("data-tf-del"); }); drawTfLines();
+    };
     if ($("m-t-btn")) $("m-t-btn").onclick = async function(){
-      var to = $("m-t-to").value, sku = pkValue("m-t-pk"), qty = parseInt($("m-t-qty").value,10);
+      var to = $("m-t-to").value;
       var m = $("m-t-msg"); m.className="req-msg";
-      if (!to){ m.className="req-msg err"; m.textContent = "No party to bill."; return; }
-      if (!sku){ m.className="req-msg err"; m.textContent = "Search for the part and tap it first. / पहले पुर्ज़ा चुनें।"; return; }
-      if (qty > 100 && !(await askConfirm("Transfer "+qty+" units to this party?\nThis is a large quantity — please confirm.\n\nबड़ी मात्रा — पक्का करें?", { okLabel:"Transfer / ट्रांसफर" }))) return;
-      var r = await sb.rpc("transfer", { p_to:to, p_sku:sku, p_qty:qty, p_pi:$("m-t-pi").value.trim()||null });
-      if (r.error){ m.className="req-msg err"; m.textContent = friendlyErr(r.error); return; }
-      m.textContent = "Transferred "+qty+" ✓"; $("m-t-pi").value=""; pkClear("m-t-pk");
-      showToast("Transferred "+qty+" ✓ / ट्रांसफर हुआ");
-      renderMoreStock();
+      if (!to){ m.className="req-msg err"; m.textContent = "No party selected to dispatch to. / पार्टी चुनें।"; return; }
+      // Support either multi-item table OR single picker fallback
+      var linesToTransfer = _tfLines.slice();
+      if (!linesToTransfer.length){
+        var singleSku = pkValue("m-t-pk"), singleQty = parseInt($("m-t-qty").value, 10);
+        if (singleSku && singleQty > 0) linesToTransfer.push({ sku:singleSku, qty:singleQty });
+      }
+      if (!linesToTransfer.length){
+        m.className="req-msg err"; m.textContent = "Add at least one part to the transfer challan. / कम से कम एक पुर्ज़ा जोड़ें।"; return;
+      }
+      var totalUnits = linesToTransfer.reduce(function(s,l){ return s + Number(l.qty||0); }, 0);
+      var toName = $("m-t-to").options[$("m-t-to").selectedIndex].text;
+      if (!(await askConfirm("Transfer " + totalUnits + " units (" + linesToTransfer.length + " items) to " + toName + "?\n\nपक्का करें?", { okLabel:"Transfer / ट्रांसफर" }))) return;
+
+      this.disabled = true; m.textContent = "Recording transfer… / ट्रांसफर हो रहा है…";
+      var piVal = ($("m-t-pi").value||"").trim() || null;
+      var failed = 0;
+      for (var i = 0; i < linesToTransfer.length; i++){
+        var line = linesToTransfer[i];
+        var r = await sb.rpc("transfer", { p_to:to, p_sku:line.sku, p_qty:line.qty, p_pi:piVal });
+        if (r.error){ failed++; }
+      }
+      this.disabled = false;
+      if (failed > 0){
+        m.className = "req-msg err";
+        m.textContent = failed + " item(s) failed to transfer. / " + failed + " आइटम ट्रांसफर नहीं हुए।";
+      } else {
+        m.textContent = "✓ Transferred " + totalUnits + " units across " + linesToTransfer.length + " items.";
+        _tfLines = []; drawTfLines();
+        $("m-t-pi").value = ""; pkClear("m-t-pk");
+        showToast("Transfer challan recorded ✓ / ट्रांसफर हुआ");
+        renderMoreStock();
+      }
     };
     // add external stock
     if ($("m-o-btn")) $("m-o-btn").onclick = async function(){
@@ -3855,15 +3960,13 @@
       var m = $("m-adj-msg"); m.className="req-msg";
       if (!sku){ m.className="req-msg err"; m.textContent = "Search for the part and tap it first. / पहले पुर्ज़ा चुनें।"; return; }
       if (!delta){ m.className="req-msg err"; m.textContent = "Enter a non-zero change (+ or −)."; return; }
-      // "this part" was all the old dialog could say — the picker below it could have been
-      // repointed since. Name the part being corrected.
       if (!(await askConfirm((delta>0?"Add ":"Remove ")+Math.abs(delta)+" unit(s) of "+skuName(sku)+"?\nReason: "+note+"\n\nपक्का करें?", { danger: delta<0, okLabel:"Apply / लागू करें" }))) return;
       var r = await sb.rpc("adjust_stock", { p_sku:sku, p_delta:delta, p_note:note });
       if (r.error){ m.className="req-msg err"; m.textContent = friendlyErr(r.error); return; }
       m.textContent = "Corrected ✓"; $("m-adj-note").value=""; pkClear("m-adj-pk");
       showToast("Stock corrected ✓ / स्टॉक सुधरा"); renderMoreStock();
     };
-    // new customer order — build a line list, then place it as an enduser order on MY shop
+    // new customer order (POS Counter Sale)
     _coLines = [];
     if ($("m-co-add")) $("m-co-add").onclick = function(){
       var sku = pkValue("m-co-pk"), qty = Math.max(1, Math.min(500, parseInt($("m-co-qty").value,10)||0));
@@ -3875,23 +3978,55 @@
       $("m-co-qty").value = "1"; pkClear("m-co-pk"); drawCoLines();
     };
     if ($("m-co-lines")) $("m-co-lines").onclick = function(e){
-      var x = e.target.closest("[data-co-del]"); if (!x) return;
-      _coLines = _coLines.filter(function(l){ return l.sku !== x.getAttribute("data-co-del"); }); drawCoLines();
+      var delBtn = e.target.closest("[data-co-del]");
+      if (delBtn){
+        _coLines = _coLines.filter(function(l){ return l.sku !== delBtn.getAttribute("data-co-del"); });
+        drawCoLines(); return;
+      }
+      var incBtn = e.target.closest("[data-co-inc]");
+      if (incBtn){
+        var skuInc = incBtn.getAttribute("data-co-inc");
+        var lineInc = _coLines.filter(function(l){ return l.sku === skuInc; })[0];
+        if (lineInc && lineInc.qty < 500){ lineInc.qty++; drawCoLines(); }
+        return;
+      }
+      var decBtn = e.target.closest("[data-co-dec]");
+      if (decBtn){
+        var skuDec = decBtn.getAttribute("data-co-dec");
+        var lineDec = _coLines.filter(function(l){ return l.sku === skuDec; })[0];
+        if (lineDec){
+          if (lineDec.qty > 1){ lineDec.qty--; } else { _coLines = _coLines.filter(function(l){ return l.sku !== skuDec; }); }
+          drawCoLines();
+        }
+        return;
+      }
     };
     if ($("m-co-create")) $("m-co-create").onclick = async function(){
       var m = $("m-co-msg"); m.className="req-msg";
-      var name = ($("m-co-name").value||"").trim();
-      if (!name){ m.className="req-msg err"; m.textContent = "Enter the customer’s name. / ग्राहक का नाम भरें।"; return; }
+      var name = ($("m-co-name").value||"").trim(), phone = ($("m-co-phone").value||"").trim();
+      if (!name){ m.className="req-msg err"; m.textContent = "Enter customer name. / ग्राहक का नाम भरें।"; return; }
       if (!_coLines.length){ m.className="req-msg err"; m.textContent = "Add at least one part. / कम से कम एक पुर्ज़ा जोड़ें।"; return; }
-      m.textContent = "Creating…";
+      m.textContent = "Creating order…";
       var r = await sb.rpc("place_enduser_order", { p_supplier: state.account.id, p_name: name,
-        p_phone: ($("m-co-phone").value||"").trim() || null, p_addr: ($("m-co-addr").value||"").trim() || null,
+        p_phone: phone || null, p_addr: ($("m-co-addr").value||"").trim() || null,
         p_lines: _coLines.map(function(l){ return { sku:l.sku, qty:l.qty }; }), p_client_key: uuid() });
       if (r.error){ m.className="req-msg err"; m.textContent = friendlyErr(r.error); return; }
+
+      // Offer instant WhatsApp bill share if customer phone is provided
+      if (phone){
+        var linesText = _coLines.map(function(l){
+          var item = state.catalog[skuToIndex(l.sku)];
+          return (item ? item.product_code : l.sku) + " x " + l.qty;
+        }).join("%0A");
+        var waUrl = "https://wa.me/91" + phone.replace(/\D/g,"") + "?text=" +
+          encodeURIComponent("नमस्ते " + name + ", KrishiGears से आपका ऑर्डर दर्ज हो गया है:%0A" + decodeURIComponent(linesText) + "%0Aधन्यवाद!");
+        m.innerHTML = 'Order created ✓ &middot; <a href="' + waUrl + '" target="_blank" rel="noopener" style="font-weight:700;color:var(--green-dark);">Send Bill on WhatsApp / व्हाट्सऐप पर रसीद भेजें</a>';
+      } else {
+        m.textContent = "Order created ✓ — see it under Requests → retail.";
+      }
       _coLines = []; drawCoLines();
       $("m-co-name").value=""; $("m-co-phone").value=""; $("m-co-addr").value="";
-      m.textContent = "Order created ✓ — see it under Requests → retail.";
-      showToast("Customer order created ✓ / ऑर्डर बना"); updateRequestBadge();
+      showToast("Counter order created ✓ / ऑर्डर बना"); updateRequestBadge();
     };
     // customer price multiple
     if ($("m-rm-save")) $("m-rm-save").onclick = async function(){
@@ -3977,7 +4112,7 @@
   // admin_products_json() is the one read that carries dealer_rate (cost) as well as identity,
   // so it is importer-only server-side. Cached for the session because it is 1,746 rows and
   // every filter/search redraw would otherwise re-fetch it; invalidated on any write.
-  var _adminRows = null, _catFilter = "all", _catShown = 40;
+  var _adminRows = null, _catFilter = "all", _catGroup = 0, _catShown = 40;
   function invalidateProducts(){ _adminRows = null; }
 
   async function loadAdminProducts(force){
@@ -3985,16 +4120,12 @@
     var r = await sb.rpc("admin_products_json");
     if (r.error) throw r.error;
     _adminRows = (r.data || []).map(function(p){
-      // what is missing IS the data here — compute it once rather than in every redraw
       p._noCode  = !String(p.product_code || "").trim();
       p._noPrice = !(Number(p.base_price) > 0);
       p._noTax   = !p.hsn || p.gst_pct === null || p.gst_pct === undefined;
       p._noHindi = !String(p.hindi_name || "").trim();
       p._noName  = !String(p.particular || "").trim();
       p._hidden  = p.active === false;
-      // "Ready to sell" has to mean ready to BILL. Without an HSN and a GST rate the part cannot
-      // go on an invoice, so leaving tax out of this made the header say "ready" on 1,333 rows
-      // that each carried an amber "no HSN/GST" chip two lines below it.
       p._ready   = !p._noCode && !p._noPrice && !p._noTax && !p._hidden && !p._noName;
       return p;
     });
@@ -4015,10 +4146,39 @@
     ready:   function(p){ return p._ready; }
   };
 
+  function drawShelfCategoryChips(){
+    var box = $("m-shelf-chips"); if (!box) return;
+    var groups = [
+      { id:0, label:"All Categories" },
+      { id:1, label:"Brush Cutter" },
+      { id:2, label:"HTP / Sprayer" },
+      { id:3, label:"Chainsaw" },
+      { id:4, label:"Water Pump" },
+      { id:5, label:"Earth Auger" },
+      { id:6, label:"Power Weeder" },
+      { id:7, label:"Tiller / Engine" }
+    ];
+    box.innerHTML = groups.map(function(g){
+      var active = Number(_catGroup) === Number(g.id);
+      return '<button type="button" class="shelf-chip' + (active ? ' active' : '') + '" data-cat-grp="' + g.id + '">' +
+        esc(g.label) + '</button>';
+    }).join("");
+    box.onclick = function(e){
+      var b = e.target.closest("[data-cat-grp]"); if (!b) return;
+      _catGroup = Number(b.getAttribute("data-cat-grp") || 0);
+      _catShown = 40;
+      drawProductList();
+    };
+  }
+
   function drawProductList(){
     var list = $("m-cat-list"); if (!list || !_adminRows) return;
+    drawShelfCategoryChips();
     var q = (($("m-cat-q") || {}).value || "").trim().toLowerCase();
     var rows = _adminRows.filter(CAT_TESTS[_catFilter] || CAT_TESTS.all);
+    if (_catGroup > 0){
+      rows = rows.filter(function(p){ return Number(p.group) === Number(_catGroup); });
+    }
     if (q) rows = rows.filter(function(p){
       return ((p.product_code || "") + " " + (p.particular || "") + " " + (p.hindi_name || "") + " " +
               (p.section || "") + " " + (p.brand || "") + " " + p.sku).toLowerCase().indexOf(q) !== -1;
@@ -4042,7 +4202,7 @@
     }
 
     if (!rows.length){
-      list.innerHTML = '<div class="empty-state" style="margin:0 14px;">Nothing matches that. / कुछ नहीं मिला।</div>';
+      list.innerHTML = '<div class="empty-state" style="margin:0 14px;">Nothing matches that filter. / कुछ नहीं मिला।</div>';
       return;
     }
     var shown = rows.slice(0, _catShown);
