@@ -592,11 +592,23 @@
   .disp-sec .tscroll{ overflow-x:auto; }
   .disp-sec table{ width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
   .disp-sec th, .disp-sec td{ text-align:left; padding:8px 10px; border-bottom:1px solid var(--warn-border); }
-  .disp-sec th.num, .disp-sec td.num{ text-align:right; }
-  .ship-label{
-    white-space:pre-line; background:#fff; border:1.5px dashed var(--warn-border);
-    border-radius:var(--r-md); padding:12px 14px; font-size:14px; line-height:1.5; font-weight:600; color:var(--text);
+  .ship-label-box{
+    position:relative; background:#fff; border:1.5px dashed var(--warn-border);
+    border-radius:var(--r-md); padding:12px 14px; margin-top:4px;
   }
+  .ship-label{
+    white-space:pre-line; font-size:14px; line-height:1.5; font-weight:600; color:var(--text);
+  }
+  .ship-label-actions{
+    display:flex; gap:8px; margin-top:10px; padding-top:8px; border-top:1px dashed var(--border);
+  }
+  .ship-label-btn{
+    flex:1; min-height:36px; padding:6px 12px; font-size:12px; font-weight:700;
+    border-radius:var(--r-sm); background:var(--surface); border:1px solid var(--border);
+    color:var(--text); display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    cursor:pointer;
+  }
+  .ship-label-btn:active{ background:var(--green-light); color:var(--green-dark); border-color:var(--green); }
   .ship-warn{ background:var(--danger-tint); border:1px solid var(--danger-border); color:var(--danger);
     border-radius:var(--r-md); padding:10px 12px; font-size:13px; font-weight:600; }
 
@@ -3299,7 +3311,11 @@
           '<p class="more-hint" style="margin-bottom:2px;"><b>Write this on the parcel / पार्सल पर यह पता लिखें</b></p>'+
           (thin
             ? '<div class="ship-warn">'+esc(ship)+'<br>No delivery address on file — ask them to add it in More → My delivery address. / पता नहीं है — उनसे पता माँगें।</div>'
-            : '<div class="ship-label">'+esc(ship)+'</div>')+
+            : '<div class="ship-label-box"><div class="ship-label">'+esc(ship)+'</div>'+
+              '<div class="ship-label-actions">'+
+                '<button type="button" class="ship-label-btn" data-copy-ship="'+esc(ship)+'">📋 Copy Address / कॉपी करें</button>'+
+                '<button type="button" class="ship-label-btn" data-wa-ship="'+esc(ship)+'">💬 Share WhatsApp / भेजें</button>'+
+              '</div></div>')+
           parcelBill+
           '<p class="more-hint" style="margin-top:12px;">Now send it, then fill the courier details below. / भेजने के बाद कूरियर की जानकारी भरें।</p>'+
           '<label class="m-lbl">Courier / कूरियर</label><input class="m-input disp-carrier" placeholder="e.g. Delhivery, Bus, Post office" maxlength="60">'+
@@ -4926,17 +4942,21 @@
     list.innerHTML = down.map(function(p){
       var curMargin = (p.margin_pct != null && p.margin_pct !== undefined) ? String(p.margin_pct) : "";
       var roleName = ROLE_LABELS[p.role] || p.role;
-      var loc = [p.city, p.phone].filter(Boolean).join(" · ");
-      return '<div class="req-card" style="margin-bottom:12px;border:1px solid var(--border);border-radius:var(--r-md);padding:12px;background:#fff;">'+
-        '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">'+
-          '<div style="font-weight:700;font-size:14px;color:var(--ink);">'+esc(p.name)+'</div>'+
-          '<span style="font-size:11.5px;padding:2px 8px;border-radius:var(--r-full);background:var(--green-light);color:var(--green);font-weight:600;text-transform:capitalize;">'+esc(roleName)+'</span>'+
+      var loc = [p.city, p.pin].filter(Boolean).join(" · ");
+      var phoneLink = p.phone ? '<a href="tel:'+esc(p.phone)+'" class="ship-label-btn" style="text-decoration:none;margin-top:6px;max-width:180px;">📞 '+esc(p.phone)+'</a>' : '';
+      return '<div class="req-card" style="margin-bottom:12px;border:1px solid var(--border);border-radius:var(--r-md);padding:14px;background:#fff;box-shadow:var(--shadow-xs);">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">'+
+          '<div>'+
+            '<div style="font-weight:800;font-size:15px;color:var(--text);letter-spacing:-0.01em;">'+esc(p.name)+'</div>'+
+            (loc ? '<div style="color:var(--muted);font-size:12px;margin-top:2px;">📍 '+esc(loc)+'</div>' : '')+
+            phoneLink+
+          '</div>'+
+          '<span style="font-size:11.5px;padding:3px 10px;border-radius:var(--r-pill);background:var(--green-light);color:var(--green-dark);font-weight:700;border:1px solid var(--green-mid);text-transform:capitalize;white-space:nowrap;">'+esc(roleName)+'</span>'+
         '</div>'+
-        (loc ? '<div style="color:var(--muted);font-size:12px;margin-top:2px;">'+esc(loc)+'</div>' : '')+
-        '<div class="row2" style="margin-top:8px;align-items:flex-end;">'+
+        '<div class="row2" style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--border);align-items:flex-end;">'+
           '<div>'+
             '<label class="m-lbl" style="margin-bottom:4px;font-size:12px;">Commission / Margin % (खाली = default)</label>'+
-            '<input type="number" id="m-margin-in-'+p.id+'" class="m-input" min="0" max="100" step="0.5" placeholder="Default" value="'+esc(curMargin)+'" style="margin:0;">'+
+            '<input type="number" id="m-margin-in-'+p.id+'" class="m-input" min="0" max="100" step="0.5" placeholder="Role Default" value="'+esc(curMargin)+'" style="margin:0;">'+
           '</div>'+
           '<div>'+
             '<button type="button" class="btn-primary m-btn" data-save-margin="'+p.id+'" style="margin:0;min-height:44px;width:100%;">Save / सहेजें</button>'+
@@ -5019,6 +5039,23 @@
   var lrTargetTag = null, lrPending = {};   // uploaded LR-copy URLs, keyed by "kind:id" until the order is completed
   async function onRequestsClick(e){
     var t = e.target;
+    var cpShip = t.closest && t.closest("[data-copy-ship]");
+    if (cpShip){
+      var txt = cpShip.getAttribute("data-copy-ship") || "";
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(txt).then(function(){ showToast("Address copied 📋 / पता कॉपी हुआ"); })
+          .catch(function(){ showToast("Address: " + txt.slice(0,30) + "…"); });
+      } else {
+        showToast("Address: " + txt.slice(0,30) + "…");
+      }
+      return;
+    }
+    var waShip = t.closest && t.closest("[data-wa-ship]");
+    if (waShip){
+      var waTxt = encodeURIComponent("Delivery Address / डिलीवरी पता:\n" + (waShip.getAttribute("data-wa-ship") || ""));
+      window.open("https://wa.me/?text=" + waTxt, "_blank", "noopener");
+      return;
+    }
     // retail close-out: move stock out to the customer, mark the order billed
     var fe = t.closest && t.closest("[data-fulfill-eu]");
     if (fe){
