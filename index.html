@@ -250,6 +250,30 @@
   #view-admin{ padding:16px; max-width:680px; margin:0 auto; }
   #view-admin h2{ color:var(--green-dark); margin:0; font-size:18px; }
   .admin-head{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
+
+  /* God Mode / Platform Master Control */
+  #view-god-mode{ padding:16px; max-width:960px; margin:0 auto; }
+  .gm-header{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; padding-bottom:10px; border-bottom:2px solid var(--border); }
+  .gm-title{ color:var(--green-dark); font-size:18px; font-weight:800; margin:0; display:flex; align-items:center; gap:6px; }
+  .gm-badge{ font-size:10px; font-weight:700; text-transform:uppercase; background:#1b4332; color:#d8f3dc; padding:2px 7px; border-radius:12px; letter-spacing:0.5px; }
+  .gm-subtitle{ font-size:12px; color:var(--muted); margin-top:2px; }
+  .gm-tabs{ display:flex; gap:6px; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:6px; overflow-x:auto; }
+  .gm-tab-btn{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:8px 14px; font-size:13px; font-weight:700; color:var(--text); cursor:pointer; white-space:nowrap; }
+  .gm-tab-btn.active{ background:var(--green-dark); color:#fff; border-color:var(--green-dark); }
+  .gm-filter-bar{ display:flex; gap:8px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+  .gm-filter-bar select, .gm-filter-bar input{ padding:9px 12px; border:1px solid var(--border); border-radius:var(--r-md); font-size:13px; background:#fff; }
+  .gm-filter-bar input{ flex:1; min-width:180px; }
+  .gm-card{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:12px 14px; margin-bottom:10px; box-shadow:var(--shadow-sm); }
+  .gm-card-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+  .gm-party-name{ font-size:14.5px; font-weight:700; color:var(--green-dark); }
+  .gm-party-role{ font-size:11px; font-weight:700; text-transform:uppercase; padding:2px 6px; border-radius:4px; background:var(--green-light); color:var(--green-dark); }
+  .gm-party-meta{ font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:12px; margin-top:4px; }
+  .gm-party-meta strong{ color:var(--text); font-weight:600; }
+  .gm-stock-table, .gm-order-table{ width:100%; border-collapse:collapse; font-size:12.5px; margin-top:8px; }
+  .gm-stock-table th, .gm-stock-table td, .gm-order-table th, .gm-order-table td{ padding:8px 10px; text-align:left; border-bottom:1px solid var(--border); }
+  .gm-stock-table th, .gm-order-table th{ background:var(--surface); font-weight:700; color:var(--green-dark); font-size:12px; }
+  .gm-stock-qty{ font-weight:800; color:var(--green-dark); }
+  .gm-exit-btn{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:6px 12px; font-size:12px; font-weight:700; color:var(--text); cursor:pointer; }
   .admin-legend{ font-size:12px; color:var(--muted); margin:2px 0 12px; }
   .admin-toolbar{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
   .admin-toolbar .btn{ width:auto; margin-top:0; padding:10px 14px; font-size:13px; }
@@ -1220,6 +1244,63 @@
   <section id="view-more" class="hidden">
     <h2 class="view-title">More / अधिक</h2>
     <div id="more-body"></div>
+  </section>
+
+  <!-- God Mode / Master Intelligence (Platform Owner Only) -->
+  <section id="view-god-mode" class="hidden">
+    <div class="gm-header">
+      <div>
+        <div class="gm-title">
+          Platform Master Intelligence <span class="gm-badge">God Mode</span>
+        </div>
+        <div class="gm-subtitle">प्लेटफ़ॉर्म मास्टर कंट्रोल — Cross-Tenant Surveillance &amp; Insights</div>
+      </div>
+      <button type="button" class="gm-exit-btn" id="gm-exit-btn">&times; Exit / बाहर निकलें</button>
+    </div>
+
+    <div class="gm-tabs" role="tablist">
+      <button type="button" class="gm-tab-btn active" id="gm-tab-networks" role="tab" aria-selected="true">Networks / नेटवर्क</button>
+      <button type="button" class="gm-tab-btn" id="gm-tab-stock" role="tab" aria-selected="false">Stock Locator / स्टॉक खोज</button>
+      <button type="button" class="gm-tab-btn" id="gm-tab-orders" role="tab" aria-selected="false">Global Orders / सभी ऑर्डर</button>
+    </div>
+
+    <!-- Sub-tab 1: Networks -->
+    <div id="gm-panel-networks">
+      <div class="gm-filter-bar">
+        <select id="gm-filter-importer" aria-label="Filter by Importer">
+          <option value="">All Importers / सभी आयातक</option>
+        </select>
+        <input type="search" id="gm-search-party" placeholder="Search party, phone, city, PIN... / खोजें">
+      </div>
+      <div id="gm-networks-body"></div>
+    </div>
+
+    <!-- Sub-tab 2: Stock Locator -->
+    <div id="gm-panel-stock" class="hidden">
+      <div class="gm-filter-bar">
+        <select id="gm-filter-stock-importer" aria-label="Filter Stock by Importer">
+          <option value="">All Importer Networks / सभी नेटवर्क</option>
+        </select>
+        <input type="search" id="gm-search-stock" placeholder="Search SKU, part code, particular... / पुर्ज़ा खोजें">
+      </div>
+      <div id="gm-stock-body"></div>
+    </div>
+
+    <!-- Sub-tab 3: Global Orders -->
+    <div id="gm-panel-orders" class="hidden">
+      <div class="gm-filter-bar">
+        <select id="gm-filter-order-status" aria-label="Filter by Status">
+          <option value="">All Statuses / सभी स्थिति</option>
+          <option value="received">Received / प्राप्त</option>
+          <option value="confirmed">Confirmed / स्वीकृत</option>
+          <option value="billed">Billed / बिल बन गया</option>
+          <option value="completed">Completed / पूरा हुआ</option>
+          <option value="rejected">Rejected / रद्द</option>
+        </select>
+        <input type="search" id="gm-search-order" placeholder="Search PI, buyer, supplier, phone... / ऑर्डर खोजें">
+      </div>
+      <div id="gm-orders-body"></div>
+    </div>
   </section>
 
 </main>
@@ -2282,7 +2363,7 @@
   });
 
   function hideAll(){
-    ["view-login","view-catalog","view-cart","view-pi","view-orders","view-requests","view-more"].forEach(function(id){ var el = $(id); if (el) el.classList.add("hidden"); });
+    ["view-login","view-catalog","view-cart","view-pi","view-orders","view-requests","view-more","view-god-mode"].forEach(function(id){ var el = $(id); if (el) el.classList.add("hidden"); });
     $("bottom-nav").classList.add("hidden");
     $("header-actions").classList.add("hidden");
     $("app-header").classList.remove("authed");
@@ -2516,6 +2597,319 @@
     updateAuthButton(); updateNavVisibility();
     setActiveNav("nav-more"); pushView("more");
     renderMore();
+  }
+
+  // ================= GOD MODE / PLATFORM MASTER INTELLIGENCE =================
+  var _gmTab = "networks";
+  var _gmNetworksData = [];
+  var _gmStockData = [];
+  var _gmOrdersData = [];
+
+  function showGodMode(){
+    hideAll();
+    $("view-god-mode").classList.remove("hidden");
+    $("header-actions").classList.remove("hidden");
+    updateAuthButton();
+    pushView("godmode");
+    paintHindi();
+    renderGodMode();
+  }
+
+  function renderGodMode(){
+    wireGodModeTabs();
+    if (_gmTab === "networks") loadGodNetworks();
+    else if (_gmTab === "stock") loadGodStock();
+    else if (_gmTab === "orders") loadGodOrders();
+  }
+
+  function wireGodModeTabs(){
+    var tabs = ["networks", "stock", "orders"];
+    tabs.forEach(function(t){
+      var btn = $("gm-tab-" + t);
+      if (btn && !btn._wired){
+        btn._wired = true;
+        btn.onclick = function(){
+          _gmTab = t;
+          tabs.forEach(function(ot){
+            var b = $("gm-tab-" + ot), p = $("gm-panel-" + ot);
+            if (b) { b.classList.toggle("active", ot === t); b.setAttribute("aria-selected", ot === t ? "true" : "false"); }
+            if (p) p.classList.toggle("hidden", ot !== t);
+          });
+          renderGodMode();
+        };
+      }
+    });
+    var exitBtn = $("gm-exit-btn");
+    if (exitBtn && !exitBtn._wired){
+      exitBtn._wired = true;
+      exitBtn.onclick = function(){
+        if (state.session && state.account) showCatalog();
+        else showLogin();
+      };
+    }
+  }
+
+  // 1. Networks
+  function loadGodNetworks(){
+    var body = $("gm-networks-body");
+    body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">Loading networks across all importers… / नेटवर्क लोड हो रहे हैं…</div>';
+    sb.rpc("god_mode_networks").then(function(res){
+      if (res.error){ body.innerHTML = '<div class="login-error">' + esc(res.error.message) + '</div>'; return; }
+      _gmNetworksData = res.data || [];
+      populateGodImporterFilter();
+      renderGodNetworksList();
+    }).catch(function(err){
+      body.innerHTML = '<div class="login-error">' + esc(err.message || err) + '</div>';
+    });
+  }
+
+  function populateGodImporterFilter(){
+    var sel = $("gm-filter-importer");
+    if (!sel) return;
+    var current = sel.value;
+    var importers = [];
+    var seen = {};
+    _gmNetworksData.forEach(function(p){
+      if (p.importer_id && !seen[p.importer_id]){
+        seen[p.importer_id] = true;
+        importers.push({ id: p.importer_id, name: p.importer_name || "Importer" });
+      }
+    });
+    sel.innerHTML = '<option value="">All Importers / सभी आयातक (' + importers.length + ')</option>' +
+      importers.map(function(imp){
+        return '<option value="' + esc(imp.id) + '">' + esc(imp.name) + '</option>';
+      }).join("");
+    if (current) sel.value = current;
+    if (!sel._wired){
+      sel._wired = true;
+      sel.onchange = renderGodNetworksList;
+      var q = $("gm-search-party");
+      if (q) q.oninput = renderGodNetworksList;
+    }
+  }
+
+  function renderGodNetworksList(){
+    var sel = $("gm-filter-importer");
+    var impId = sel ? sel.value : "";
+    var q = (($("gm-search-party") || {}).value || "").trim().toLowerCase();
+    var rows = _gmNetworksData.filter(function(p){
+      if (impId && p.importer_id !== impId) return false;
+      if (q){
+        var match = (p.name && p.name.toLowerCase().indexOf(q) !== -1) ||
+                    (p.phone && p.phone.toLowerCase().indexOf(q) !== -1) ||
+                    (p.city && p.city.toLowerCase().indexOf(q) !== -1) ||
+                    (p.pin && p.pin.toLowerCase().indexOf(q) !== -1) ||
+                    (p.role && p.role.toLowerCase().indexOf(q) !== -1) ||
+                    (p.parent_name && p.parent_name.toLowerCase().indexOf(q) !== -1) ||
+                    (p.importer_name && p.importer_name.toLowerCase().indexOf(q) !== -1);
+        if (!match) return false;
+      }
+      return true;
+    });
+
+    var body = $("gm-networks-body");
+    if (!rows.length){
+      body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">No parties match this search / कोई पार्टी नहीं मिली</div>';
+      return;
+    }
+
+    body.innerHTML = rows.map(function(p){
+      var roleColor = p.role === "importer" ? "#1b4332" : (p.role === "distributor" ? "#2d6a4f" : (p.role === "dealer" ? "#40916c" : "#52b788"));
+      var roleBg = p.role === "importer" ? "#d8f3dc" : "#e8f5e9";
+      var marginText = p.margin_pct != null ? (p.margin_pct + '%') : (p.role === "shopkeeper" ? "3× (MRP)" : "Default");
+      return '<div class="gm-card">' +
+        '<div class="gm-card-head">' +
+          '<div>' +
+            '<span class="gm-party-name">' + esc(p.name) + '</span>' +
+            (p.city ? (' <span style="font-size:12.5px;color:var(--muted);">(' + esc(p.city) + (p.pin ? ', ' + esc(p.pin) : '') + ')</span>') : '') +
+          '</div>' +
+          '<span class="gm-party-role" style="background:' + roleBg + ';color:' + roleColor + ';">' + esc(p.role) + '</span>' +
+        '</div>' +
+        '<div class="gm-party-meta">' +
+          (p.phone ? ('<div>Phone: <strong><a href="tel:' + esc(p.phone) + '" style="color:var(--green-dark);">' + esc(p.phone) + '</a></strong></div>') : '') +
+          (p.parent_name ? ('<div>Parent: <strong>' + esc(p.parent_name) + '</strong></div>') : '') +
+          (p.importer_name && p.role !== 'importer' ? ('<div>Importer: <strong>' + esc(p.importer_name) + '</strong></div>') : '') +
+          '<div>Margin: <strong>' + esc(marginText) + '</strong></div>' +
+          (p.gstin ? ('<div>GSTIN: <strong>' + esc(p.gstin) + '</strong></div>') : '') +
+        '</div>' +
+        (p.address ? ('<div style="font-size:11.5px;color:var(--muted);margin-top:4px;">📍 ' + esc(p.address) + '</div>') : '') +
+      '</div>';
+    }).join("");
+    paintHindi();
+  }
+
+  // 2. Stock Locator
+  function loadGodStock(){
+    var body = $("gm-stock-body");
+    body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">Loading stock across all network locations… / स्टॉक लोड हो रहा है…</div>';
+    sb.rpc("god_mode_stock", { p_importer_id: null }).then(function(res){
+      if (res.error){ body.innerHTML = '<div class="login-error">' + esc(res.error.message) + '</div>'; return; }
+      _gmStockData = res.data || [];
+      populateGodStockImporterFilter();
+      renderGodStockList();
+    }).catch(function(err){
+      body.innerHTML = '<div class="login-error">' + esc(err.message || err) + '</div>';
+    });
+  }
+
+  function populateGodStockImporterFilter(){
+    var sel = $("gm-filter-stock-importer");
+    if (!sel) return;
+    var current = sel.value;
+    var importers = [];
+    var seen = {};
+    _gmStockData.forEach(function(s){
+      if (s.importer_id && !seen[s.importer_id]){
+        seen[s.importer_id] = true;
+        importers.push({ id: s.importer_id, name: s.importer_name || "Importer" });
+      }
+    });
+    sel.innerHTML = '<option value="">All Importer Networks / सभी नेटवर्क (' + importers.length + ')</option>' +
+      importers.map(function(imp){
+        return '<option value="' + esc(imp.id) + '">' + esc(imp.name) + '</option>';
+      }).join("");
+    if (current) sel.value = current;
+    if (!sel._wired){
+      sel._wired = true;
+      sel.onchange = renderGodStockList;
+      var q = $("gm-search-stock");
+      if (q) q.oninput = renderGodStockList;
+    }
+  }
+
+  function renderGodStockList(){
+    var sel = $("gm-filter-stock-importer");
+    var impId = sel ? sel.value : "";
+    var q = (($("gm-search-stock") || {}).value || "").trim().toLowerCase();
+    var rows = _gmStockData.filter(function(s){
+      if (impId && s.importer_id !== impId) return false;
+      if (q){
+        var match = (s.sku && s.sku.toLowerCase().indexOf(q) !== -1) ||
+                    (s.product_code && s.product_code.toLowerCase().indexOf(q) !== -1) ||
+                    (s.particular && s.particular.toLowerCase().indexOf(q) !== -1) ||
+                    (s.holder_name && s.holder_name.toLowerCase().indexOf(q) !== -1) ||
+                    (s.holder_city && s.holder_city.toLowerCase().indexOf(q) !== -1) ||
+                    (s.holder_pin && s.holder_pin.toLowerCase().indexOf(q) !== -1);
+        if (!match) return false;
+      }
+      return true;
+    });
+
+    var body = $("gm-stock-body");
+    if (!rows.length){
+      body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">No matching stock found / कोई स्टॉक नहीं मिला</div>';
+      return;
+    }
+
+    var html = '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Showing ' + rows.length + ' stock holdings</div>';
+    html += '<div style="overflow-x:auto;"><table class="gm-stock-table">' +
+      '<thead><tr>' +
+        '<th>Part / Code</th>' +
+        '<th>Particular</th>' +
+        '<th>Held By</th>' +
+        '<th>Role</th>' +
+        '<th>Location</th>' +
+        '<th>Qty</th>' +
+        '<th>Network</th>' +
+      '</tr></thead><tbody>';
+
+    html += rows.slice(0, 300).map(function(s){
+      return '<tr>' +
+        '<td><strong>' + esc(s.product_code || s.sku) + '</strong><br><span style="font-size:11px;color:var(--muted);">' + esc(s.sku) + '</span></td>' +
+        '<td>' + esc(s.particular || '—') + '</td>' +
+        '<td><strong>' + esc(s.holder_name) + '</strong>' + (s.holder_phone ? ('<br><a href="tel:' + esc(s.holder_phone) + '" style="font-size:11px;color:var(--green-dark);">' + esc(s.holder_phone) + '</a>') : '') + '</td>' +
+        '<td><span class="gm-party-role">' + esc(s.holder_role) + '</span></td>' +
+        '<td>' + esc([s.holder_city, s.holder_pin].filter(Boolean).join(" - ") || '—') + '</td>' +
+        '<td class="gm-stock-qty">' + Number(s.qty) + '</td>' +
+        '<td style="font-size:11.5px;color:var(--muted);">' + esc(s.importer_name || '—') + '</td>' +
+      '</tr>';
+    }).join("");
+
+    html += '</tbody></table></div>';
+    if (rows.length > 300){
+      html += '<div style="padding:10px;text-align:center;font-size:12px;color:var(--muted);">Showing first 300 items. Refine search for specific parts.</div>';
+    }
+    body.innerHTML = html;
+    paintHindi();
+  }
+
+  // 3. Global Orders
+  function loadGodOrders(){
+    var body = $("gm-orders-body");
+    body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">Loading orders across all networks… / सभी ऑर्डर लोड हो रहे हैं…</div>';
+    sb.rpc("god_mode_orders").then(function(res){
+      if (res.error){ body.innerHTML = '<div class="login-error">' + esc(res.error.message) + '</div>'; return; }
+      _gmOrdersData = res.data || [];
+      wireGodOrdersFilter();
+      renderGodOrdersList();
+    }).catch(function(err){
+      body.innerHTML = '<div class="login-error">' + esc(err.message || err) + '</div>';
+    });
+  }
+
+  function wireGodOrdersFilter(){
+    var sel = $("gm-filter-order-status");
+    if (sel && !sel._wired){
+      sel._wired = true;
+      sel.onchange = renderGodOrdersList;
+      var q = $("gm-search-order");
+      if (q) q.oninput = renderGodOrdersList;
+    }
+  }
+
+  function renderGodOrdersList(){
+    var sel = $("gm-filter-order-status");
+    var st = sel ? sel.value : "";
+    var q = (($("gm-search-order") || {}).value || "").trim().toLowerCase();
+    var rows = _gmOrdersData.filter(function(o){
+      if (st && o.status !== st) return false;
+      if (q){
+        var match = (o.pi_number && o.pi_number.toLowerCase().indexOf(q) !== -1) ||
+                    (o.buyer_name && o.buyer_name.toLowerCase().indexOf(q) !== -1) ||
+                    (o.buyer_phone && o.buyer_phone.toLowerCase().indexOf(q) !== -1) ||
+                    (o.buyer_city && o.buyer_city.toLowerCase().indexOf(q) !== -1) ||
+                    (o.supplier_name && o.supplier_name.toLowerCase().indexOf(q) !== -1) ||
+                    (o.importer_name && o.importer_name.toLowerCase().indexOf(q) !== -1);
+        if (!match) return false;
+      }
+      return true;
+    });
+
+    var body = $("gm-orders-body");
+    if (!rows.length){
+      body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">No matching orders found / कोई ऑर्डर नहीं मिला</div>';
+      return;
+    }
+
+    var html = '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Showing ' + rows.length + ' orders</div>';
+    html += '<div style="overflow-x:auto;"><table class="gm-order-table">' +
+      '<thead><tr>' +
+        '<th>PI / Date</th>' +
+        '<th>Buyer</th>' +
+        '<th>Supplier</th>' +
+        '<th>Status</th>' +
+        '<th>Lines / Units</th>' +
+        '<th>Grand Total</th>' +
+        '<th>Network</th>' +
+      '</tr></thead><tbody>';
+
+    html += rows.slice(0, 200).map(function(o){
+      var d = o.created_at ? new Date(o.created_at).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }) : "";
+      var badge = (o.status === "billed" || o.status === "completed") ? "badge-green" : (o.status === "rejected" ? "badge-red" : "badge-amber");
+      return '<tr>' +
+        '<td><strong>' + esc(o.pi_number || ('Order #' + o.id)) + '</strong><br><span style="font-size:11px;color:var(--muted);">' + d + '</span></td>' +
+        '<td><strong>' + esc(o.buyer_name || '—') + '</strong>' + (o.buyer_city ? ('<br><span style="font-size:11px;color:var(--muted);">' + esc(o.buyer_city) + '</span>') : '') + '</td>' +
+        '<td>' + esc(o.supplier_name || '—') + '</td>' +
+        '<td><span class="' + badge + '">' + esc(ORDER_STATUS_LABEL[o.status] || o.status) + '</span></td>' +
+        '<td>' + Number(o.line_count || 0) + ' lines<br><span style="font-size:11px;color:var(--muted);">' + Number(o.total_units || 0) + ' units</span></td>' +
+        '<td><strong style="color:var(--green-dark);">' + inr(o.grand) + '</strong></td>' +
+        '<td style="font-size:11.5px;color:var(--muted);">' + esc(o.importer_name || '—') + '</td>' +
+      '</tr>';
+    }).join("");
+
+    html += '</tbody></table></div>';
+    body.innerHTML = html;
+    paintHindi();
   }
 
   async function renderRequests(){
@@ -5587,7 +5981,23 @@
     if ($("eu-pickup")) $("eu-pickup").addEventListener("change", function(){
       applyPickupState(); saveEuContact();
     });
-    $("home-brand").onclick = function(){
+    var _logoTaps = 0, _logoTapTimer = null;
+    $("home-brand").onclick = function(e){
+      _logoTaps++;
+      if (_logoTapTimer) clearTimeout(_logoTapTimer);
+      _logoTapTimer = setTimeout(function(){ _logoTaps = 0; }, 1800);
+      if (_logoTaps >= 5){
+        _logoTaps = 0;
+        var entered = prompt("Enter Master Access Key / मास्टर की दर्ज करें:");
+        if (entered && entered.trim() === "krishigears@2026"){
+          try { localStorage.setItem("kg_god_mode", "1"); } catch(e){}
+          showGodMode();
+          return;
+        } else if (entered) {
+          showToast("Access Denied / अनुमति नहीं है");
+        }
+        return;
+      }
       if (state.session && state.session.role !== "admin"){ showCatalog(); resetToBrowse(); }
     };
     $("nav-catalog").onclick = function(){
@@ -5604,7 +6014,7 @@
     $("view-requests").addEventListener("click", onRequestsClick);
     $("bill-file").addEventListener("change", onBillFileChosen);
     // history routing table + notification deep-link into Requests
-    VIEW_SHOW = { catalog:showCatalog, cart:showCart, orders:showOrders, requests:showRequests, more:showMore, pi:showPI };
+    VIEW_SHOW = { catalog:showCatalog, cart:showCart, orders:showOrders, requests:showRequests, more:showMore, pi:showPI, godmode:showGodMode };
     if (navigator.serviceWorker) navigator.serviceWorker.addEventListener("message", function(e){
       if (!e.data) return;
       if (e.data.go === "requests" && isSupplier()) showRequests();
@@ -5615,6 +6025,9 @@
     window.addEventListener("error", function(ev){ logEvent("error", (ev.message||"") + " @ " + (ev.filename||"") + ":" + (ev.lineno||"")); });
     window.addEventListener("unhandledrejection", function(ev){ logEvent("error", "unhandled: " + ((ev.reason && (ev.reason.message||ev.reason)) || "")); });
     if (location.hash === "#requests"){ window._deepReq = true; try { history.replaceState(null, "", location.pathname + location.search); } catch(e){} }
+    if (location.hash === "#godmode" || new URLSearchParams(location.search).get("godmode") === "1" || localStorage.getItem("kg_god_mode") === "1"){
+      window._deepGodMode = true;
+    }
     $("generate-pi-btn").onclick = function(){
       if (!Object.keys(state.cart).some(function(k){ return state.cart[k] > 0; })) return;
       if (state.enduser){
@@ -5865,6 +6278,7 @@
     }
     // restore an existing Supabase session (survives reloads)
     sb.auth.getSession().then(function(res){
+      if (window._deepGodMode){ window._deepGodMode = false; showGodMode(); return; }
       var session = res && res.data && res.data.session;
       if (!session || !session.user){ loadCart(); showLogin(); return; }
       var u = session.user;
@@ -5875,7 +6289,10 @@
         if (!state.account){ if (!painted) showLogin(); return; } // offline keeps the cached view
         painted ? renderCatalogBody() : showCatalog();
       });
-    }).catch(function(){ loadCart(); showLogin(); });
+    }).catch(function(){
+      if (window._deepGodMode){ window._deepGodMode = false; showGodMode(); return; }
+      loadCart(); showLogin();
+    });
     if ("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(function(){}); }
     flushOutbox(); // send any order stored offline on a previous visit
   }

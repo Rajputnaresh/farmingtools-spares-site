@@ -847,3 +847,162 @@ insert into storage.buckets (id, name, public) values ('bills','bills', true)
 drop policy if exists bills_upload on storage.objects;
 create policy bills_upload on storage.objects for insert to authenticated
   with check (bucket_id = 'bills');
+
+-- ===================================================================
+-- PLATFORM OWNER INTELLIGENCE & GOD MODE (Cross-Tenant Admin)
+-- Enables the software owner to inspect all tenant networks, spare parts,
+-- stock by location, and commercial flow across all importers.
+-- ===================================================================
+
+create or replace function god_mode_networks()
+  returns table(
+    id uuid,
+    name text,
+    role text,
+    parent_id uuid,
+    parent_name text,
+    importer_id uuid,
+    importer_name text,
+    city text,
+    pin text,
+    phone text,
+    address text,
+    gstin text,
+    margin_pct numeric,
+    retail_mult numeric,
+    created_at timestamptz
+  )
+  language sql stable security definer set search_path = public as $$
+  with recursive up as (
+    select p.id, p.name, p.role, p.parent_id, p.id as root_id, p.name as root_name
+    from parties p where p.parent_id is null
+    union all
+    select c.id, c.name, c.role, c.parent_id, up.root_id, up.root_name
+    from parties c join up on c.parent_id = up.id
+  )
+  select 
+    p.id,
+    p.name,
+    p.role,
+    p.parent_id,
+    par.name as parent_name,
+    up.root_id as importer_id,
+    up.root_name as importer_name,
+    p.city,
+    p.pin,
+    p.phone,
+    p.address,
+    p.gstin,
+    p.margin_pct,
+    p.retail_mult,
+    p.created_at
+  from parties p
+  left join parties par on par.id = p.parent_id
+  left join up on up.id = p.id
+  order by up.root_name nulls last, p.role, p.name;
+$$;
+
+create or replace function god_mode_stock(p_importer_id uuid default null)
+  returns table(
+    party_id uuid,
+    party_name text,
+    party_role text,
+    importer_name text,
+    city text,
+    pin text,
+    phone text,
+    sku text,
+    product_code text,
+    particular text,
+    section text,
+    qty int
+  )
+  language sql stable security definer set search_path = public as $$
+  with recursive up as (
+    select p.id, p.name as root_name, p.id as root_id
+    from parties p where p.parent_id is null
+    union all
+    select c.id, up.root_name, up.root_id
+    from parties c join up on c.parent_id = up.id
+  ),
+  raw_stock as (
+    select party_id, sku, sum(delta)::int as qty
+    from (
+      select to_party as party_id, sku, qty as delta from movements
+      union all
+      select from_party as party_id, sku, -qty as delta from movements where from_party is not null
+    ) m
+    group by party_id, sku
+    having sum(delta) <> 0
+  )
+  select 
+    s.party_id,
+    p.name as party_name,
+    p.role as party_role,
+    up.root_name as importer_name,
+    p.city,
+    p.pin,
+    p.phone,
+    s.sku,
+    c.product_code,
+    c.particular,
+    c.section,
+    s.qty
+  from raw_stock s
+  join parties p on p.id = s.party_id
+  left join up on up.id = p.id
+  left join catalog c on c.sku = s.sku
+  where (p_importer_id is null or up.root_id = p_importer_id)
+  order by c.product_code, up.root_name, p.name;
+$$;
+
+create or replace function god_mode_orders()
+  returns table(
+    id bigint,
+    created_at timestamptz,
+    pi_number text,
+    status text,
+    subtotal numeric,
+    grand numeric,
+    buyer_name text,
+    buyer_city text,
+    buyer_phone text,
+    supplier_name text,
+    importer_name text,
+    line_count bigint,
+    total_units bigint
+  )
+  language sql stable security definer set search_path = public as $$
+  with recursive up as (
+    select p.id, p.name as root_name
+    from parties p where p.parent_id is null
+    union all
+    select c.id, up.root_name
+    from parties c join up on c.parent_id = up.id
+  )
+  select 
+    o.id,
+    o.created_at,
+    o.pi_number,
+    o.status,
+    o.subtotal,
+    o.grand,
+    b.name as buyer_name,
+    b.city as buyer_city,
+    b.phone as buyer_phone,
+    s.name as supplier_name,
+    up.root_name as importer_name,
+    count(l.sku) as line_count,
+    coalesce(sum(l.qty), 0) as total_units
+  from orders o
+  join parties b on b.id = o.dealer_party
+  left join parties s on s.id = o.importer_party
+  left join up on up.id = o.importer_party
+  left join order_lines l on l.order_id = o.id
+  group by o.id, o.created_at, o.pi_number, o.status, o.subtotal, o.grand, b.name, b.city, b.phone, s.name, up.root_name
+  order by o.created_at desc;
+$$;
+
+grant execute on function god_mode_networks() to authenticated, anon;
+grant execute on function god_mode_stock(uuid) to authenticated, anon;
+grant execute on function god_mode_orders() to authenticated, anon;
