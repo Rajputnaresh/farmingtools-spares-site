@@ -7,7 +7,7 @@
      on first load; preloading starts it with the scripts instead -->
 <link rel="preload" as="fetch" href="catalog.json" crossorigin>
 <meta name="robots" content="noindex, nofollow">
-<title>FarmingTools.in Spares</title>
+<title>KrishiGears Spares</title>
 <!-- The photographic logo is unreadable as a favicon — at 32px the tiller, the soil and the
      triangle merge into one dark smudge — so small sizes get the simplified vector mark and
      the launcher gets the real artwork. -->
@@ -1053,7 +1053,7 @@
   <button class="brand-btn" id="home-brand" type="button" aria-label="Home / होम" title="Home / होम">
     <img class="brand-mark" src="brand/logo-64.png" alt="" width="34" height="34" decoding="async">
     <span class="brand-txt">
-      <h1>FarmingTools.in Spares</h1>
+      <h1>KrishiGears Spares</h1>
       <span class="sub">Spare parts ordering / स्पेयर पार्ट्स ऑर्डर</span>
     </span>
   </button>
@@ -1082,8 +1082,8 @@
          simply searched for FarmingTools landed on a wall and read it as "wrong place". The
          mark and the name say whose app this is before the form asks for anything. -->
     <div class="login-brand">
-      <img src="brand/logo-256.png" alt="FarmingTools.in" width="104" height="104" fetchpriority="high">
-      <div class="lb-name">FarmingTools.in</div>
+      <img src="brand/logo-256.png" alt="KrishiGears" width="104" height="104" fetchpriority="high">
+      <div class="lb-name">KrishiGears Spares</div>
       <div class="lb-tag"><span class="l-en">Spare parts for every machine you run</span><br><span lang="hi" class="l-hi">हर मशीन के स्पेयर पार्ट्स</span></div>
     </div>
     <!-- Anyone who searches for FarmingTools and lands here is far more likely to be a farmer
@@ -1352,7 +1352,7 @@
   "use strict";
 
   var SELLER = {
-    name: "FarmingTools.in Spares",
+    name: "KrishiGears Spares",
     gstin: "08EQLPD7160R1Z2",
     place: "Jaipur, Rajasthan",
     phone: "6006078815"
@@ -1475,7 +1475,7 @@
   // to 3, so every price a walk-in customer sees is MRP without a second code path.
   // Read from config rather than hardcoded here — it is already the deploy's single source of truth.
   var PUBLIC_SUPPLIER = (window.LEDGER_CONFIG && window.LEDGER_CONFIG.IMPORTER_ID) || "";
-  var PUBLIC_SELLER_NAME = "FarmingTools.in Spares"; // the party row is suffixed "(Importer)" — trade wording, not shopfront wording
+  var PUBLIC_SELLER_NAME = "KrishiGears Spares"; // the party row is suffixed "(Importer)" — trade wording, not shopfront wording
 
   var state = {
     catalog: [],
@@ -4151,14 +4151,14 @@
       this.disabled = true;
       try {
         var rows = await loadAdminProducts(true);
-        downloadCsv("farmingtools-parts.csv", toCsv(rows));
+        downloadCsv("spares-parts.csv", toCsv(rows));
         showToast(rows.length + " parts downloaded ✓ / फ़ाइल उतर गई");
       } catch(e){ say(esc(friendlyErr(e)), true); }
       this.disabled = false;
     };
     $("m-csv-tpl").onclick = function(){
       // one worked example beats a paragraph explaining the columns
-      downloadCsv("farmingtools-parts-template.csv", CSV_COLS.join(",") + "\r\n" +
+      downloadCsv("spares-parts-template.csv", CSV_COLS.join(",") + "\r\n" +
         ',NEW-001,Example new part,उदाहरण पुर्ज़ा,1,Brush Cutter Accessories & Part,,,,250,750,84329010,18,pcs,1,1,,,,,,yes');
       showToast("Template downloaded ✓ / नमूना उतर गया");
     };

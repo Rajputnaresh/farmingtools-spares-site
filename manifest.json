@@ -1,7 +1,7 @@
 {
-  "name": "FarmingTools.in Spares",
-  "short_name": "FT Spares",
-  "description": "Order genuine spare parts for brush cutters, chainsaws, tillers, sprayers and more — FarmingTools.in",
+  "name": "KrishiGears Spares",
+  "short_name": "KG Spares",
+  "description": "Order genuine farm machinery spare parts for brush cutters, chainsaws, tillers, sprayers and more",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
