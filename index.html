@@ -109,7 +109,7 @@
   /* The mark sits INSIDE the existing 44px brand button rather than beside it, so the header
      gains a logo without gaining a second tap target or a millimetre of height. */
   .brand-btn{ background:none; border:none; padding:0; margin:0; text-align:left; color:#fff;
-    min-height:44px; min-width:0; overflow:hidden; display:flex; align-items:center; gap:9px; }
+    min-height:44px; min-width:0; flex:1 1 auto; overflow:hidden; display:flex; align-items:center; gap:9px; }
   .brand-btn h1{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   /* On a phone the header carries the mark, the product name and two controls, and the name is
      what loses — it ellipsised to "FarmingTools.in Sp…" on every screen. The authed header
@@ -120,8 +120,8 @@
     header.app-header.authed .brand-btn h1{ white-space:normal; overflow:visible; line-height:1.15; }
   }
   .brand-mark{ width:34px; height:34px; flex:none; display:block; }
-  .brand-txt{ min-width:0; }
-  .header-actions{ display:flex; align-items:center; gap:6px; flex-shrink:0; }
+  .brand-txt{ min-width:0; flex:1 1 auto; overflow:hidden; }
+  .header-actions{ display:flex; align-items:center; gap:6px; flex:0 0 auto; }
   .icon-btn{ background:rgba(255,255,255,.15); border:none; color:#fff; border-radius:var(--r-md); min-height:44px; min-width:44px; display:inline-flex; align-items:center; justify-content:center; }
   .cart-btn{
     position:relative; background:rgba(255,255,255,.15); border:none; color:#fff;
@@ -442,7 +442,7 @@
   .thumb-ph .t-icon{ width:34px; height:34px; }
   .item-main{ flex:1 1 auto; min-width:0; }
   :root{ color-scheme:light; }
-  .item-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:3px; }
+  .item-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:3px; flex-wrap:wrap; }
   .item-code{
     font-weight:800; font-size:13.5px; color:var(--green-dark); white-space:nowrap; flex:none;
     background:var(--green-light); padding:2px 8px; border-radius:var(--r-sm); border:1px solid var(--green-mid);
@@ -461,8 +461,8 @@
   .stock-in{ background:var(--green-light); color:var(--green-dark); border:1px solid var(--green-mid); }
   .stock-out{ background:var(--calm-tint); color:var(--muted); border:1px solid var(--border); }
   .stock-chain{ background:var(--warn-tint); color:var(--warn-ink); border:1px solid var(--warn-border); }
-  .item-bottom{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; padding-top:8px; border-top:1px dashed var(--border); }
-  .rate-wrap{ display:flex; flex-direction:column; min-width:0; }
+  .item-bottom{ display:flex; align-items:center; justify-content:space-between; gap:8px 10px; margin-top:10px; padding-top:8px; border-top:1px dashed var(--border); flex-wrap:wrap; }
+  .rate-wrap{ display:flex; flex-direction:column; min-width:0; flex:1 1 auto; }
   .rate{ font-weight:800; font-size:19px; color:var(--green-dark); line-height:1.1; }
   .rate.na{ color:var(--muted); font-weight:700; font-size:13.5px; }
   .rate-sub{ font-size:10.5px; font-weight:600; color:var(--muted); margin-top:2px; }
@@ -470,7 +470,7 @@
   .line-x{ background:#fff; border:1px solid var(--border); color:var(--danger); font-weight:700;
     width:34px; height:34px; border-radius:var(--r-sm); line-height:1; cursor:pointer; }
   .line-x:hover{ background:var(--danger-tint); }
-  .item-actions{ display:flex; align-items:center; gap:8px; margin-left:auto; flex:0 0 auto; }
+  .item-actions{ display:flex; align-items:center; gap:8px; margin-left:auto; flex:0 1 auto; flex-wrap:wrap; }
   .diagram-btn{
     background:#fff; color:var(--muted); border:1px solid var(--border); border-radius:var(--r-md);
     padding:8px 10px; font-size:12px; font-weight:700; min-height:44px;
@@ -572,12 +572,12 @@
 
   /* cart */
   .cart-item{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:12px; margin-bottom:8px; box-shadow:0 1px 3px rgba(0,0,0,0.02); }
-  .cart-item-top{ display:flex; justify-content:space-between; gap:8px; }
+  .cart-item-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; flex-wrap:wrap; }
   .cart-item-name{ font-size:14px; font-weight:700; color:var(--text); }
   .cart-item-code{ font-size:12.5px; color:var(--muted); font-weight:600; }
-  .cart-item-bottom{ display:flex; align-items:center; justify-content:space-between; margin-top:10px; }
-  .remove-btn{ background:none; border:none; color:var(--danger); font-size:12.5px; font-weight:700; min-height:44px; padding:6px 10px; }
-  .line-total{ font-weight:800; font-size:14.5px; color:var(--green-dark); }
+  .cart-item-bottom{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; flex-wrap:wrap; }
+  .remove-btn{ background:none; border:none; color:var(--danger); font-size:12.5px; font-weight:700; min-height:44px; padding:6px 10px; margin-left:auto; }
+  .line-total{ font-weight:800; font-size:14.5px; color:var(--green-dark); margin-left:auto; }
   .grand-total-bar{
     background:#fff; border:2px solid var(--green); border-radius:var(--r-lg); padding:14px; margin-top:12px;
     display:flex; justify-content:space-between; align-items:center; font-size:16px; font-weight:800; color:var(--green-dark);
