@@ -5069,10 +5069,13 @@
       line(M, y, W - M, y); y -= 16;
     }
     function docHead(){
-      txt(M, y, 13, true, pi.docType === "PI" ? "PROFORMA INVOICE" : "PURCHASE ORDER");
+      var isRetail = pi.dealerCode === "RETAIL" || (state && state.enduser);
+      var title = pi.docType === "PI" ? "PROFORMA INVOICE" : (isRetail ? "ORDER" : "PURCHASE ORDER");
+      txt(M, y, 13, true, title);
       txt(W - M - 170, y, 11, true, pi.number); y -= 18;
-      txt(M, y, 10, false, "Buyer: " + pi.dealerName + (pi.dealerCode ? " (" + pi.dealerCode + ")" : "") + (pi.dealerGstin ? "  GSTIN: " + pi.dealerGstin : "")); y -= 13;
-      txt(M, y, 10, false, "Date: " + pi.date + "   Valid till: " + pi.validTill); y -= 13;
+      var partyLabel = isRetail ? "Ordered by: " : "Buyer: ";
+      txt(M, y, 10, false, partyLabel + pi.dealerName + ((pi.dealerCode && !isRetail) ? " (" + pi.dealerCode + ")" : "") + (pi.dealerGstin ? "  GSTIN: " + pi.dealerGstin : "")); y -= 13;
+      txt(M, y, 10, false, "Date: " + pi.date + (isRetail ? "" : "   Valid till: " + pi.validTill)); y -= 13;
       // the PDF is what gets printed and taped to the parcel — the destination has to be on it
       if (pi.shipTo) wrapText("Deliver to: " + pi.shipTo, 88).forEach(function(w){ txt(M, y, 10, false, w); y -= 12; });
       y -= 6;
@@ -5097,7 +5100,11 @@
     txt(cols.rate - 60, y, 9, false, "Subtotal:"); txt(cols.amt, y, 9, false, "Rs." + pi.subtotal); y -= 13;
     txt(cols.rate - 60, y, 9, false, gstHead(pi) + ":"); txt(cols.amt, y, 9, false, "+ Rs." + pi.gst); y -= 15;
     txt(cols.rate - 60, y, 12, true, "Grand Total:"); txt(cols.amt, y, 12, true, "Rs." + pi.grand); y -= 24;
-    wrapText((pi.docType === "PI" ? "This is a Proforma Invoice from the seller. " : "This is a Purchase Order (buyer's request). ") + gstFoot(pi) + "Payment via UPI / bank transfer as agreed. Prices valid till " + pi.validTill + ".", 95)
+    var isRetailDoc = pi.dealerCode === "RETAIL" || (state && state.enduser);
+    var footText = isRetailDoc
+      ? "This is an Order requested from the shop. The shop will confirm this order and contact the customer. " + gstFoot(pi) + "Payment via UPI / bank transfer as agreed."
+      : ((pi.docType === "PI" ? "This is a Proforma Invoice from the seller. " : "This is a Purchase Order (buyer's request). ") + gstFoot(pi) + "Payment via UPI / bank transfer as agreed. Prices valid till " + pi.validTill + ".");
+    wrapText(footText, 95)
       .forEach(function(w){ txt(M, y, 8, false, w); y -= 10; });
     // This PDF is the artifact that actually leaves the app — forwarded on WhatsApp, printed,
     // handed across a counter. It should say where it came from. pdfSafe() strips non-ASCII,
@@ -5138,9 +5145,11 @@
     showToast("Preparing PDF… / पीडीएफ बन रही है");
     var blob = await buildPIPdf(pi);
     var file = new File([blob], pi.number + ".pdf", { type: "application/pdf" });
+    var isRetail = pi.dealerCode === "RETAIL" || (state && state.enduser);
+    var docName = pi.docType === "PI" ? "Proforma Invoice " : (isRetail ? "Order " : "Purchase Order ");
     if (navigator.canShare && navigator.canShare({ files: [file] })){
       navigator.share({ files: [file], title: pi.number,
-        text: pi.dealerName + " — Purchase Order " + pi.number + " — Grand Total Rs." + pi.grand +
+        text: pi.dealerName + " — " + docName + pi.number + " — Grand Total Rs." + pi.grand +
               "\nOrder spares at farmingtools.in" })
         .catch(function(){});
     } else {
@@ -5150,7 +5159,7 @@
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
       showToast("PDF downloaded — attach it in WhatsApp / पीडीएफ डाउनलोड हुई");
-      announce("PI PDF downloaded as " + pi.number + ".pdf. Attach it in WhatsApp.");
+      announce("PDF downloaded as " + pi.number + ".pdf. Attach it in WhatsApp.");
     }
   }
 
