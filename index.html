@@ -253,17 +253,21 @@
 
   /* God Mode / Platform Master Control */
   #view-god-mode{ padding:16px; max-width:960px; margin:0 auto; }
-  .gm-header{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; padding-bottom:10px; border-bottom:2px solid var(--border); }
+  .gm-header{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; padding-bottom:12px; border-bottom:2px solid var(--border); }
   .gm-title{ color:var(--green-dark); font-size:18px; font-weight:800; margin:0; display:flex; align-items:center; gap:6px; }
   .gm-badge{ font-size:10px; font-weight:700; text-transform:uppercase; background:#1b4332; color:#d8f3dc; padding:2px 7px; border-radius:12px; letter-spacing:0.5px; }
   .gm-subtitle{ font-size:12px; color:var(--muted); margin-top:2px; }
-  .gm-tabs{ display:flex; gap:6px; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:6px; overflow-x:auto; }
-  .gm-tab-btn{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:8px 14px; font-size:13px; font-weight:700; color:var(--text); cursor:pointer; white-space:nowrap; }
+  .gm-kpis{ display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-bottom:14px; }
+  .gm-kpi{ background:#fff; border:1px solid var(--border); border-radius:var(--r-md); padding:10px 12px; display:flex; flex-direction:column; }
+  .gm-kpi-lbl{ font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+  .gm-kpi-val{ font-size:20px; font-weight:800; color:var(--green-dark); margin-top:3px; font-variant-numeric:tabular-nums; }
+  .gm-tabs{ display:flex; gap:6px; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:6px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .gm-tab-btn{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:9px 15px; font-size:13px; font-weight:700; color:var(--text); cursor:pointer; white-space:nowrap; min-height:44px; }
   .gm-tab-btn.active{ background:var(--green-dark); color:#fff; border-color:var(--green-dark); }
   .gm-filter-bar{ display:flex; gap:8px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
-  .gm-filter-bar select, .gm-filter-bar input{ padding:9px 12px; border:1px solid var(--border); border-radius:var(--r-md); font-size:13px; background:#fff; }
+  .gm-filter-bar select, .gm-filter-bar input{ padding:9px 12px; border:1px solid var(--border); border-radius:var(--r-md); font-size:13px; background:#fff; min-height:44px; }
   .gm-filter-bar input{ flex:1; min-width:180px; }
-  .gm-card{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:12px 14px; margin-bottom:10px; box-shadow:var(--shadow-sm); }
+  .gm-card{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:12px 14px; margin-bottom:10px; }
   .gm-card-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
   .gm-party-name{ font-size:14.5px; font-weight:700; color:var(--green-dark); }
   .gm-party-role{ font-size:11px; font-weight:700; text-transform:uppercase; padding:2px 6px; border-radius:4px; background:var(--green-light); color:var(--green-dark); }
@@ -272,8 +276,13 @@
   .gm-stock-table, .gm-order-table{ width:100%; border-collapse:collapse; font-size:12.5px; margin-top:8px; }
   .gm-stock-table th, .gm-stock-table td, .gm-order-table th, .gm-order-table td{ padding:8px 10px; text-align:left; border-bottom:1px solid var(--border); }
   .gm-stock-table th, .gm-order-table th{ background:var(--surface); font-weight:700; color:var(--green-dark); font-size:12px; }
-  .gm-stock-qty{ font-weight:800; color:var(--green-dark); }
-  .gm-exit-btn{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:6px 12px; font-size:12px; font-weight:700; color:var(--text); cursor:pointer; }
+  .gm-stock-qty{ font-weight:800; color:var(--green-dark); font-variant-numeric:tabular-nums; }
+  .gm-exit-btn{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:8px 14px; font-size:12.5px; font-weight:700; color:var(--text); cursor:pointer; min-height:44px; }
+  @media (max-width:640px){
+    #view-god-mode{ padding:12px 8px; }
+    .gm-stock-table, .gm-order-table{ font-size:12px; }
+    .gm-stock-table th, .gm-stock-table td, .gm-order-table th, .gm-order-table td{ padding:6px 8px; }
+  }
   .admin-legend{ font-size:12px; color:var(--muted); margin:2px 0 12px; }
   .admin-toolbar{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
   .admin-toolbar .btn{ width:auto; margin-top:0; padding:10px 14px; font-size:13px; }
@@ -364,8 +373,14 @@
   }
 
   /* search & filters */
-  .search-row{ position:relative; margin-bottom:8px; }
-  .search-row input{ padding-right:46px; }
+  .search-row{ position:relative; margin-bottom:10px; }
+  .search-row input{
+    padding-left:42px; padding-right:46px; border-radius:var(--r-md);
+    background-image:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b6b60' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='8'/><line x1='21' y1='21' x2='16.65' y2='16.65'/></svg>");
+    background-repeat:no-repeat; background-position:13px center; background-size:18px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.03); border:1.5px solid var(--border);
+  }
+  .search-row input:focus{ border-color:var(--green); box-shadow:0 0 0 3px var(--green-light); outline:none; }
   /* placeholder carries the search hint — keep it ≥4.5:1 (muted green-gray on white) */
   .search-row input::placeholder{ color:var(--muted); opacity:1; }
   /* type=search adds a native clear ✕; hide it so our own button is the only one */
@@ -375,151 +390,108 @@
     background:none; border:none; font-size:20px; color:var(--muted);
     width:44px; height:44px; line-height:1; border-radius:var(--r-sm);
   }
-  .filter-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+  .filter-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
   .filter-row .state-only{ display:none; } /* selects kept only as list-scope state */
-  .stock-chip{ background:#fff; border:1px solid var(--border); border-radius:var(--r-pill); min-height:44px; padding:6px 14px; font-size:13px; font-weight:700; color:var(--muted); }
+  .stock-chip{ background:#fff; border:1px solid var(--border); border-radius:var(--r-pill); min-height:44px; padding:6px 14px; font-size:13px; font-weight:700; color:var(--muted); box-shadow:0 1px 2px rgba(0,0,0,0.02); }
   .stock-chip.on{ background:var(--green-light); border-color:var(--green); color:var(--green-dark); }
   .filter-row select{
     flex:1 1 140px; min-width:0; padding:12px 10px; border:1px solid var(--border);
     border-radius:var(--r-md); background:#fff; font-size:13px; min-height:48px;
   }
-  .result-count{ font-size:13px; color:var(--muted); margin:2px 0 8px; }
-  .list-reset{ background:none; border:none; color:var(--green-dark); font-weight:600; font-size:13px; min-height:44px; padding:6px 2px; margin-bottom:2px; }
+  .result-count{ font-size:13px; color:var(--muted); margin:4px 0 10px; font-weight:600; }
+  .list-reset{ background:none; border:none; color:var(--green-dark); font-weight:700; font-size:13.5px; min-height:44px; padding:6px 2px; margin-bottom:4px; display:inline-flex; align-items:center; gap:4px; }
 
   /* browse landing (progressive disclosure over 1,746 SKUs) */
-  .browse-head{ font-size:15px; font-weight:700; color:var(--green-dark); margin:6px 0 12px; }
-  .browse-back{ background:none; border:none; color:var(--green-dark); font-weight:600; font-size:13px; min-height:44px; padding:6px 2px; margin-bottom:4px; }
+  .browse-head{ font-size:16px; font-weight:800; color:var(--green-dark); margin:6px 0 12px; }
+  .browse-back{ background:none; border:none; color:var(--green-dark); font-weight:700; font-size:13.5px; min-height:44px; padding:6px 2px; margin-bottom:6px; display:inline-flex; align-items:center; gap:4px; }
   .tiles{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .tile{
     background:#fff; border:1px solid var(--border); border-radius:var(--r-lg);
-    padding:14px 12px; text-align:left; min-height:72px;
+    padding:16px 14px; text-align:left; min-height:76px;
     display:flex; flex-direction:column; justify-content:center; gap:4px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.02);
   }
-  .tile:active{ border-color:var(--green); }
-  .tile .t-icon{ width:26px; height:26px; color:var(--green); }
-  /* categorical wayfinding: each machine group gets a muted, on-brand hue so a
-     dealer recognizes a group by colour on return. Icon + soft chip only; text stays ink. */
-  .tile .t-chip{ display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:var(--r-lg); margin-bottom:4px; background:var(--green-light); }
-  .tile .t-name{ font-weight:700; font-size:13.5px; color:var(--text); line-height:1.3; }
-  .tile .t-count{ font-size:12px; color:var(--muted); }
-  /* Four category hues used to live here (oklch 150 / 210 / 75 / 35) so a returning dealer
-     could recognise a group by colour. Removed: two of them WERE the app's own signal colours
-     — hue 75 is the amber reserved for warning, hue 35 the red reserved for danger — spent as
-     decoration on the first screen a farmer sees. And the tints were chroma 0.03–0.045, which
-     is invisible on a cheap LCD in sunlight, so the One Green Rule was broken for a
-     distinction nobody could perceive. The four icon glyphs (gear / weeder / droplet /
-     seedling) already carry the recognition, in one green, at any brightness.
-     Every thumbnail slot keeps a tint so a photoless or still-loading row is a soft square
-     rather than a stark empty box; thumbFail() swaps in the group icon on that same tint. */
+  .tile:active{ border-color:var(--green); background:var(--green-light); }
+  .tile .t-icon{ width:26px; height:26px; color:var(--green-dark); }
+  .tile .t-chip{ display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:var(--r-lg); margin-bottom:6px; background:var(--green-light); }
+  .tile .t-name{ font-weight:700; font-size:14px; color:var(--text); line-height:1.3; }
+  .tile .t-count{ font-size:12px; color:var(--muted); font-weight:600; }
   .item-thumb,.thumb-ph,.tile .t-chip{ background:var(--green-light); }
 
   /* list */
   .item{
     background:#fff; border:1px solid var(--border); border-radius:var(--r-lg);
-    padding:10px 12px; margin-bottom:8px;
-    display:flex; gap:12px; align-items:flex-start;
+    padding:12px 14px; margin-bottom:10px;
+    display:flex; gap:14px; align-items:flex-start;
+    box-shadow:0 1px 4px rgba(0,0,0,0.03);
+    transition:border-color .15s ease, box-shadow .15s ease;
   }
+  .item:hover{ border-color:var(--green-mid); box-shadow:0 2px 8px rgba(0,0,0,0.05); }
   /* real per-part photo — tap to enlarge. Rows with no extracted photo swap to .thumb-ph (group icon). */
   .item-thumb{
-    flex:0 0 66px; width:66px; height:66px; border:1px solid var(--border);
-    border-radius:var(--r-sm); object-fit:cover; object-position:top center;
-    background:var(--green-light); cursor:zoom-in;
+    flex:0 0 76px; width:76px; height:76px; border:1.5px solid var(--border);
+    border-radius:var(--r-md); object-fit:cover; object-position:top center;
+    background:var(--green-light); cursor:zoom-in; box-shadow:0 1px 2px rgba(0,0,0,0.04);
   }
   .item-thumb:focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
-  /* while the lazy JPEG loads, show a quiet wrench glyph so slow-3G lists don't read as "no photos";
-     the loaded image (object-fit:cover) fully covers it */
   img.item-thumb[data-g]{
     background-image:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b6b60' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.8 2.8-2.1-2.1 2.9-2.7z'/></svg>");
     background-repeat:no-repeat; background-position:center; background-size:26px;
   }
-  /* fallback when no per-part photo exists — a calm group icon, never a misleading page crop */
-  .thumb-ph{ display:flex; align-items:center; justify-content:center; cursor:default; color:var(--green-dark); background:var(--green-light); }
-  .thumb-ph .t-icon{ width:30px; height:30px; }
+  .thumb-ph{ display:flex; align-items:center; justify-content:center; cursor:default; color:var(--green-dark); background:var(--green-light); flex:0 0 76px; width:76px; height:76px; border-radius:var(--r-md); border:1.5px solid var(--border); }
+  .thumb-ph .t-icon{ width:34px; height:34px; }
   .item-main{ flex:1 1 auto; min-width:0; }
-  /* the meta tag alone leaves computed color-scheme at "normal"; this is what actually pins it */
   :root{ color-scheme:light; }
-  .item-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
-  /* The part code is the one string a farmer matches against the number stamped on the broken
-     part in his other hand — it must never break across lines. It wins the row; the section
-     name gives way, because he already knows the section from how he navigated here. */
-  .item-code{ font-weight:700; font-size:14px; color:var(--green-dark); white-space:nowrap; flex:none; }
-  /* Contrast on these was never the problem — size was. A 55-year-old shopkeeper reading a
-     Devanagari conjunct in direct sunlight cannot resolve a 10px glyph at any contrast ratio,
-     so the whole small-text band moves up. That bump pushed this nowrap pill 204px wide in a
-     334px row, which is what put seven badges past the viewport edge — hence min-width:0. */
-  /* Now that this only renders on cross-section lists, it is the ONLY thing telling you which
-     section a search hit came from — so an ellipsis eats precisely the information it is kept
-     for ("Brush Cutter Accessories & Part" needs 204px and had 137px at 320px, truncating 43 of
-     51 rows). The nowrap+ellipsis was added to stop the pill pushing past the viewport; wrapping
-     stops that too, and keeps the words. */
+  .item-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:3px; }
+  .item-code{
+    font-weight:800; font-size:13.5px; color:var(--green-dark); white-space:nowrap; flex:none;
+    background:var(--green-light); padding:2px 8px; border-radius:var(--r-sm); border:1px solid var(--green-mid);
+    letter-spacing:0.02em;
+  }
   .badge{
-    background:var(--green-light); color:var(--green-dark); font-size:12px; font-weight:600;
-    padding:3px 7px; border-radius:var(--r-lg); line-height:1.35;
+    background:var(--bg); color:var(--muted); font-size:11.5px; font-weight:600;
+    padding:2px 8px; border-radius:var(--r-sm); line-height:1.35; border:1px solid var(--border);
     min-width:0; flex:0 1 auto; overflow-wrap:anywhere; text-align:right;
   }
-  .item-particular{ font-size:13.5px; margin:4px 0 8px; color:var(--text); line-height:1.35; }
-  /* availability from Supabase (chain_availability) — three states: on my supplier's shelf,
-     reachable further up the chain, or nowhere. Who holds upstream stock is never revealed. */
-  .stock-badge{ font-size:12px; font-weight:600; padding:3px 7px; border-radius:var(--r-pill); white-space:nowrap; }
-  .stock-in{ background:var(--green-light); color:var(--green-dark); }
-  /* out-of-stock is a calm, muted state — not an alarm (most of the catalog may be unstocked) */
-  .stock-out{ background:var(--calm-tint); color:var(--muted); }
-  /* held further up the chain: orderable, just not on the shelf today */
-  .stock-chain{ background:var(--warn-tint); color:var(--warn-ink); }
-  .item-bottom{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
-  /* The price is the number a retail buyer is actually deciding on, and it was set smaller
-     than the taxonomy pill above it. DESIGN.md gives 800 weight to the number that carries
-     data; this is that number. 18px is the Headline step — the row's loudest element. */
-  .rate{ font-weight:800; font-size:18px; color:var(--text); }
-  .rate.na{ color:var(--muted); font-weight:600; font-size:13px; }
-  /* per-line photo cell + decline button on request / PI tables */
+  .item-particular{ font-size:14px; font-weight:700; margin:2px 0 4px; color:var(--text); line-height:1.35; }
+  .item-particular-hi{ font-size:13px; font-weight:600; color:var(--muted); margin-bottom:6px; line-height:1.3; }
+  .item-spec{ font-size:12px; color:var(--muted); margin-bottom:8px; line-height:1.4; }
+  .item-spec b{ color:var(--text); font-weight:700; }
+  .stock-badge{ font-size:11.5px; font-weight:700; padding:3px 8px; border-radius:var(--r-pill); white-space:nowrap; display:inline-flex; align-items:center; gap:4px; }
+  .stock-in{ background:var(--green-light); color:var(--green-dark); border:1px solid var(--green-mid); }
+  .stock-out{ background:var(--calm-tint); color:var(--muted); border:1px solid var(--border); }
+  .stock-chain{ background:var(--warn-tint); color:var(--warn-ink); border:1px solid var(--warn-border); }
+  .item-bottom{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; padding-top:8px; border-top:1px dashed var(--border); }
+  .rate-wrap{ display:flex; flex-direction:column; min-width:0; }
+  .rate{ font-weight:800; font-size:19px; color:var(--green-dark); line-height:1.1; }
+  .rate.na{ color:var(--muted); font-weight:700; font-size:13.5px; }
+  .rate-sub{ font-size:10.5px; font-weight:600; color:var(--muted); margin-top:2px; }
   td.ln-thumb{ width:1%; padding:2px 4px; vertical-align:middle; }
   .line-x{ background:#fff; border:1px solid var(--border); color:var(--danger); font-weight:700;
-    width:32px; height:32px; border-radius:var(--r-sm); line-height:1; cursor:pointer; }
+    width:34px; height:34px; border-radius:var(--r-sm); line-height:1; cursor:pointer; }
   .line-x:hover{ background:var(--danger-tint); }
-  /* wrap, not nowrap: at 360px (the commonest cheap-Android width) an active stepper pushed
-     .item-controls to 264px inside a 236px column and clipped the "+" button off-screen */
-  /* These two used to always wrap onto separate lines — 182px of secondary link plus an 86px
-     primary button could not share 264px — which was most of why a row stood 194px tall.
-     Shortening the label to "Catalog / सूची" lets them share one line from 360px up. Neither
-     may SHRINK to achieve it: letting the secondary flex down just moved the truncation from
-     the badge to the button, and at 320px crushed it to a 54px sliver. It wraps instead. */
-  /* The row cannot hold price + catalogue link + a 130px stepper on one line inside 236px, so
-     it is two lines by arithmetic. Given that, make the two lines mean something: what the part
-     IS and costs on the first, the one thing you can DO about it on the second, alone and
-     right-aligned under your thumb. */
-  .item-facts{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0; flex:1 1 100%; }
-  .item-controls{ display:flex; align-items:center; gap:6px; margin-left:auto; flex:0 0 auto; }
-  .item-facts .diagram-btn{ flex:0 0 auto; white-space:nowrap; margin-left:auto; }
-  /* Secondary by construction. This opens a scan of the printed catalogue page — genuinely
-     useful, never the reason anyone came to the row. As a filled green pill sitting above the
-     ordering action it made the reference material louder than the purchase, on all 1,746 rows.
-     Still a full 44px target; it just stops shouting. */
+  .item-actions{ display:flex; align-items:center; gap:8px; margin-left:auto; flex:0 0 auto; }
   .diagram-btn{
-    background:none; color:var(--muted); border:1px solid transparent; border-radius:var(--r-sm);
-    padding:8px 6px; font-size:12px; font-weight:600; min-height:44px;
+    background:#fff; color:var(--muted); border:1px solid var(--border); border-radius:var(--r-md);
+    padding:8px 10px; font-size:12px; font-weight:700; min-height:44px;
+    display:inline-flex; align-items:center; justify-content:center; gap:5px;
+    transition:background-color .12s ease;
+  }
+  .diagram-btn:active{ background:var(--green-light); color:var(--green-dark); border-color:var(--green); }
+  .stepper{ display:flex; align-items:center; border:2px solid var(--green); border-radius:var(--r-md); overflow:hidden; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
+  .stepper button{ background:var(--green-light); border:none; width:44px; height:44px; font-size:20px; color:var(--green-dark); font-weight:800; }
+  .stepper button:active{ background:var(--green-mid); }
+  .stepper input{ width:48px; text-align:center; border:none; padding:0; height:44px; min-height:44px; -moz-appearance:textfield; font-size:16px; font-weight:800; color:var(--green-dark); }
+  .add-btn{
+    background:var(--green); color:#fff; border:none; border-radius:var(--r-md); padding:10px 18px;
+    font-size:14px; font-weight:800; min-height:44px; min-width:110px; box-shadow:0 1px 3px rgba(30,125,52,0.3);
     display:inline-flex; align-items:center; justify-content:center; gap:6px;
   }
-  /* Add and the stepper that replaces it must occupy the SAME footprint. They did not — 86px
-     against 136px — so tapping Add wrapped .item-controls onto a second line and grew the row
-     by 52px, shoving every row below it down. On a phone that means your next tap lands on the
-     row above the one you were aiming at, and there is no order-review step to catch it.
-     Slimming the row in v110 made the jolt proportionally worse, not better.
-     Equal widths only fit once the Catalog link moved off this line onto .item-facts; while
-     they shared a line the pair needed 266px of a 236px row and every row wrapped. */
-  .item-controls .add-btn, .item-controls .stepper{ min-width:136px; box-sizing:border-box; justify-content:center; }
-  .stepper{ display:flex; align-items:center; border:1px solid var(--border); border-radius:var(--r-sm); overflow:hidden; }
-  .stepper button{ background:var(--green-light); border:none; width:44px; height:44px; font-size:18px; color:var(--green-dark); font-weight:700; }
-  .stepper input{ width:46px; text-align:center; border:none; padding:0; height:44px; min-height:44px; -moz-appearance:textfield; font-size:15px; }
-  .add-btn{
-    background:var(--green); color:#fff; border:none; border-radius:var(--r-sm); padding:8px 14px;
-    font-size:13px; font-weight:700; min-height:44px;
-  }
-  .add-btn[disabled], .stepper[disabled]{ opacity:.5; }
-  .demand-btn{ background:#fff; color:var(--warn-ink); border:1px solid var(--warn-border); }
-  .show-more{ background:#fff; border:1px solid var(--green); color:var(--green-dark); border-radius:var(--r-md); width:100%; min-height:48px; font-weight:700; font-size:14px; margin:4px 0 8px; }
-  .empty-state{ text-align:center; color:var(--muted); padding:40px 10px; font-size:13.5px; line-height:1.6; }
-  .empty-state .retry-btn{ display:inline-block; margin-top:12px; background:var(--green); color:#fff; border:none; border-radius:var(--r-md); min-height:44px; padding:0 18px; font-weight:700; }
+  .add-btn[disabled], .stepper[disabled]{ opacity:.5; box-shadow:none; }
+  .demand-btn{ background:#fff; color:var(--warn-ink); border:1.5px solid var(--warn-border); font-weight:700; font-size:12.5px; box-shadow:none; }
+  .show-more{ background:#fff; border:2px solid var(--green); color:var(--green-dark); border-radius:var(--r-md); width:100%; min-height:48px; font-weight:800; font-size:14.5px; margin:8px 0 12px; }
+  .empty-state{ text-align:center; color:var(--muted); padding:40px 10px; font-size:14px; line-height:1.6; }
+  .empty-state .retry-btn{ display:inline-block; margin-top:12px; background:var(--green); color:#fff; border:none; border-radius:var(--r-md); min-height:44px; padding:0 20px; font-weight:700; }
   .spinner{ width:26px; height:26px; border:3px solid var(--border); border-top-color:var(--green); border-radius:50%; margin:0 auto 12px; animation:spin .8s linear infinite; }
   @keyframes spin{ to{ transform:rotate(360deg); } }
   @media (prefers-reduced-motion: reduce){ .spinner{ animation:none; } }
@@ -528,25 +500,33 @@
   nav.bottom-nav{
     position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid var(--border);
     display:flex; z-index:var(--z-nav);
+    box-shadow:0 -2px 8px rgba(0,0,0,0.04);
     padding-bottom:env(safe-area-inset-bottom); /* gesture-bar phones: keep taps above the home indicator */
   }
   nav.bottom-nav button{
-    flex:1; position:relative; background:none; border:none; padding:8px 2px; min-height:52px; font-size:11.5px; font-weight:600; color:var(--muted);
+    flex:1; position:relative; background:none; border:none; padding:7px 2px; min-height:56px; font-size:11.5px; font-weight:600; color:var(--muted);
     display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    transition:color .12s ease, background-color .12s ease;
   }
-  nav.bottom-nav button.active .ico svg{ stroke:var(--green-dark); }
+  nav.bottom-nav button:active{ background:var(--hover-faint); }
   nav.bottom-nav button.active{ color:var(--green-dark); }
+  nav.bottom-nav button.active .ico svg{ stroke:var(--green-dark); stroke-width:2.2; }
+  nav.bottom-nav button.active::after{
+    content:""; position:absolute; top:0; left:50%; transform:translateX(-50%);
+    width:36px; height:3px; background:var(--green-dark); border-radius:0 0 3px 3px;
+  }
   /* live count of orders waiting to be billed — the reason to open Requests */
   .nav-badge{
-    position:absolute; top:2px; right:6px; left:auto;
-    min-width:17px; height:17px; padding:0 5px;
+    position:absolute; top:3px; right:8px; left:auto;
+    min-width:18px; height:18px; padding:0 5px;
     background:var(--danger); color:#fff; border-radius:var(--r-pill);
-    font-size:11px; font-weight:700; line-height:17px; text-align:center;
+    font-size:11px; font-weight:700; line-height:18px; text-align:center;
     font-variant-numeric:tabular-nums;
   }
   /* nav labels: English over Hindi, uniformly two lines so nothing wraps raggedly */
-  nav.bottom-nav button .nl{ display:block; line-height:1.15; }
-  nav.bottom-nav button .nl-hi{ display:block; font-size:11.5px; font-weight:600; opacity:.85; line-height:1.15; }
+  nav.bottom-nav button .nl{ display:block; line-height:1.15; font-size:12px; }
+  nav.bottom-nav button .nl-hi{ display:block; font-size:11px; font-weight:600; opacity:.85; line-height:1.15; }
+  nav.bottom-nav button.active .nl{ font-weight:700; }
   /* cart count is informational (green), not an alert like the red Requests badge */
   #cart-badge{ background:var(--green-dark); }
 
@@ -591,32 +571,32 @@
   @media (prefers-reduced-motion: reduce){ main#main > section:not(.hidden){ animation:none; } }
 
   /* cart */
-  .cart-item{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:10px 12px; margin-bottom:8px; }
+  .cart-item{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:12px; margin-bottom:8px; box-shadow:0 1px 3px rgba(0,0,0,0.02); }
   .cart-item-top{ display:flex; justify-content:space-between; gap:8px; }
-  .cart-item-name{ font-size:13.5px; font-weight:600; }
-  .cart-item-code{ font-size:13px; color:var(--muted); }
-  .cart-item-bottom{ display:flex; align-items:center; justify-content:space-between; margin-top:8px; }
-  .remove-btn{ background:none; border:none; color:var(--danger); font-size:12px; font-weight:700; min-height:44px; padding:6px 8px; }
-  .line-total{ font-weight:700; font-size:13.5px; }
+  .cart-item-name{ font-size:14px; font-weight:700; color:var(--text); }
+  .cart-item-code{ font-size:12.5px; color:var(--muted); font-weight:600; }
+  .cart-item-bottom{ display:flex; align-items:center; justify-content:space-between; margin-top:10px; }
+  .remove-btn{ background:none; border:none; color:var(--danger); font-size:12.5px; font-weight:700; min-height:44px; padding:6px 10px; }
+  .line-total{ font-weight:800; font-size:14.5px; color:var(--green-dark); }
   .grand-total-bar{
-    background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:12px; margin-top:10px;
-    display:flex; justify-content:space-between; align-items:center; font-size:15px; font-weight:700;
+    background:#fff; border:2px solid var(--green); border-radius:var(--r-lg); padding:14px; margin-top:12px;
+    display:flex; justify-content:space-between; align-items:center; font-size:16px; font-weight:800; color:var(--green-dark);
   }
-  .generate-btn{ background:var(--green); color:#fff; border:none; border-radius:var(--r-md); padding:14px; width:100%; margin-top:12px; font-size:15px; font-weight:700; min-height:48px; }
-  .generate-btn[disabled]{ opacity:.5; }
+  .generate-btn{ background:var(--green); color:#fff; border:none; border-radius:var(--r-md); padding:14px; width:100%; margin-top:12px; font-size:15px; font-weight:700; min-height:48px; box-shadow:0 2px 6px rgba(30,125,52,0.25); }
+  .generate-btn[disabled]{ opacity:.5; box-shadow:none; }
 
   /* orders */
-  .order-row{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; gap:8px; font-size:13.5px; }
+  .order-row{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:12px 14px; margin-bottom:10px; display:flex; justify-content:space-between; gap:10px; font-size:13.5px; box-shadow:0 1px 3px rgba(0,0,0,0.02); }
   /* Requests (supplier) cards */
-  .req-card{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:12px; margin-bottom:10px; font-size:13.5px; }
+  .req-card{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:14px; margin-bottom:12px; font-size:13.5px; box-shadow:0 1px 3px rgba(0,0,0,0.02); }
   .req-card table{ width:100%; border-collapse:collapse; font-size:13px; margin-top:6px; }
-  .req-card th, .req-card td{ text-align:left; padding:4px 6px; border-bottom:1px solid var(--border); }
+  .req-card th, .req-card td{ text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); }
   .req-card th.num, .req-card td.num{ text-align:right; }
   .req-card .tscroll{ overflow-x:auto; }
   /* packing list + courier label inside a dispatch card */
   .disp-sec .tscroll{ overflow-x:auto; }
   .disp-sec table{ width:100%; border-collapse:collapse; font-size:13px; margin-top:6px; }
-  .disp-sec th, .disp-sec td{ text-align:left; padding:4px 6px; border-bottom:1px solid var(--warn-border); }
+  .disp-sec th, .disp-sec td{ text-align:left; padding:6px 8px; border-bottom:1px solid var(--warn-border); }
   .disp-sec th.num, .disp-sec td.num{ text-align:right; }
   .ship-label{
     white-space:pre-line; background:#fff; border:1px dashed var(--warn-border);
@@ -628,19 +608,19 @@
   /* money: the two numbers a trader checks every morning */
   .money-row{ display:flex; gap:10px; margin-top:12px; }
   /* column + auto margin keeps both amounts on the same baseline when one label wraps */
-  .money-tile{ flex:1; min-width:0; border-radius:var(--r-lg); padding:10px 12px; border:1px solid var(--border); background:#fff;
-    display:flex; flex-direction:column; }
+  .money-tile{ flex:1; min-width:0; border-radius:var(--r-lg); padding:12px 14px; border:1px solid var(--border); background:#fff;
+    display:flex; flex-direction:column; box-shadow:0 1px 3px rgba(0,0,0,0.02); }
   .money-tile .mt-val{ margin-top:auto; }
   .money-tile.in{ background:var(--green-light); border-color:var(--green-mid); }
   .money-tile.out{ background:var(--warn-tint); border-color:var(--warn-border); }
-  .mt-lbl{ font-size:11.5px; font-weight:600; color:var(--muted); line-height:1.25; }
+  .mt-lbl{ font-size:12px; font-weight:700; color:var(--muted); line-height:1.25; }
   .money-tile.in .mt-lbl{ color:var(--green-dark); }
   .money-tile.out .mt-lbl{ color:var(--warn-ink); }
-  .mt-val{ font-size:20px; font-weight:800; margin-top:2px; font-variant-numeric:tabular-nums; }
+  .mt-val{ font-size:22px; font-weight:800; margin-top:4px; font-variant-numeric:tabular-nums; }
   .money-tile.in .mt-val{ color:var(--green-dark); }
   .money-tile.out .mt-val{ color:var(--warn-ink); }
   .pay-row{ display:flex; justify-content:space-between; align-items:center; gap:10px;
-    padding:9px 0; border-bottom:1px solid var(--border); font-size:13.5px; }
+    padding:10px 0; border-bottom:1px solid var(--border); font-size:13.5px; }
   .pay-row:last-of-type{ border-bottom:none; }
   .pay-due{ font-weight:800; color:var(--danger); font-variant-numeric:tabular-nums; white-space:nowrap; }
   .pay-adv{ font-weight:800; color:var(--green-dark); font-variant-numeric:tabular-nums; white-space:nowrap; }
@@ -693,18 +673,26 @@
   .req-msg.err{ color:var(--danger); }
   .fwd-eu{ margin-top:8px; border-top:1px dashed var(--border); padding-top:8px; }
   /* More hub */
-  .more-card{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:12px; margin-bottom:10px; }
+  .more-card{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:14px 16px; margin-bottom:12px; }
+  .more-profile{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+  .more-profile-name{ font-size:16px; font-weight:800; color:var(--green-dark); letter-spacing:-0.01em; }
+  .more-profile-role{ display:inline-block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; padding:2px 8px; border-radius:var(--r-pill); background:var(--green-light); color:var(--green-dark); margin-top:4px; }
+  .more-profile-loc{ font-size:12px; color:var(--muted); margin-top:4px; }
+  .more-kpis{ display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+  .more-kpi-item{ display:flex; flex-direction:column; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:8px 10px; }
+  .more-kpi-lbl{ font-size:11px; font-weight:700; color:var(--muted); }
+  .more-kpi-val{ font-size:16px; font-weight:800; color:var(--green-dark); margin-top:2px; font-variant-numeric:tabular-nums; }
   .more-link{ display:block; width:100%; text-align:left; background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:14px; margin-bottom:8px; font-size:14px; font-weight:600; color:var(--green-dark); text-decoration:none; }
   .more-signout{ color:var(--danger); }
-  .more-sec{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); margin-bottom:8px; overflow:hidden; }
-  .more-sec > summary{ position:relative; padding:14px 34px 14px 14px; font-size:14px; font-weight:600; color:var(--green-dark); cursor:pointer; list-style:none; }
+  .more-sec{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); margin-bottom:10px; overflow:hidden; }
+  .more-sec > summary{ position:relative; padding:15px 38px 15px 16px; font-size:14.5px; font-weight:700; color:var(--green-dark); cursor:pointer; list-style:none; }
   .more-sec > summary::-webkit-details-marker{ display:none; }
-  .more-sec > summary::after{ content:"⌄"; position:absolute; top:13px; right:14px; color:var(--muted); transition:transform .2s var(--ease-quint); transform-origin:center; }
+  .more-sec > summary::after{ content:"⌄"; position:absolute; top:14px; right:16px; font-size:16px; color:var(--muted); transition:transform .2s var(--ease-quint); transform-origin:center; }
   .more-sec[open] > summary::after{ transform:rotate(180deg); }
   .more-sec[open] > summary{ border-bottom:1px solid var(--border); }
   .more-sec > *:not(summary){ margin:0 14px; }
-  .more-sec > *:not(summary):first-of-type{ margin-top:12px; }
-  .more-sec > *:last-child{ margin-bottom:14px; }
+  .more-sec > *:not(summary):first-of-type{ margin-top:14px; }
+  .more-sec > *:last-child{ margin-bottom:16px; }
   /* a width:100% control plus the 14px side margins above overflows the card and gets clipped
      by overflow:hidden — subtract the gutters so direct-child fields/buttons sit inside the box */
   .more-sec > .m-input, .more-sec > .m-btn{ width:calc(100% - 28px); }
@@ -712,20 +700,20 @@
   .more-group{ font-size:13px; font-weight:700; color:var(--green-dark); margin:18px 2px 6px; }
   .more-group:first-of-type{ margin-top:14px; }
   /* Tabs, because these are separate jobs done at separate times — not one long settings page. */
-  .more-tabs{ display:flex; gap:8px; overflow-x:auto; overflow-y:hidden; padding:4px 2px 10px;
+  .more-tabs{ display:flex; gap:6px; overflow-x:auto; overflow-y:hidden; padding:2px 2px 10px;
     -webkit-overflow-scrolling:touch; scrollbar-width:none; }
   .more-tabs::-webkit-scrollbar{ display:none; }
-  .more-tab{ position:relative; flex:0 0 auto; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; gap:1px; min-width:76px; min-height:60px; padding:8px 12px;
-    border:1px solid var(--border); border-radius:var(--r-lg); background:#fff; color:var(--muted);
-    font:inherit; font-weight:700; cursor:pointer; transition:background-color .15s ease, color .15s ease; }
+  .more-tab{ position:relative; flex:1 0 auto; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:2px; min-width:68px; min-height:56px; padding:8px 10px;
+    border:1px solid var(--border); border-radius:var(--r-md); background:#fff; color:var(--muted);
+    font:inherit; font-weight:700; cursor:pointer; transition:background-color .15s ease, color .15s ease, border-color .15s ease; }
   .more-tab .ico{ width:20px; height:20px; }
-  .mt-en{ font-size:12.5px; line-height:1.1; }
-  .mt-hi{ font-size:11px; font-weight:600; opacity:.85; line-height:1.1; }
-  .more-tab[aria-selected="true"]{ background:var(--green); border-color:var(--green); color:#fff; }
-  .more-tab[aria-selected="true"] .mt-hi{ opacity:.9; }
+  .mt-en{ font-size:12px; line-height:1.1; }
+  .mt-hi{ font-size:10.5px; font-weight:600; opacity:.85; line-height:1.1; }
+  .more-tab[aria-selected="true"]{ background:var(--green-dark); border-color:var(--green-dark); color:#fff; }
+  .more-tab[aria-selected="true"] .mt-hi{ opacity:.95; }
   .mt-dot{ position:absolute; top:4px; right:6px; min-width:16px; height:16px; padding:0 4px;
-    border-radius:var(--r-pill); background:var(--danger); color:#fff; font-size:11px; font-weight:700;
+    border-radius:var(--r-pill); background:var(--danger); color:#fff; font-size:10.5px; font-weight:800;
     display:flex; align-items:center; justify-content:center; }
   @media (prefers-reduced-motion: reduce){ .more-tab{ transition:none; } }
   .ms-hint{ display:block; font-size:12px; font-weight:400; color:var(--muted); margin-top:2px; }
@@ -1067,7 +1055,7 @@
      visual place (bottom bar on a phone, left rail on desktop) is unchanged. On desktop it
      renders at 0,0 — visually first — and DOM-last meant 458 Tab presses to reach it. -->
 <nav class="bottom-nav hidden" id="bottom-nav">
-  <button id="nav-catalog" class="active" aria-label="Warehouse / गोदाम"><span class="ico" data-ico="warehouse" aria-hidden="true"></span><span class="nl">Warehouse</span><span class="nl-hi">गोदाम</span></button>
+  <button id="nav-catalog" class="active" aria-label="Spares / पुर्जे"><span class="ico" data-ico="spares" aria-hidden="true"></span><span class="nl">Spares</span><span class="nl-hi">पुर्जे</span></button>
   <button id="nav-cart" aria-label="Cart / कार्ट"><span class="ico" data-ico="cart" aria-hidden="true"></span><span class="nav-badge hidden" id="cart-badge">0</span><span class="nl">Cart</span><span class="nl-hi">कार्ट</span></button>
   <button id="nav-orders" class="hidden" aria-label="My orders / मेरे ऑर्डर"><span class="ico" data-ico="orders" aria-hidden="true"></span><span class="nl">Orders</span><span class="nl-hi">ऑर्डर</span></button>
   <button id="nav-requests" class="hidden" aria-label="Requests / अनुरोध"><span class="ico" data-ico="bell" aria-hidden="true"></span><span class="nav-badge hidden" id="req-badge">0</span><span class="nl">Requests</span><span class="nl-hi">अनुरोध</span></button>
@@ -1155,7 +1143,7 @@
 
   <!-- CATALOG -->
   <section id="view-catalog" class="hidden">
-    <h2 class="sr-only">Warehouse / गोदाम</h2>
+    <h2 class="sr-only">Spares / पुर्जे</h2>
     <div class="dealer-strip" id="dealer-strip"></div>
     <div id="notice-area"></div>
     <div class="search-row">
@@ -1256,6 +1244,14 @@
         <div class="gm-subtitle">प्लेटफ़ॉर्म मास्टर कंट्रोल — Cross-Tenant Surveillance &amp; Insights</div>
       </div>
       <button type="button" class="gm-exit-btn" id="gm-exit-btn">&times; Exit / बाहर निकलें</button>
+    </div>
+
+    <!-- Quick Intelligence KPIs -->
+    <div class="gm-kpis" id="gm-kpis-strip">
+      <div class="gm-kpi"><span class="gm-kpi-lbl">Importers</span><span class="gm-kpi-val" id="gm-kpi-imp">—</span></div>
+      <div class="gm-kpi"><span class="gm-kpi-lbl">Total Parties</span><span class="gm-kpi-val" id="gm-kpi-parties">—</span></div>
+      <div class="gm-kpi"><span class="gm-kpi-lbl">Stock Records</span><span class="gm-kpi-val" id="gm-kpi-stock">—</span></div>
+      <div class="gm-kpi"><span class="gm-kpi-lbl">Orders Raised</span><span class="gm-kpi-val" id="gm-kpi-orders">—</span></div>
     </div>
 
     <div class="gm-tabs" role="tablist">
@@ -1438,6 +1434,7 @@
     manage:  '<circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a1.7 1.7 0 0 1 0-3l1-.6-1-1.7-1.1.4a1.7 1.7 0 0 1-2.6-1l-.1-1.1h-2l-.1 1.1a1.7 1.7 0 0 1-2.6 1l-1.1-.4-1 1.7 1 .6a1.7 1.7 0 0 1 0 3l-1 .6 1 1.7 1.1-.4a1.7 1.7 0 0 1 2.6 1l.1 1.1h2l.1-1.1a1.7 1.7 0 0 1 2.6-1l1.1.4 1-1.7z"/>',
     bell:    '<path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
     more:    '<circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/>',
+    spares:  '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.8 2.8-2.1-2.1 2.9-2.7z"/>',
     download:'<path d="M12 3v12"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/>'
   };
   function svgRaw(name){
@@ -2778,6 +2775,11 @@
     sb.rpc("god_mode_networks").then(function(res){
       if (res.error){ body.innerHTML = '<div class="login-error">' + esc(res.error.message) + '</div>'; return; }
       _gmNetworksData = res.data || [];
+      var imps = new Set();
+      _gmNetworksData.forEach(function(p){ if (p.importer_id) imps.add(p.importer_id); });
+      var kImp = $("gm-kpi-imp"), kP = $("gm-kpi-parties");
+      if (kImp) kImp.textContent = imps.size;
+      if (kP) kP.textContent = _gmNetworksData.length;
       populateGodImporterFilter();
       renderGodNetworksList();
     }).catch(function(err){
@@ -2908,6 +2910,8 @@
     sb.rpc("god_mode_stock", { p_importer_id: null }).then(function(res){
       if (res.error){ body.innerHTML = '<div class="login-error">' + esc(res.error.message) + '</div>'; return; }
       _gmStockData = res.data || [];
+      var kStk = $("gm-kpi-stock");
+      if (kStk) kStk.textContent = _gmStockData.length;
       populateGodStockImporterFilter();
       renderGodStockList();
     }).catch(function(err){
@@ -3003,6 +3007,8 @@
     sb.rpc("god_mode_orders").then(function(res){
       if (res.error){ body.innerHTML = '<div class="login-error">' + esc(res.error.message) + '</div>'; return; }
       _gmOrdersData = res.data || [];
+      var kOrd = $("gm-kpi-orders");
+      if (kOrd) kOrd.textContent = _gmOrdersData.length;
       wireGodOrdersFilter();
       renderGodOrdersList();
     }).catch(function(err){
@@ -3383,7 +3389,21 @@
     // empty kept 8,730 <option> nodes out of the initial paint, but the control was still one
     // nobody could operate on a phone.
 
-    var html = '<div class="more-card"><div style="font-weight:700;">'+esc(name)+'</div><div style="color:var(--muted);font-size:13px;">'+esc(role)+'</div></div>';
+    var locStr = [a.city, a.phone].filter(Boolean).join(" · ");
+    var html = '<div class="more-card">' +
+      '<div class="more-profile">' +
+        '<div>' +
+          '<div class="more-profile-name">' + esc(name) + '</div>' +
+          '<span class="more-profile-role">' + esc(role) + '</span>' +
+          (locStr ? '<div class="more-profile-loc">' + esc(locStr) + '</div>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="more-kpis">' +
+        '<div class="more-kpi-item"><span class="more-kpi-lbl">Network</span><span class="more-kpi-val">' + mine.size + ' part' + (mine.size===1?'y':'ies') + '</span></div>' +
+        '<div class="more-kpi-item"><span class="more-kpi-lbl">Catalog</span><span class="more-kpi-val">' + (state.catalog||[]).length + ' parts</span></div>' +
+        (isImporter ? '<div class="more-kpi-item"><span class="more-kpi-lbl">Pending Appr.</span><span class="more-kpi-val" id="more-kpi-appr-val">0</span></div>' : '') +
+      '</div>' +
+    '</div>';
 
     // Say plainly what is still missing and why it matters — these blanks are what break
     // couriers, bills and payments later, and nothing else in the app asks for them twice.
@@ -4761,6 +4781,8 @@
     var rows = r.data || [];
     var bdg = $("m-badge-appr");
     if (bdg){ bdg.textContent = String(rows.length); bdg.classList.toggle("hidden", !rows.length); }
+    var kAppr = $("more-kpi-appr-val");
+    if (kAppr) kAppr.textContent = String(rows.length);
     if (!rows.length){ card.innerHTML = '<div style="color:var(--muted);font-size:13px;">No pending registrations.</div>'; return; }
     card.innerHTML = rows.map(function(x){ return '<div class="req-card"><div><b>'+esc(x.business_name||"(no name)")+'</b> — '+esc(x.requested_role)+'</div>'+
       '<div style="color:var(--muted);font-size:12.5px;">'+esc(x.email||"")+(x.phone?' · '+esc(x.phone):'')+(x.city?' · '+esc(x.city):'')+'</div>'+((x.gstin||x.upi_id)?'<div style="color:var(--muted);font-size:12.5px;">'+(x.gstin?'GSTIN: '+esc(x.gstin):'')+(x.gstin&&x.upi_id?' · ':'')+(x.upi_id?'UPI: '+esc(x.upi_id):'')+'</div>':'')+
@@ -5309,21 +5331,24 @@
       var av = availOf(idx); // number = quantity at my supplier; boolean = in/out (retail view)
       var sClass = stockClass(idx);
 
-      var rateHtml = canAdd ? '<span class="rate">' + inr(net) + '</span>' : '<span class="rate na">Rate on request</span>';
+      var rateHtml = canAdd
+        ? '<div class="rate-wrap"><span class="rate">' + inr(net) + '</span><span class="rate-sub">+ GST</span></div>'
+        : '<div class="rate-wrap"><span class="rate na">Rate on request</span></div>';
       // Availability is shown only when it is NOT this list's ordinary case (see
       // dominantStockClass). A chip repeated on all 150 rows reports nothing and actively
       // costs something: the eye learns to skip that slot, so the one row that IS different
       // gets scanned past with the rest. Absence is the default, presence is the signal.
       // A real count ("12 ready") is a number rather than a constant, so it always stays.
+      var stockBadgeHtml = '';
       if (sClass !== "unknown"){
         var label = null, cls = "";
         if (sClass === "here"){
-          if (typeof av === "number"){ cls = "stock-in"; label = av + ' ready / तैयार ' + av; }
-          else if (sClass !== dominantStock){ cls = "stock-in"; label = 'In stock / स्टॉक में'; }
+          if (typeof av === "number"){ cls = "stock-in"; label = '✓ ' + av + ' ready / तैयार ' + av; }
+          else if (sClass !== dominantStock){ cls = "stock-in"; label = '✓ In stock / स्टॉक में'; }
         } else if (sClass === "chain"){
-          if (sClass !== dominantStock){ cls = "stock-chain"; label = 'Available to order / मंगाया जा सकता है'; }
-        } else { cls = "stock-out"; label = 'Out of stock / स्टॉक नहीं'; }
-        if (label) rateHtml += ' <span class="stock-badge ' + cls + '">' + label + '</span>';
+          if (sClass !== dominantStock){ cls = "stock-chain"; label = '⏳ Orderable / मंगाया जा सकता है'; }
+        } else { cls = "stock-out"; label = '✕ Out of stock / स्टॉक नहीं'; }
+        if (label) stockBadgeHtml = '<span class="stock-badge ' + cls + '">' + label + '</span>';
       }
 
       // only a part nobody in the chain holds is unorderable — then we record demand instead
@@ -5333,8 +5358,6 @@
       if (outOfStock){
         controlsHtml = '<button class="add-btn demand-btn" type="button" data-demand="' + idx + '">Request part / माँग दर्ज करें</button>';
       } else if (!canOrder){
-        // a disabled button with a tooltip is a dead end on a phone: tooltips never fire on
-        // touch. Give it the same escape hatch an out-of-stock part gets — ask for it.
         controlsHtml = '<button class="add-btn demand-btn" type="button" data-demand="' + idx + '">Ask for price / दाम पूछें</button>';
       } else if (qty > 0){
         // once in the cart, the stepper IS the cart quantity (no separate Add)
@@ -5344,7 +5367,7 @@
             '<button class="qty-plus" type="button" aria-label="Increase quantity">+</button>' +
           '</div>';
       } else {
-        controlsHtml = '<button class="add-btn" type="button" data-add="' + idx + '">Add / जोड़ें</button>';
+        controlsHtml = '<button class="add-btn" type="button" data-add="' + idx + '">+ Add / जोड़ें</button>';
       }
 
       return '<div class="item">' +
@@ -5353,25 +5376,24 @@
           'loading="lazy" role="button" tabindex="0" data-photo="' + idx + '" ' +
           'onerror="thumbFail(this)">' +
         '<div class="item-main">' +
-        '<div class="item-top"><span class="item-code">' + code + '</span>' +
-          // The section name is news only when the list spans sections. Inside one section it
-          // repeated on all 150 rows AND was too long for the slot, so every row carried the
-          // same truncated string — 204px of text in 137px of space at 320px. v98 gave it an
-          // ellipsis, which made the overflow safe without making the badge worth its place.
-          (crossSection ? '<span class="badge">' + esc(r.section || "") + '</span>' : '') +
+          '<div class="item-top">' +
+            '<span class="item-code">' + code + '</span>' +
+            (crossSection && r.section ? '<span class="badge">' + esc(r.section) + '</span>' : '') +
           '</div>' +
-        '<div class="item-particular">' + esc(nice(r.particular)) + '</div>' +
-        (r.hindi_name ? '<div class="item-particular" style="font-weight:500;">' + esc(r.hindi_name) + '</div>' : '') +
-        specLine(r) +
-        '<div class="item-bottom">' +
-          '<div class="item-facts">' + rateHtml +
-            // "Catalog page" was 182px next to an 86px Add, so the two could not share a line.
-            // The page icon already says "page"; the word was carrying it twice.
-            '<button class="diagram-btn" type="button" data-diagram="' + idx + '" ' +
-              'aria-label="Catalog page / सूची पन्ना">' + svgIco("page") + 'Catalog / सूची</button>' +
+          '<div class="item-particular">' + esc(nice(r.particular)) + '</div>' +
+          (r.hindi_name ? '<div class="item-particular-hi">' + esc(r.hindi_name) + '</div>' : '') +
+          specLine(r) +
+          (stockBadgeHtml ? '<div style="margin-bottom:6px;">' + stockBadgeHtml + '</div>' : '') +
+          '<div class="item-bottom">' +
+            rateHtml +
+            '<div class="item-actions">' +
+              '<button class="diagram-btn" type="button" data-diagram="' + idx + '" ' +
+                'aria-label="Catalog diagram / सूची पन्ना">' + svgIco("page") + 'Catalog</button>' +
+              controlsHtml +
+            '</div>' +
           '</div>' +
-          '<div class="item-controls">' + controlsHtml + '</div>' +
-          '</div></div></div>';
+        '</div>' +
+      '</div>';
     }).join("");
 
     var more = total > shown.length
