@@ -1006,3 +1006,32 @@ $$;
 grant execute on function god_mode_networks() to authenticated, anon;
 grant execute on function god_mode_stock(uuid) to authenticated, anon;
 grant execute on function god_mode_orders() to authenticated, anon;
+
+-- god_mode_create_importer: Provision a brand new independent importer root party
+create or replace function god_mode_create_importer(
+  p_name text,
+  p_phone text default null,
+  p_city text default null,
+  p_pin text default null,
+  p_address text default null,
+  p_gstin text default null
+)
+  returns uuid
+  language plpgsql security definer set search_path = public as $$
+declare
+  v_id uuid;
+begin
+  if p_name is null or trim(p_name) = '' then
+    raise exception 'importer name is required';
+  end if;
+
+  insert into parties (name, role, parent_id, phone, city, pin, address, gstin)
+  values (trim(p_name), 'importer', null, trim(p_phone), trim(p_city), trim(p_pin), trim(p_address), trim(p_gstin))
+  returning id into v_id;
+
+  return v_id;
+end;
+$$;
+
+grant execute on function god_mode_create_importer(text, text, text, text, text, text) to authenticated, anon;
+

@@ -1271,8 +1271,28 @@
           <option value="">All Importers / सभी आयातक</option>
         </select>
         <input type="search" id="gm-search-party" placeholder="Search party, phone, city, PIN... / खोजें">
+        <button type="button" class="gm-exit-btn" id="gm-new-importer-btn" style="background:var(--green-dark);color:#fff;border-color:var(--green-dark);">+ New Importer</button>
         <button type="button" class="gm-exit-btn" id="gm-export-networks" title="Export to CSV">📥 Export CSV</button>
       </div>
+
+      <!-- Quick Add Importer Form (Collapsible) -->
+      <div id="gm-new-importer-box" class="admin-form hidden" style="border:2px solid var(--green);margin-bottom:16px;">
+        <h3 style="margin-top:0;">Add New Importer Tenant / नया आयातक जोड़ें</h3>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 10px;">Creates a new independent root network. All downline dealers under this importer will form their own private tree.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;">
+          <div><label class="field-label">Company / Importer Name *</label><input type="text" id="gm-imp-name" placeholder="e.g. Bharat Agro Importers"></div>
+          <div><label class="field-label">Phone / फ़ोन</label><input type="tel" id="gm-imp-phone" placeholder="10-digit mobile"></div>
+          <div><label class="field-label">City / शहर</label><input type="text" id="gm-imp-city" placeholder="e.g. Ludhiana"></div>
+          <div><label class="field-label">PIN Code / पिन कोड</label><input type="text" id="gm-imp-pin" placeholder="6 digits" maxlength="6"></div>
+          <div><label class="field-label">GSTIN / जीएसटी</label><input type="text" id="gm-imp-gstin" placeholder="15-digit GSTIN" maxlength="15"></div>
+          <div><label class="field-label">Address / पता</label><input type="text" id="gm-imp-address" placeholder="Premises, Area, State"></div>
+        </div>
+        <div class="admin-form-actions" style="margin-top:12px;">
+          <button type="button" class="btn btn-primary" id="gm-imp-save">Provision Importer / आयातक जोड़ें</button>
+          <button type="button" class="btn btn-outline" id="gm-imp-cancel">Cancel / रद्द</button>
+        </div>
+      </div>
+
       <div id="gm-networks-body"></div>
     </div>
 
@@ -2693,6 +2713,60 @@
       expOrd._wired = true;
       expOrd.onclick = function(){
         downloadCSV("platform_global_orders_" + new Date().toISOString().slice(0,10) + ".csv", _gmOrdersData);
+      };
+    }
+    // New Importer provisioning
+    var newImpBtn = $("gm-new-importer-btn");
+    var impBox = $("gm-new-importer-box");
+    if (newImpBtn && !newImpBtn._wired){
+      newImpBtn._wired = true;
+      newImpBtn.onclick = function(){
+        if (impBox) impBox.classList.toggle("hidden");
+      };
+    }
+    var impCancel = $("gm-imp-cancel");
+    if (impCancel && !impCancel._wired){
+      impCancel._wired = true;
+      impCancel.onclick = function(){
+        if (impBox) impBox.classList.add("hidden");
+      };
+    }
+    var impSave = $("gm-imp-save");
+    if (impSave && !impSave._wired){
+      impSave._wired = true;
+      impSave.onclick = function(){
+        var name = (($("gm-imp-name")||{}).value || "").trim();
+        if (!name){ showToast("Please enter Importer / Company name"); $("gm-imp-name").focus(); return; }
+        var phone = (($("gm-imp-phone")||{}).value || "").trim();
+        var city = (($("gm-imp-city")||{}).value || "").trim();
+        var pin = (($("gm-imp-pin")||{}).value || "").trim();
+        var gstin = (($("gm-imp-gstin")||{}).value || "").trim();
+        var address = (($("gm-imp-address")||{}).value || "").trim();
+
+        impSave.disabled = true;
+        impSave.textContent = "Provisioning… / बन रहा है…";
+        sb.rpc("god_mode_create_importer", {
+          p_name: name,
+          p_phone: phone || null,
+          p_city: city || null,
+          p_pin: pin || null,
+          p_address: address || null,
+          p_gstin: gstin || null
+        }).then(function(res){
+          impSave.disabled = false;
+          impSave.textContent = "Provision Importer / आयातक जोड़ें";
+          if (res.error){ showToast("Error: " + res.error.message); return; }
+          showToast("✓ New Importer created / नया आयातक जुड़ गया!");
+          if (impBox) impBox.classList.add("hidden");
+          ["gm-imp-name","gm-imp-phone","gm-imp-city","gm-imp-pin","gm-imp-gstin","gm-imp-address"].forEach(function(id){
+            var el = $(id); if (el) el.value = "";
+          });
+          loadGodNetworks();
+        }).catch(function(err){
+          impSave.disabled = false;
+          impSave.textContent = "Provision Importer / आयातक जोड़ें";
+          showToast("Error: " + (err.message || err));
+        });
       };
     }
   }
