@@ -586,7 +586,9 @@
   .generate-btn[disabled]{ opacity:.5; box-shadow:none; }
 
   /* orders */
-  .order-row{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:12px 14px; margin-bottom:10px; display:flex; justify-content:space-between; gap:10px; font-size:13.5px; box-shadow:0 1px 3px rgba(0,0,0,0.02); }
+  .order-row{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:12px 14px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; font-size:13.5px; box-shadow:0 1px 3px rgba(0,0,0,0.02); }
+  .order-row > div:first-child{ min-width:0; flex:1 1 200px; }
+  .order-row > div:last-child{ text-align:right; flex:0 0 auto; margin-left:auto; }
   /* Requests (supplier) cards */
   .req-card{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:14px; margin-bottom:12px; font-size:13.5px; box-shadow:0 1px 3px rgba(0,0,0,0.02); }
   .req-card table{ width:100%; border-collapse:collapse; font-size:13px; margin-top:6px; }
