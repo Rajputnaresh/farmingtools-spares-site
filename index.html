@@ -28,7 +28,7 @@
     --green:#0F5132; --green-dark:#0A3622; --green-light:#E8F5E9; --green-mid:#A3D9B1;
     --green-accent:#16A34A;
     --border:#E2E8F0; --border-dark:#CBD5E1;
-    --text:#0F172A; --muted:#64748B; --bg:#F8FAFC; --surface:#FFFFFF;
+    --text:#0F172A; --muted:#475569; --bg:#F8FAFC; --surface:#FFFFFF;
     --focus:#2563EB;
 
     /* Semantic roles: danger, warning, calm */
@@ -89,8 +89,8 @@
     background:#0F5132; color:#fff;
     display:flex; align-items:center; justify-content:space-between;
     padding:10px 14px; gap:10px;
-    box-shadow:0 2px 8px rgba(10,54,34,0.18);
-    border-bottom:1px solid rgba(255,255,255,0.12);
+    box-shadow:0 1px 3px rgba(0,0,0,0.14);
+    border-bottom:1px solid rgba(255,255,255,0.14);
   }
   header.app-header h1{ font-size:15px; margin:0; font-weight:800; line-height:1.2; letter-spacing:-0.01em; }
   header.app-header .sub{ display:block; font-size:11px; opacity:.9; font-weight:500; letter-spacing:0.01em; }
@@ -440,9 +440,9 @@
     padding:2px 8px; border-radius:var(--r-xs); line-height:1.35; border:1px solid var(--border);
     min-width:0; flex:0 1 auto; overflow-wrap:anywhere; text-align:right;
   }
-  .item-particular{ font-size:15px; font-weight:700; margin:2px 0 3px; color:var(--text); line-height:1.35; }
-  .item-particular-hi{ font-size:13px; font-weight:600; color:var(--muted); margin-bottom:5px; line-height:1.3; }
-  .item-spec{ font-size:12px; color:var(--muted); margin-bottom:8px; line-height:1.4; }
+  .item-particular{ font-size:15.5px; font-weight:800; margin:2px 0 2px; color:var(--text); line-height:1.3; letter-spacing:-0.01em; }
+  .item-particular-hi{ font-size:13px; font-weight:600; color:var(--green-dark); margin-bottom:6px; line-height:1.3; }
+  .item-spec{ font-size:12px; color:var(--muted); margin-bottom:8px; line-height:1.45; }
   .item-spec b{ color:var(--text); font-weight:700; }
   .stock-badge{ font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:var(--r-pill); white-space:nowrap; display:inline-flex; align-items:center; gap:4px; }
   .stock-in{ background:var(--green-light); color:var(--green-dark); border:1px solid var(--green-mid); }
@@ -819,6 +819,49 @@
   .pos-summary-bar b{ color:var(--green-dark); font-size:16px; }
   .pos-qty-btn{ width:28px; height:28px; border-radius:var(--r-sm); border:1px solid var(--border); background:#fff; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
 
+  /* In-Catalog Counter POS Mode Bar */
+  .counter-mode-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+    padding:8px 12px; margin-bottom:10px; font-size:13px;
+  }
+  .counter-mode-btn{
+    display:inline-flex; align-items:center; gap:6px; min-height:36px; padding:6px 14px;
+    border-radius:var(--r-pill); border:1px solid var(--border); background:#fff;
+    color:var(--text); font:inherit; font-size:12.5px; font-weight:700; cursor:pointer;
+    transition:all .15s ease;
+  }
+  .counter-mode-btn:hover{ border-color:var(--green); }
+  .counter-mode-btn.active{
+    background:var(--green-dark); border-color:var(--green-dark); color:#fff;
+    box-shadow:0 1px 4px rgba(15,81,50,0.25);
+  }
+  .counter-mult-wrap{ display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--muted); }
+  .counter-mult-input{ width:54px; height:32px; border:1px solid var(--border); border-radius:var(--r-sm); text-align:center; font-weight:700; color:var(--green-dark); font-size:13px; }
+
+  /* Floating Counter Bill Drawer */
+  .counter-drawer{
+    position:fixed; bottom:calc(var(--dock-h) + 8px); left:12px; right:12px; max-width:680px; margin:0 auto;
+    z-index:var(--z-nav); background:#fff; border:1.5px solid var(--green-dark); border-radius:var(--r-lg);
+    box-shadow:0 8px 24px rgba(15,23,42,0.18); padding:12px 14px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+    animation:cfRise .22s var(--ease-quint);
+  }
+  .counter-drawer-info{ display:flex; flex-direction:column; min-width:0; }
+  .counter-drawer-title{ font-size:13.5px; font-weight:800; color:var(--green-dark); display:flex; align-items:center; gap:6px; }
+  .counter-drawer-sub{ font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .counter-drawer-actions{ display:flex; gap:8px; flex:none; }
+  .counter-drawer-btn{
+    min-height:40px; padding:6px 14px; border-radius:var(--r-md); font-size:13px; font-weight:700;
+    cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .counter-bill-btn{
+    background:#fff; color:var(--green-dark); border:1.5px solid var(--green);
+    border-radius:var(--r-md); padding:8px 12px; font-size:12.5px; font-weight:700; min-height:44px;
+    cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:5px;
+    transition:background-color .12s ease;
+  }
+  .counter-bill-btn:active{ background:var(--green-light); }
+
   /* legacy selectors fallback */
   .more-sec > .pp-step{ margin:20px 14px 2px; padding-top:14px; border-top:1px solid var(--border); font-weight:700; font-size:14px; line-height:1.3; }
   .more-sec > .pp-step:first-of-type{ border-top:0; padding-top:0; margin-top:14px; }
@@ -1094,6 +1137,7 @@
   <button id="nav-cart" aria-label="Cart / कार्ट"><span class="ico" data-ico="cart" aria-hidden="true"></span><span class="nav-badge hidden" id="cart-badge">0</span><span class="nl">Cart</span><span class="nl-hi">कार्ट</span></button>
   <button id="nav-orders" class="hidden" aria-label="My orders / मेरे ऑर्डर"><span class="ico" data-ico="orders" aria-hidden="true"></span><span class="nl">Orders</span><span class="nl-hi">ऑर्डर</span></button>
   <button id="nav-requests" class="hidden" aria-label="Requests / अनुरोध"><span class="ico" data-ico="bell" aria-hidden="true"></span><span class="nav-badge hidden" id="req-badge">0</span><span class="nl">Requests</span><span class="nl-hi">अनुरोध</span></button>
+  <button id="nav-dispatch" class="hidden" aria-label="Dispatch / डिस्पैच"><span class="ico" data-ico="truck" aria-hidden="true"></span><span class="nav-badge hidden" id="disp-badge">0</span><span class="nl">Dispatch</span><span class="nl-hi">डिस्पैच</span></button>
   <button id="nav-more" class="hidden" aria-label="More / अधिक"><span class="ico" data-ico="more" aria-hidden="true"></span><span class="nl">More</span><span class="nl-hi">अधिक</span></button>
 </nav>
 
@@ -1180,6 +1224,16 @@
   <section id="view-catalog" class="hidden">
     <h2 class="sr-only">Spares / पुर्जे</h2>
     <div class="dealer-strip" id="dealer-strip"></div>
+    <div id="counter-mode-bar" class="counter-mode-bar hidden">
+      <button type="button" class="counter-mode-btn" id="counter-mode-toggle">
+        🛒 Counter Sale Mode / ग्राहक बिक्री मोड
+      </button>
+      <div class="counter-mult-wrap">
+        <span>Markup:</span>
+        <input type="number" id="counter-mult-input" class="counter-mult-input" min="1" max="20" step="0.1" value="3">
+        <span>&times;</span>
+      </div>
+    </div>
     <div id="notice-area"></div>
     <div class="search-row">
       <input type="search" id="search-box" enterkeyhint="search" autocomplete="off" aria-label="Search parts / पुर्जे खोजें" aria-controls="catalog-body" placeholder="Search / खोजें — code, name, sr no." data-ph-en="Search — code, name, sr no.">
@@ -1255,12 +1309,16 @@
 
   <!-- Requests (supplier: orders placed to me + retail orders on my shop) -->
   <section id="view-requests" class="hidden">
-    <h2 class="view-title">Requests / अनुरोध</h2>
+    <h2 class="view-title">Commercial Requests / व्यावसायिक अनुरोध</h2>
     <div id="req-dealer-list"></div>
     <h3 style="color:var(--green-dark);font-size:15px;margin:18px 0 6px;">Retail orders / खुदरा ऑर्डर</h3>
     <div id="req-retail-list"></div>
-    <h3 style="color:var(--green-dark);font-size:15px;margin:18px 0 6px;">Awaiting dispatch / भेजना बाकी</h3>
-    <div id="req-dispatch-list"></div>
+  </section>
+
+  <!-- Dispatch (supplier: physical packing, courier labels, AWB/LR) -->
+  <section id="view-dispatch" class="hidden">
+    <h2 class="view-title">Ready for Dispatch / भेजना बाकी</h2>
+    <div id="dispatch-full-list"></div>
   </section>
 
   <!-- More (business hub) -->
@@ -1358,6 +1416,17 @@
   </section>
 
 </main>
+
+<div id="counter-bill-drawer" class="counter-drawer hidden">
+  <div class="counter-drawer-info">
+    <span class="counter-drawer-title">🛒 Counter Bill (<span id="cbd-items">0</span> items)</span>
+    <span class="counter-drawer-sub" id="cbd-total">Total: ₹0</span>
+  </div>
+  <div class="counter-drawer-actions">
+    <button type="button" class="btn-soft counter-drawer-btn" id="cbd-view-btn">Review / देखें</button>
+    <button type="button" class="btn-primary counter-drawer-btn" id="cbd-wa-btn">⚡ WhatsApp Bill</button>
+  </div>
+</div>
 
 <input type="file" id="bill-file" accept="application/pdf,image/*" class="hidden" aria-hidden="true" aria-label="Choose a bill or LR file to upload" tabindex="-1">
 <input type="file" id="pp-file" accept="image/*" class="hidden" aria-hidden="true" aria-label="Choose a photo of this part" tabindex="-1">
@@ -1470,7 +1539,8 @@
     bell:    '<path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
     more:    '<circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/>',
     spares:  '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.8 2.8-2.1-2.1 2.9-2.7z"/>',
-    download:'<path d="M12 3v12"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/>'
+    download:'<path d="M12 3v12"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/>',
+    truck:   '<rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle>'
   };
   function svgRaw(name){
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -2418,23 +2488,24 @@
   });
 
   function hideAll(){
-    ["view-login","view-catalog","view-cart","view-pi","view-orders","view-requests","view-more","view-god-mode"].forEach(function(id){ var el = $(id); if (el) el.classList.add("hidden"); });
+    ["view-login","view-catalog","view-cart","view-pi","view-orders","view-requests","view-dispatch","view-more","view-god-mode"].forEach(function(id){ var el = $(id); if (el) el.classList.add("hidden"); });
     $("bottom-nav").classList.add("hidden");
     $("header-actions").classList.add("hidden");
     $("app-header").classList.remove("authed");
   }
   // role-adaptive bottom nav: retail sees Shop+Cart only; a logged-in buyer also gets Orders;
-  // suppliers who run a network (importer/distributor/dealer) also get Requests + More.
+  // suppliers who run a network (importer/distributor/dealer) also get Requests + Dispatch + More.
   var MANAGE_ROLES = { importer:1, distributor:1, dealer:1 };
   function updateNavVisibility(){
     var isRetail = !!state.enduser;
     var isBuyer = !isRetail && !!state.account;
     var supplier = isBuyer && state.account.role && MANAGE_ROLES[state.account.role];
     // the root importer has no supplier to buy from, so "Orders" (own purchases) is always
-    // empty for them — hide it so their nav is Shop · Cart · Requests · More, not 5 tabs.
+    // empty for them — hide it so their nav is Shop · Cart · Requests · Dispatch · More, not 6 tabs.
     var isRoot = isBuyer && state.account.parentId == null;
     $("nav-orders").classList.toggle("hidden", !isBuyer || isRoot);
     $("nav-requests").classList.toggle("hidden", !supplier);
+    if ($("nav-dispatch")) $("nav-dispatch").classList.toggle("hidden", !supplier);
     $("nav-more").classList.toggle("hidden", !supplier);
     // retail customers now get chain availability too, so the "ready today" chip is useful to them
     $("filter-stock").classList.remove("hidden"); // visibility is then decided per list, below
@@ -2519,7 +2590,7 @@
   }
   function setActiveNav(id){
     applyCartWording();
-    ["nav-catalog","nav-cart","nav-orders","nav-requests","nav-more"].forEach(function(nid){
+    ["nav-catalog","nav-cart","nav-orders","nav-requests","nav-dispatch","nav-more"].forEach(function(nid){
       var el = $(nid); if (el) el.classList.toggle("active", nid === id);
     });
   }
@@ -2643,6 +2714,15 @@
     updateAuthButton(); updateNavVisibility();
     setActiveNav("nav-requests"); pushView("requests");
     renderRequests();
+  }
+  function showDispatch(){
+    hideAll();
+    $("view-dispatch").classList.remove("hidden");
+    $("bottom-nav").classList.remove("hidden");
+    $("header-actions").classList.remove("hidden");
+    updateAuthButton(); updateNavVisibility();
+    setActiveNav("nav-dispatch"); pushView("dispatch");
+    renderDispatch();
   }
   function showMore(){
     hideAll();
@@ -3231,108 +3311,114 @@
         '<div class="req-sub" style="margin-top:6px;"><button class="btn-soft" data-billattach-eu="'+o.id+'">Attach my bill / मेरा बिल लगाएँ</button>'+euBill+'</div>'+
         '<div class="req-msg" id="rem-'+o.id+'"></div></div>';
     }).join("");
+  }
 
-    // ---- Awaiting dispatch: orders I billed but haven't shipped. Add courier + AWB/LR (+ LR copy),
-    // then mark complete — completing a drop-ship order also completes it for the downstream buyer. ----
-    var disp = $("req-dispatch-list");
-    if (disp){
-      var bd = ((await sb.from("orders").select("id,pi_number,dealer_party,grand,created_at,ship_to,source_kind,source_order_id").eq("importer_party", mine).eq("status","billed").order("created_at",{ascending:false})).data) || [];
-      var be = ((await sb.from("enduser_orders").select("id,pi_number,customer_name,grand,created_at,customer_phone,ship_to_addr").eq("supplier_party", mine).eq("status","billed").order("created_at",{ascending:false})).data) || [];
-      // drop-shipped orders are dispatched by the UPSTREAM supplier, not me — keep them out of my list
-      bd = bd.filter(function(o){ return !fwdSet['dealer:'+o.id]; });
-      be = be.filter(function(o){ return !fwdSet['enduser:'+o.id]; });
-      // ONE PARCEL PER CARD, collapsed. Several billed orders for the same buyer used to render
-      // as identical expanded forms, which read as "why is it asking for the LR again?" — the
-      // numbered, closed summary makes the count obvious and only opens the parcel being packed.
-      var dispTotal = bd.length + be.length;
-      // what actually goes in the box — the packer needs the parts, not just a total
-      var dIds = bd.map(function(o){ return o.id; }), eIds = be.map(function(o){ return o.id; });
-      var dLines = dIds.length ? (((await sb.rpc("order_lines_json", { p_ids: dIds })).data) || []) : [];
-      var eLines = eIds.length ? (((await sb.rpc("enduser_order_lines_json", { p_ids: eIds })).data) || []) : [];
-      var linesBy = {};
-      dLines.forEach(function(l){ (linesBy["dealer:"+l.order_id] = linesBy["dealer:"+l.order_id] || []).push(l); });
-      eLines.forEach(function(l){ (linesBy["enduser:"+l.order_id] = linesBy["enduser:"+l.order_id] || []).push(l); });
-      // DROP-SHIP: the parcel must carry the FORWARDER's own bill, never mine — the final
-      // customer must not learn the goods came from up the chain. Fetch it off the source order.
-      var srcD = [], srcE = [];
-      bd.forEach(function(o){ if (o.source_order_id){ (o.source_kind === "enduser" ? srcE : srcD).push(o.source_order_id); } });
-      var srcBill = {};
-      if (srcD.length) (((await sb.from("orders").select("id,bill_url").in("id", srcD)).data) || [])
-        .forEach(function(x){ srcBill["dealer:"+x.id] = x.bill_url; });
-      if (srcE.length) (((await sb.from("enduser_orders").select("id,bill_url").in("id", srcE)).data) || [])
-        .forEach(function(x){ srcBill["enduser:"+x.id] = x.bill_url; });
-      var pInfo = {}; (state.parties || []).forEach(function(p){ pInfo[p.id] = p; });
-      // the address block that gets copied onto the courier slip
-      function shipBlock(kind, o){
-        if (kind === "enduser"){
-          return [o.customer_name || "Customer", o.ship_to_addr || "",
-                  o.customer_phone ? "Phone: " + o.customer_phone : ""].filter(Boolean).join("\n");
-        }
-        if (o.ship_to) return String(o.ship_to).replace(/^Ship to:\s*/, ""); // drop-ship: final recipient
-        var p = pInfo[o.dealer_party] || {};                                 // normal order: the buyer
-        return [p.name || "Buyer", p.address || "", [p.city, p.pin].filter(Boolean).join(" "),
-                p.phone ? "Phone: " + p.phone : ""].filter(Boolean).join("\n");
-      }
-      function packList(ls){
-        if (!ls || !ls.length) return '<p class="more-hint">Item list not available. / सूची उपलब्ध नहीं।</p>';
-        var pieces = ls.reduce(function(s,l){ return s + (l.qty||0); }, 0);
-        var total  = ls.reduce(function(s,l){ return s + (l.amount||0); }, 0);
-        return '<div class="tscroll"><table><thead><tr><th></th><th>Part / पुर्ज़ा</th><th class="num">Qty</th>'+
-            '<th class="num">Rate</th><th class="num">Amount</th></tr></thead><tbody>'+
-          ls.map(function(l){ var s = skuParts(l.sku);
-            return '<tr><td class="ln-thumb">'+lineThumb(l.sku, 34)+'</td>'+
-              '<td><b>'+esc(s.code)+'</b>'+(s.name ? '<div style="color:var(--muted);font-size:12px;">'+esc(nice(s.name))+'</div>' : '')+'</td>'+
-              '<td class="num"><b>'+(l.qty||0)+'</b></td><td class="num">'+inr(l.rate||0)+'</td>'+
-              '<td class="num">'+inr(l.amount||0)+'</td></tr>'; }).join("")+
-          '</tbody></table></div>'+
-          '<p class="more-hint"><b>'+ls.length+'</b> different part'+(ls.length===1?'':'s')+', <b>'+pieces+'</b> piece'+(pieces===1?'':'s')+
-            ' in this parcel · goods value '+inr(total)+' / इस पार्सल में '+pieces+' नग।</p>';
-      }
-      function dispCard(kind, o, who, n){
-        var tag = kind+":"+o.id;
-        var d = o.created_at ? new Date(o.created_at).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "";
-        var ship = shipBlock(kind, o);
-        var firstLine = String(ship).split("\n")[0];
-        var thin = String(ship).split("\n").length < 2; // name only — nothing a courier can use
-        // drop-ship parcels must contain the forwarder's bill
-        var fwdKey = o.source_order_id ? (o.source_kind + ":" + o.source_order_id) : null;
-        var parcelBill = fwdKey
-          ? (srcBill[fwdKey]
-              ? '<p class="more-hint" style="margin-top:10px;">Put this bill in the parcel — it is in '+esc(who)+'&rsquo;s name, not yours. / यह बिल पार्सल में रखें।</p>'+
-                '<a class="btn-soft m-btn" style="display:block;text-align:center;line-height:30px;text-decoration:none;" href="'+esc(srcBill[fwdKey])+'" target="_blank" rel="noopener">📄 Open bill for the parcel / बिल खोलें</a>'
-              : '<div class="ship-warn" style="margin-top:10px;">No bill attached by '+esc(who)+' yet. Ask them to attach it before you ship — the customer must not receive your bill. / '+esc(who)+' ने बिल नहीं लगाया — भेजने से पहले माँगें।</div>')
-          : "";
-        return '<details class="more-sec disp-sec"'+(dispTotal === 1 ? ' open' : '')+'>'+
-          '<summary><span class="disp-n">'+n+'</span><b>'+esc(who)+'</b> — <b>'+inr(o.grand)+'</b>'+
-            '<span class="ms-hint">Order '+esc(o.pi_number||"")+(d ? ' · billed '+esc(d) : '')+
-              '<br>📍 '+esc(firstLine)+(fwdKey ? ' · drop-ship / सीधी डिलीवरी' : '')+'</span></summary>'+
-          '<p class="more-hint" style="margin-bottom:2px;"><b>What goes in this parcel / इस पार्सल में क्या जाएगा</b></p>'+
-          packList(linesBy[tag])+
-          '<p class="more-hint" style="margin-bottom:2px;"><b>Write this on the parcel / पार्सल पर यह पता लिखें</b></p>'+
-          (thin
-            ? '<div class="ship-warn">'+esc(ship)+'<br>No delivery address on file — ask them to add it in More → My delivery address. / पता नहीं है — उनसे पता माँगें।</div>'
-            : '<div class="ship-label-box"><div class="ship-label">'+esc(ship)+'</div>'+
-              '<div class="ship-label-actions">'+
-                '<button type="button" class="ship-label-btn" data-copy-ship="'+esc(ship)+'">📋 Copy Address / कॉपी करें</button>'+
-                '<button type="button" class="ship-label-btn" data-wa-ship="'+esc(ship)+'">💬 Share WhatsApp / भेजें</button>'+
-              '</div></div>')+
-          parcelBill+
-          '<p class="more-hint" style="margin-top:12px;">Now send it, then fill the courier details below. / भेजने के बाद कूरियर की जानकारी भरें।</p>'+
-          '<label class="m-lbl">Courier / कूरियर</label><input class="m-input disp-carrier" placeholder="e.g. Delhivery, Bus, Post office" maxlength="60">'+
-          '<label class="m-lbl">AWB / LR no. / नंबर</label><input class="m-input disp-track" placeholder="tracking / LR number" maxlength="80">'+
-          '<div class="req-sub" style="margin-top:8px;"><button class="btn-soft" data-lr="'+tag+'">Photo of LR (optional) / एलआर फ़ोटो</button>'+
-            '<button class="btn-primary" data-complete="'+tag+'" style="flex:1;">Parcel sent ✓ / भेज दिया</button></div>'+
-          '<div class="req-msg" id="dm-'+kind+'-'+o.id+'"></div></details>';
-      }
-      var dispN = 0;
-      disp.innerHTML = dispTotal
-        ? '<p class="more-hint" style="margin:0 0 8px;">'+dispTotal+' order'+(dispTotal === 1 ? '' : 's')+
-            ' billed and waiting. Each one is its own parcel with its own courier and LR number — tap an order to fill it in. / '+
-            'हर ऑर्डर अलग पार्सल है, उसका अपना कूरियर और एलआर नंबर — भरने के लिए ऑर्डर पर टैप करें।</p>'+
-          bd.map(function(o){ return dispCard("dealer", o, pName[o.dealer_party]||"dealer", ++dispN); }).join("")
-          + be.map(function(o){ return dispCard("enduser", o, o.customer_name||"customer", ++dispN); }).join("")
-        : '<p style="color:var(--muted);font-size:13px;margin:8px 2px;">Nothing awaiting dispatch / कुछ नहीं</p>';
+  async function renderDispatch(){
+    paintHindi();
+    if (!isSupplier()) return;
+    var disp = $("dispatch-full-list");
+    if (!disp) return;
+    disp.innerHTML = '<p style="color:var(--muted);font-size:13px;">Loading dispatch parcels… / लोड हो रहा है…</p>';
+    var mine = state.account.id;
+    var fwdR = await sb.from("orders").select("source_kind, source_order_id").eq("dealer_party", mine).not("source_order_id", "is", null).neq("status","rejected");
+    var fwdSet = {}; ((fwdR && fwdR.data) || []).forEach(function(x){ fwdSet[x.source_kind + ":" + x.source_order_id] = true; });
+    var pName = {}; (state.parties || []).forEach(function(p){ pName[p.id] = p.name; });
+
+    var bd = ((await sb.from("orders").select("id,pi_number,dealer_party,grand,created_at,ship_to,source_kind,source_order_id").eq("importer_party", mine).eq("status","billed").order("created_at",{ascending:false})).data) || [];
+    var be = ((await sb.from("enduser_orders").select("id,pi_number,customer_name,grand,created_at,customer_phone,ship_to_addr").eq("supplier_party", mine).eq("status","billed").order("created_at",{ascending:false})).data) || [];
+    bd = bd.filter(function(o){ return !fwdSet['dealer:'+o.id]; });
+    be = be.filter(function(o){ return !fwdSet['enduser:'+o.id]; });
+    var dispTotal = bd.length + be.length;
+    var bDisp = $("disp-badge");
+    if (bDisp){
+      bDisp.textContent = dispTotal > 99 ? "99+" : String(dispTotal);
+      bDisp.classList.toggle("hidden", dispTotal === 0);
     }
+
+    var dIds = bd.map(function(o){ return o.id; }), eIds = be.map(function(o){ return o.id; });
+    var dLines = dIds.length ? (((await sb.rpc("order_lines_json", { p_ids: dIds })).data) || []) : [];
+    var eLines = eIds.length ? (((await sb.rpc("enduser_order_lines_json", { p_ids: eIds })).data) || []) : [];
+    var linesBy = {};
+    dLines.forEach(function(l){ (linesBy["dealer:"+l.order_id] = linesBy["dealer:"+l.order_id] || []).push(l); });
+    eLines.forEach(function(l){ (linesBy["enduser:"+l.order_id] = linesBy["enduser:"+l.order_id] || []).push(l); });
+
+    var srcD = [], srcE = [];
+    bd.forEach(function(o){ if (o.source_order_id){ (o.source_kind === "enduser" ? srcE : srcD).push(o.source_order_id); } });
+    var srcBill = {};
+    if (srcD.length) (((await sb.from("orders").select("id,bill_url").in("id", srcD)).data) || [])
+      .forEach(function(x){ srcBill["dealer:"+x.id] = x.bill_url; });
+    if (srcE.length) (((await sb.from("enduser_orders").select("id,bill_url").in("id", srcE)).data) || [])
+      .forEach(function(x){ srcBill["enduser:"+x.id] = x.bill_url; });
+    var pInfo = {}; (state.parties || []).forEach(function(p){ pInfo[p.id] = p; });
+
+    function shipBlock(kind, o){
+      if (kind === "enduser"){
+        return [o.customer_name || "Customer", o.ship_to_addr || "",
+                o.customer_phone ? "Phone: " + o.customer_phone : ""].filter(Boolean).join("\n");
+      }
+      if (o.ship_to) return String(o.ship_to).replace(/^Ship to:\s*/, "");
+      var p = pInfo[o.dealer_party] || {};
+      return [p.name || "Buyer", p.address || "", [p.city, p.pin].filter(Boolean).join(" "),
+              p.phone ? "Phone: " + p.phone : ""].filter(Boolean).join("\n");
+    }
+    function packList(ls){
+      if (!ls || !ls.length) return '<p class="more-hint">Item list not available. / सूची उपलब्ध नहीं।</p>';
+      var pieces = ls.reduce(function(s,l){ return s + (l.qty||0); }, 0);
+      var total  = ls.reduce(function(s,l){ return s + (l.amount||0); }, 0);
+      return '<div class="tscroll"><table><thead><tr><th></th><th>Part / पुर्ज़ा</th><th class="num">Qty</th>'+
+          '<th class="num">Rate</th><th class="num">Amount</th></tr></thead><tbody>'+
+        ls.map(function(l){ var s = skuParts(l.sku);
+          return '<tr><td class="ln-thumb">'+lineThumb(l.sku, 34)+'</td>'+
+            '<td><b>'+esc(s.code)+'</b>'+(s.name ? '<div style="color:var(--muted);font-size:12px;">'+esc(nice(s.name))+'</div>' : '')+'</td>'+
+            '<td class="num"><b>'+(l.qty||0)+'</b></td><td class="num">'+inr(l.rate||0)+'</td>'+
+            '<td class="num">'+inr(l.amount||0)+'</td></tr>'; }).join("")+
+        '</tbody></table></div>'+
+        '<p class="more-hint"><b>'+ls.length+'</b> different part'+(ls.length===1?'':'s')+', <b>'+pieces+'</b> piece'+(pieces===1?'':'s')+
+          ' in this parcel · goods value '+inr(total)+' / इस पार्सल में '+pieces+' नग।</p>';
+    }
+    function dispCard(kind, o, who, n){
+      var tag = kind+":"+o.id;
+      var d = o.created_at ? new Date(o.created_at).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "";
+      var ship = shipBlock(kind, o);
+      var firstLine = String(ship).split("\n")[0];
+      var thin = String(ship).split("\n").length < 2;
+      var fwdKey = o.source_order_id ? (o.source_kind + ":" + o.source_order_id) : null;
+      var parcelBill = fwdKey
+        ? (srcBill[fwdKey]
+            ? '<p class="more-hint" style="margin-top:10px;">Put this bill in the parcel — it is in '+esc(who)+'&rsquo;s name, not yours. / यह बिल पार्सल में रखें।</p>'+
+              '<a class="btn-soft m-btn" style="display:block;text-align:center;line-height:30px;text-decoration:none;" href="'+esc(srcBill[fwdKey])+'" target="_blank" rel="noopener">📄 Open bill for the parcel / बिल खोलें</a>'
+            : '<div class="ship-warn" style="margin-top:10px;">No bill attached by '+esc(who)+' yet. Ask them to attach it before you ship — the customer must not receive your bill. / '+esc(who)+' ने बिल नहीं लगाया — भेजने से पहले माँगें।</div>')
+        : "";
+      return '<details class="more-sec disp-sec"'+(dispTotal === 1 ? ' open' : '')+'>'+
+        '<summary><span class="disp-n">'+n+'</span><b>'+esc(who)+'</b> — <b>'+inr(o.grand)+'</b>'+
+          '<span class="ms-hint">Order '+esc(o.pi_number||"")+(d ? ' · billed '+esc(d) : '')+
+            '<br>📍 '+esc(firstLine)+(fwdKey ? ' · drop-ship / सीधी डिलीवरी' : '')+'</span></summary>'+
+        '<p class="more-hint" style="margin-bottom:2px;"><b>What goes in this parcel / इस पार्सल में क्या जाएगा</b></p>'+
+        packList(linesBy[tag])+
+        '<p class="more-hint" style="margin-bottom:2px;"><b>Write this on the parcel / पार्सल पर यह पता लिखें</b></p>'+
+        (thin
+          ? '<div class="ship-warn">'+esc(ship)+'<br>No delivery address on file — ask them to add it in More → My delivery address. / पता नहीं है — उनसे पता माँगें।</div>'
+          : '<div class="ship-label-box"><div class="ship-label">'+esc(ship)+'</div>'+
+            '<div class="ship-label-actions">'+
+              '<button type="button" class="ship-label-btn" data-copy-ship="'+esc(ship)+'">📋 Copy Address / कॉपी करें</button>'+
+              '<button type="button" class="ship-label-btn" data-wa-ship="'+esc(ship)+'">💬 Share WhatsApp / भेजें</button>'+
+            '</div></div>')+
+        parcelBill+
+        '<p class="more-hint" style="margin-top:12px;">Now send it, then fill the courier details below. / भेजने के बाद कूरियर की जानकारी भरें।</p>'+
+        '<label class="m-lbl">Courier / कूरियर</label><input class="m-input disp-carrier" placeholder="e.g. Delhivery, Bus, Post office" maxlength="60">'+
+        '<label class="m-lbl">AWB / LR no. / नंबर</label><input class="m-input disp-track" placeholder="tracking / LR number" maxlength="80">'+
+        '<div class="req-sub" style="margin-top:8px;"><button class="btn-soft" data-lr="'+tag+'">Photo of LR (optional) / एलआर फ़ोटो</button>'+
+          '<button class="btn-primary" data-complete="'+tag+'" style="flex:1;">Parcel sent ✓ / भेज दिया</button></div>'+
+        '<div class="req-msg" id="dm-'+kind+'-'+o.id+'"></div></details>';
+    }
+    var dispN = 0;
+    disp.innerHTML = dispTotal
+      ? '<p class="more-hint" style="margin:0 0 10px;">'+dispTotal+' order'+(dispTotal === 1 ? '' : 's')+
+          ' billed and awaiting dispatch. Each parcel requires carrier/LR info before completion. / '+
+          'हर ऑर्डर अलग पार्सल है — कूरियर और एलआर नंबर भरें।</p>'+
+        bd.map(function(o){ return dispCard("dealer", o, pName[o.dealer_party]||"dealer", ++dispN); }).join("")
+        + be.map(function(o){ return dispCard("enduser", o, o.customer_name||"customer", ++dispN); }).join("")
+      : '<p style="color:var(--muted);font-size:14px;margin:16px 2px;">Nothing awaiting dispatch / कोई पार्सल भेजना बाकी नहीं है</p>';
   }
 
   // set of party ids at or below `root` in the parent_id tree
@@ -3399,6 +3485,16 @@
         '<div><span>Items: <b>'+_coLines.length+'</b> ('+totalQty+' units)</span></div>' +
         '<div><span>Estimated Total: <b>'+inr(totalAmt)+'</b></span></div>' +
       '</div>';
+    }
+
+    // Sync floating counter bill drawer
+    var cbd = $("counter-bill-drawer");
+    if (cbd){
+      var isVisible = _coLines.length > 0 && state.counterModeActive && !$("view-catalog").classList.contains("hidden");
+      cbd.classList.toggle("hidden", !isVisible);
+      var itEl = $("cbd-items"), totEl = $("cbd-total");
+      if (itEl) itEl.textContent = String(_coLines.length);
+      if (totEl) totEl.textContent = "Total: " + inr(totalAmt);
     }
   }
   // ---------- one part picker, shared by every stock and order form ----------
@@ -3502,15 +3598,19 @@
       '<ul class="setup-list">'+todo.map(function(t){ return '<li>'+esc(t)+'</li>'; }).join("")+'</ul>'+
       '<div class="setup-foot">Fill these in below — they take a minute and prevent problems later. / नीचे भरें।</div></div>';
 
-    // grouped by intent, most-used first; closed rows carry a one-line hint so nothing is a mystery box
+    // Grouped by intent into clear, accessible business dashboards
     // Money first inside its tab: in a credit trade "who owes what" is the question asked
     // every morning, and it is short.
-    var secMoney = '<details class="more-sec" open><summary>Who owes whom / कौन कितना देना है<span class="ms-hint">Your customers and your supplier / ग्राहक और सप्लायर</span></summary>'+
-      '<div id="m-money-card"><div style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</div></div></details>';
+    var secMoney = '<div class="more-sec" style="padding:16px 14px;overflow:visible;">'+
+      '<div class="pp-card-head" style="margin-top:0;"><span>💰 Ledger &amp; Balances / कौन कितना देना है</span></div>'+
+      '<p class="more-hint" style="margin:0 0 10px;">Clear view of customer receivables, supplier payables, and payment entries.</p>'+
+      '<div id="m-money-card"><div style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</div></div></div>';
 
-    var secStock = '<details class="more-sec" open><summary>Who holds what / किसके पास कितना है<span class="ms-hint">Across your whole network / पूरे नेटवर्क में</span></summary>'+
-      '<input type="search" id="m-stock-filter" placeholder="Filter — part or party / खोजें" data-ph-en="Filter — part or party" autocomplete="off" class="m-input">'+
-      '<div id="m-stock-card"><div style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</div></div></details>';
+    var secStock = '<div class="more-sec" style="padding:16px 14px;overflow:visible;">'+
+      '<div class="pp-card-head" style="margin-top:0;"><span>📦 Network Stock Overview / किसके पास कितना है</span></div>'+
+      '<p class="more-hint" style="margin:0 0 10px;">Stock held across your entire network and downline stores.</p>'+
+      '<input type="search" id="m-stock-filter" placeholder="Filter — part or party / खोजें" data-ph-en="Filter — part or party" autocomplete="off" class="m-input" style="width:100%;margin-bottom:10px;">'+
+      '<div id="m-stock-card"><div style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</div></div></div>';
 
     var secAddDealer = !below.length ? '' : '<details class="more-sec"><summary>Add a dealer / shopkeeper — नया जोड़ें<span class="ms-hint">Create a login for a party under you / अपने नीचे नया लॉगिन बनाएँ</span></summary>'+
       '<p class="more-hint">They activate their login by opening the app, tapping <b>Create an account</b>, and using the email you enter here.</p>'+
@@ -5147,7 +5247,7 @@
       delete lrPending[ctag];
       showToast("Order completed ✓ / ऑर्डर पूरा");
       var dcard = cpl.closest(".disp-sec, .req-card"); if (dcard) dcard.classList.add("req-done");
-      setTimeout(function(){ renderRequests(); }, 180);
+      setTimeout(function(){ renderRequests(); renderDispatch(); updateRequestBadge(); }, 180);
       return;
     }
     // accept the customer's counter-offer: the offered total becomes the order total
@@ -5237,15 +5337,28 @@
   }
   var _lastReqCount = 0;
   async function updateRequestBadge(){
-    if (!isSupplier()){ $("req-badge").classList.add("hidden"); return; }
+    if (!isSupplier()){
+      $("req-badge").classList.add("hidden");
+      if ($("disp-badge")) $("disp-badge").classList.add("hidden");
+      return;
+    }
     var r = await sb.from("orders").select("id", { count:"exact", head:true }).eq("importer_party", state.account.id).eq("status","placed");
     var n = r.count || 0;
     var b = $("req-badge");
     b.textContent = n > 99 ? "99+" : String(n);
     b.classList.toggle("hidden", n === 0);
-    // a growing count means a new request just landed — pulse to pull the eye
     if (n > _lastReqCount && n > 0){ b.classList.remove("pulse"); void b.offsetWidth; b.classList.add("pulse"); }
     _lastReqCount = n;
+
+    // Dispatch badge count: billed orders waiting for LR
+    var bDisp = $("disp-badge");
+    if (bDisp){
+      var rD = await sb.from("orders").select("id", { count:"exact", head:true }).eq("importer_party", state.account.id).eq("status","billed");
+      var rE = await sb.from("enduser_orders").select("id", { count:"exact", head:true }).eq("supplier_party", state.account.id).eq("status","billed");
+      var nd = (rD.count || 0) + (rE.count || 0);
+      bDisp.textContent = nd > 99 ? "99+" : String(nd);
+      bDisp.classList.toggle("hidden", nd === 0);
+    }
   }
   function subscribeSellerAlerts(){
     if (window._sellerSub || !isSupplier() || !sb) return;
@@ -5335,9 +5448,22 @@
     if (state.account){
       el.innerHTML = '<span class="name">' + esc(state.account.company || state.session.id) + '</span>' +
         '<span>' + esc(roleLabel) + '</span>';
-      // suppliers reach the console via the persistent "Manage" tab in the bottom nav (no redundant banner here)
+      // Show Counter Sale Mode bar for suppliers / dealers
+      var cmBar = $("counter-mode-bar");
+      if (cmBar){
+        cmBar.classList.remove("hidden");
+        var cmBtn = $("counter-mode-toggle");
+        if (cmBtn) cmBtn.classList.toggle("active", !!state.counterModeActive);
+        var multInp = $("counter-mult-input");
+        if (multInp && !multInp._initVal){
+          multInp.value = String(state.account.retailMult || 3);
+          multInp._initVal = true;
+        }
+      }
     } else {
       el.innerHTML = '<span class="name">Retail customer</span><span>' + esc(roleLabel) + '</span>';
+      var cmBar2 = $("counter-mode-bar");
+      if (cmBar2) cmBar2.classList.add("hidden");
     }
   }
 
@@ -5397,6 +5523,22 @@
     // a search term searches the WHOLE catalogue, ignoring any group/section picked earlier —
     // group/section filters only apply once the search box is cleared again. Stock filter always applies.
     if (q){
+      // workshop & colloquial transliteration aliases
+      var ALIAS_MAP = {
+        "carbutor": "carburetor", "carborator": "carburetor", "carbu": "carburetor",
+        "cluch": "clutch", "clus": "clutch",
+        "dori": "rope", "rassi": "rope", "starter dori": "recoil starter",
+        "chakki": "blade", "trimmer": "cutter",
+        "katora": "drum", "goli": "bearing", "chidiya": "rocker", "pipin": "pinion",
+        "tashan": "cable", "acceletor": "accelerator", "plug": "spark plug", "silencer": "muffler"
+      };
+      var tokens = q.split(/\s+/).filter(Boolean);
+      var expandedTokens = [];
+      tokens.forEach(function(t){
+        expandedTokens.push(t);
+        if (ALIAS_MAP[t]) expandedTokens.push(ALIAS_MAP[t]);
+      });
+
       return state.catalog
         .map(function(row, idx){ return {row: row, idx: idx}; })
         .filter(function(o){
@@ -5407,7 +5549,12 @@
           var hay = (String(r.product_code || "") + " " + String(r.particular || "") + " " + String(r.sr_no || "") + " " +
                      String(r.hindi_name || "") + " " + String(r.fits || "") + " " + String(r.oem_refs || "") + " " +
                      String(r.brand || "")).toLowerCase();
-          return hay.indexOf(q) !== -1 && passesStock(o.idx);
+          // match all original words OR their alias expansions
+          var matchAll = tokens.every(function(tok){
+            var alt = ALIAS_MAP[tok];
+            return hay.indexOf(tok) !== -1 || (alt && hay.indexOf(alt) !== -1);
+          });
+          return matchAll && passesStock(o.idx);
         });
     }
     var groupVal = $("filter-group").value, sectionVal = $("filter-section").value;
@@ -5570,9 +5717,28 @@
       var av = availOf(idx); // number = quantity at my supplier; boolean = in/out (retail view)
       var sClass = stockClass(idx);
 
-      var rateHtml = canAdd
-        ? '<div class="rate-wrap"><span class="rate">' + inr(net) + '</span><span class="rate-sub">+ GST</span></div>'
-        : '<div class="rate-wrap"><span class="rate na">Rate on request</span></div>';
+      var rateHtml;
+      var isCounterMode = !!state.counterModeActive && !!state.account;
+      var counterMult = parseFloat(($("counter-mult-input") || {}).value) || (state.account && state.account.retailMult) || 3;
+      if (isCounterMode){
+        var custRate = (net !== null) ? Math.round(net * counterMult) : (r.mrp ? Number(r.mrp) : null);
+        rateHtml = custRate !== null
+          ? '<div class="rate-wrap"><span class="rate">' + inr(custRate) + '</span><span class="rate-sub">Retail / खुदरा दर (MRP)</span></div>'
+          : '<div class="rate-wrap"><span class="rate na">Rate on request</span></div>';
+      } else {
+        rateHtml = canAdd
+          ? '<div class="rate-wrap"><span class="rate">' + inr(net) + '</span><span class="rate-sub">+ GST</span></div>'
+          : '<div class="rate-wrap"><span class="rate na">Rate on request</span></div>';
+      }
+
+      // In Counter Mode: offer direct "+ Counter Bill" button
+      var counterBtnHtml = '';
+      if (isCounterMode && !outOfStock){
+        var coEx = _coLines.filter(function(l){ return l.sku === r.sku; })[0];
+        var coQty = coEx ? coEx.qty : 0;
+        counterBtnHtml = '<button class="counter-bill-btn" type="button" data-co-add-card="' + esc(r.sku) + '">' +
+          (coQty > 0 ? '✓ In Bill (' + coQty + ')' : '+ Bill / बिल में') + '</button>';
+      }
       // Availability is shown only when it is NOT this list's ordinary case (see
       // dominantStockClass). A chip repeated on all 150 rows reports nothing and actively
       // costs something: the eye learns to skip that slot, so the one row that IS different
@@ -5628,6 +5794,7 @@
             '<div class="item-actions">' +
               '<button class="diagram-btn" type="button" data-diagram="' + idx + '" ' +
                 'aria-label="Catalog diagram / सूची पन्ना">' + svgIco("page") + 'Catalog</button>' +
+              counterBtnHtml +
               controlsHtml +
             '</div>' +
           '</div>' +
@@ -6434,11 +6601,82 @@
     $("nav-cart").onclick = showCart;
     $("nav-orders").onclick = showOrders;
     $("nav-requests").onclick = showRequests;
+    if ($("nav-dispatch")) $("nav-dispatch").onclick = showDispatch;
     $("nav-more").onclick = showMore;
+
+    // Counter Sale Mode in Catalog
+    if ($("counter-mode-toggle")){
+      $("counter-mode-toggle").onclick = function(){
+        state.counterModeActive = !state.counterModeActive;
+        this.classList.toggle("active", !!state.counterModeActive);
+        drawCoLines();
+        renderCatalogBody();
+        showToast(state.counterModeActive ? "🛒 Counter Sale Mode Active / ग्राहक बिक्री मोड चालू" : "Counter Sale Mode Off / बंद");
+      };
+    }
+    if ($("counter-mult-input")){
+      $("counter-mult-input").addEventListener("change", function(){
+        var mult = parseFloat(this.value) || 3;
+        if (state.account) state.account.retailMult = mult;
+        drawCoLines();
+        renderCatalogBody();
+      });
+    }
+    if ($("cbd-view-btn")){
+      $("cbd-view-btn").onclick = function(){
+        showMore();
+        // switch to warehouse tab and open counter sale section
+        var tabSell = $("tab-sell"); if (tabSell) tabSell.click();
+        var coSec = $("m-co-sec"); if (coSec) coSec.open = true;
+      };
+    }
+    if ($("cbd-wa-btn")){
+      $("cbd-wa-btn").onclick = async function(){
+        if (!_coLines.length){ showToast("No items in bill / कोई पुर्ज़ा नहीं"); return; }
+        var phone = prompt("Enter customer phone for WhatsApp receipt / ग्राहक का फ़ोन नंबर दर्ज करें (10 अंक):");
+        if (!phone) return;
+        var cleanPhone = phone.replace(/\D/g, "");
+        if (cleanPhone.length < 10){ showToast("Invalid phone number / गलत नंबर"); return; }
+        var custName = prompt("Customer name / ग्राहक का नाम (वैकल्पिक):") || "Customer";
+        var linesText = _coLines.map(function(l){
+          var item = state.catalog[skuToIndex(l.sku)];
+          var r = (item && item.mrp) ? Number(item.mrp) : (netRate(l.sku)||0) * (parseFloat(($("counter-mult-input")||{}).value)||3);
+          return (item ? item.product_code : l.sku) + " x " + l.qty + " = " + inr(r * l.qty);
+        }).join("%0A");
+        var totAmt = _coLines.reduce(function(acc, l){
+          var item = state.catalog[skuToIndex(l.sku)];
+          var r = (item && item.mrp) ? Number(item.mrp) : (netRate(l.sku)||0) * (parseFloat(($("counter-mult-input")||{}).value)||3);
+          return acc + (r * l.qty);
+        }, 0);
+        var waMsg = "नमस्ते " + custName + ", " + ((state.account&&state.account.company)||"KrishiGears") + " से आपका बिल:%0A" +
+          linesText + "%0A%0Aकुल योग: " + inr(totAmt) + "%0Aधन्यवाद!";
+        var waUrl = "https://wa.me/91" + cleanPhone + "?text=" + encodeURIComponent(decodeURIComponent(waMsg));
+        window.open(waUrl, "_blank", "noopener");
+
+        // Record in enduser_orders backend as billed counter order
+        if (state.account && sb){
+          sb.rpc("place_enduser_order", {
+            p_supplier: state.account.id,
+            p_name: custName,
+            p_phone: cleanPhone,
+            p_addr: "Counter Sale / काउंटर बिक्री",
+            p_lines: _coLines.map(function(l){ return { sku:l.sku, qty:l.qty }; }),
+            p_client_key: uuid()
+          }).then(function(res){
+            if (!res.error){
+              showToast("Recorded as Counter Order ✓ / दर्ज हुआ");
+              _coLines = []; drawCoLines(); renderCatalogBody(); updateRequestBadge();
+            }
+          });
+        }
+      };
+    }
+
     $("view-requests").addEventListener("click", onRequestsClick);
+    if ($("view-dispatch")) $("view-dispatch").addEventListener("click", onRequestsClick);
     $("bill-file").addEventListener("change", onBillFileChosen);
     // history routing table + notification deep-link into Requests
-    VIEW_SHOW = { catalog:showCatalog, cart:showCart, orders:showOrders, requests:showRequests, more:showMore, pi:showPI, godmode:showGodMode };
+    VIEW_SHOW = { catalog:showCatalog, cart:showCart, orders:showOrders, requests:showRequests, dispatch:showDispatch, more:showMore, pi:showPI, godmode:showGodMode };
     if (navigator.serviceWorker) navigator.serviceWorker.addEventListener("message", function(e){
       if (!e.data) return;
       if (e.data.go === "requests" && isSupplier()) showRequests();
@@ -6607,6 +6845,17 @@
       var r = state.catalog[idx], n = cartCount();
       var msg = "✓ Added" + (r && r.product_code ? " " + r.product_code : "") + " — cart " + n + " item" + (n === 1 ? "" : "s");
       showToast(msg); announce(msg.replace("✓ ", ""));
+      renderCatalogBody(); return;
+    }
+    var coAddBtn = e.target.closest("[data-co-add-card]");
+    if (coAddBtn){
+      var cosku = coAddBtn.getAttribute("data-co-add-card");
+      var ex = _coLines.filter(function(l){ return l.sku === cosku; })[0];
+      if (ex) ex.qty = Math.min(500, ex.qty + 1); else _coLines.push({ sku:cosku, qty:1 });
+      drawCoLines();
+      var cor = state.catalog[skuToIndex(cosku)];
+      var comsg = "✓ Counter Bill: " + (cor && cor.product_code ? cor.product_code : cosku) + " (" + (ex ? ex.qty : 1) + ")";
+      showToast(comsg);
       renderCatalogBody(); return;
     }
     var photoEl = e.target.closest("[data-photo]");
