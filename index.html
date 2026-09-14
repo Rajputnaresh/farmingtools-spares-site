@@ -816,6 +816,123 @@
   .item-spec{ font-size:12px; color:var(--muted); margin-bottom:8px; line-height:1.45; }
   .item-spec b{ color:var(--text); font-weight:700; }
   .stock-badge{ font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:var(--r-pill); white-space:nowrap; display:inline-flex; align-items:center; gap:4px; }
+  /* Tactile Graphical Stock Gauge on Part Cards */
+  .part-stock-gauge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 8px 3px 6px;
+    border-radius: var(--r-pill);
+    font-size: 11.5px;
+    font-weight: 700;
+    line-height: 1.2;
+    border: 1px solid var(--border);
+    background: #fff;
+  }
+  .part-stock-gauge.gauge-in {
+    background: var(--green-light);
+    border-color: var(--green-mid);
+    color: var(--green-dark);
+  }
+  .part-stock-gauge.gauge-chain {
+    background: var(--warn-tint);
+    border-color: var(--warn-border);
+    color: var(--warn-ink);
+  }
+  .part-stock-gauge.gauge-out {
+    background: var(--calm-tint);
+    border-color: var(--border);
+    color: var(--muted);
+  }
+  .stock-gauge-bar {
+    width: 28px;
+    height: 6px;
+    border-radius: var(--r-pill);
+    background: rgba(0,0,0,0.12);
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+    flex: 0 0 28px;
+  }
+  .stock-gauge-fill {
+    height: 100%;
+    border-radius: var(--r-pill);
+    transition: width 0.2s ease;
+  }
+  .gauge-in .stock-gauge-fill { background: var(--green); }
+  .gauge-chain .stock-gauge-fill { background: #d97706; }
+  .gauge-out .stock-gauge-fill { background: var(--border); width: 0% !important; }
+  .stock-gauge-label {
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Network Stock Distribution meters */
+  .stk-meter-wrap {
+    width: 100%;
+    margin-top: 6px;
+  }
+  .stk-meter-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: var(--r-pill);
+    overflow: hidden;
+    display: flex;
+  }
+  .stk-meter-fill {
+    height: 100%;
+    background: var(--green);
+    border-radius: var(--r-pill);
+  }
+
+  /* Cart Order Fulfillment Gauge */
+  .cart-fulfillment-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-xs);
+  }
+  .cart-fulfillment-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .cart-fulfillment-bar {
+    height: 8px;
+    background: var(--border);
+    border-radius: var(--r-pill);
+    overflow: hidden;
+    display: flex;
+  }
+  .cart-fulfillment-fill-ready {
+    background: var(--green);
+    height: 100%;
+  }
+  .cart-fulfillment-fill-chain {
+    background: #d97706;
+    height: 100%;
+  }
+  .cart-fulfillment-fill-oos {
+    background: var(--danger);
+    height: 100%;
+  }
+  .cart-fulfillment-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-top: 6px;
+  }
   .stock-in{ background:var(--green-light); color:var(--green-dark); border:1px solid var(--green-mid); }
   .stock-out{ background:var(--calm-tint); color:var(--muted); border:1px solid var(--border); }
   .stock-chain{ background:var(--warn-tint); color:var(--warn-ink); border:1px solid var(--warn-border); }
@@ -5828,43 +5945,64 @@
       var rows = _moreStock.filter(function(r){ return r.party === top.val && (!q || String(r.part).toLowerCase().indexOf(q) !== -1); })
         .sort(function(a,b){ return String(a.part).localeCompare(String(b.part)); });
       var total = rows.reduce(function(s,r){ return s + r.qty; }, 0);
+      var maxQtyInParty = rows.reduce(function(m,r){ return Math.max(m, r.qty); }, 1);
       card.innerHTML = stkCrumbs() +
         '<div class="stk-title">'+esc(top.val)+'</div>'+
-        '<div class="stk-count">'+rows.length+' part'+(rows.length===1?"":"s")+' · '+total+' units</div>'+
+        '<div class="stk-count">'+rows.length+' part'+(rows.length===1?"":"s")+' · '+total+' units total</div>'+
         '<div class="stk-list">'+ rows.slice(0,CAP).map(function(r){
+          var partPct = Math.min(100, Math.round((r.qty / maxQtyInParty) * 100));
           return '<button type="button" class="stk-row" data-nav-part="'+esc(r.sku)+'" data-nav-label="'+esc(r.part)+'" aria-label="'+esc(r.part)+', '+r.qty+' units, see who else holds it">'+
-            '<span class="stk-main"><span class="stk-name">'+esc(r.part)+'</span></span>'+
-            '<span class="stk-qty">'+r.qty+'</span><span class="stk-chev" aria-hidden="true">›</span></button>'; }).join("") +'</div>'+
+            '<span class="stk-main">' +
+              '<span class="stk-name">'+esc(r.part)+'</span>' +
+              '<div class="stk-meter-wrap"><div class="stk-meter-bar"><div class="stk-meter-fill" style="width:'+partPct+'%;"></div></div></div>' +
+            '</span>'+
+            '<span class="stk-qty">'+r.qty+'<small>in stock</small></span><span class="stk-chev" aria-hidden="true">›</span></button>'; }).join("") +'</div>'+
         stkCap(rows, CAP);
       return;
     }
     if (top && top.t === 'part'){
       var prows = _moreStock.filter(function(r){ return r.sku === top.val && (!q || r.party.toLowerCase().indexOf(q) !== -1); })
         .sort(function(a,b){ return b.qty - a.qty || a.party.localeCompare(b.party); }); // most-held first
-      var ptotal = prows.reduce(function(s,r){ return s + r.qty; }, 0);
+      var ptotal = prows.reduce(function(s,r){ return s + r.qty; }, 0) || 1;
       card.innerHTML = stkCrumbs() +
         '<div class="stk-title">'+esc(top.label || top.val)+'</div>'+
         '<div class="stk-count">held by '+prows.length+' part'+(prows.length===1?"y":"ies")+' · '+ptotal+' units total</div>'+
         '<div class="stk-list">'+ prows.slice(0,CAP).map(function(r){
+          var sharePct = Math.min(100, Math.round((r.qty / ptotal) * 100));
           return '<button type="button" class="stk-row" data-nav-party="'+esc(r.party)+'" aria-label="'+esc(r.party)+' holds '+r.qty+', open">'+
-            '<span class="stk-main"><span class="stk-name">'+esc(r.party)+'</span></span>'+
-            '<span class="stk-qty">'+r.qty+'</span><span class="stk-chev" aria-hidden="true">›</span></button>'; }).join("") +'</div>'+
+            '<span class="stk-main">' +
+              '<span class="stk-name">'+esc(r.party)+'</span>' +
+              '<div class="stk-meter-wrap"><div class="stk-meter-bar"><div class="stk-meter-fill" style="width:'+sharePct+'%;"></div></div></div>' +
+            '</span>'+
+            '<span class="stk-qty">'+r.qty+'<small>'+sharePct+'% share</small></span><span class="stk-chev" aria-hidden="true">›</span></button>'; }).join("") +'</div>'+
         stkCap(prows, CAP);
       return;
     }
 
     // overview: one row per party (distinct parts + total units), tap to drill in
     var byParty = {};
-    _moreStock.forEach(function(r){ var p = byParty[r.party] || (byParty[r.party] = { party:r.party, lines:0, qty:0 }); p.lines++; p.qty += r.qty; });
+    var totalNetworkUnits = 0;
+    _moreStock.forEach(function(r){
+      var p = byParty[r.party] || (byParty[r.party] = { party:r.party, lines:0, qty:0 });
+      p.lines++;
+      p.qty += r.qty;
+      totalNetworkUnits += r.qty;
+    });
+    totalNetworkUnits = totalNetworkUnits || 1;
     var parties = Object.keys(byParty).map(function(k){ return byParty[k]; })
       .filter(function(p){ return !q || p.party.toLowerCase().indexOf(q) !== -1; })
-      .sort(function(a,b){ return a.party.localeCompare(b.party); });
+      .sort(function(a,b){ return b.qty - a.qty || a.party.localeCompare(b.party); });
     if (!parties.length){ card.innerHTML = '<div style="color:var(--muted);font-size:13px;">No match for "'+esc(q)+'".</div>'; return; }
     card.innerHTML =
-      '<div class="stk-count">'+parties.length+' part'+(parties.length===1?"y":"ies")+' holding stock — tap to see parts / देखें</div>'+
+      '<div class="stk-count">'+parties.length+' part'+(parties.length===1?"y":"ies")+' holding stock ('+totalNetworkUnits+' total units in network) — tap to explore / देखें</div>'+
       '<div class="stk-list">'+ parties.slice(0,CAP).map(function(p){
+        var netSharePct = Math.min(100, Math.round((p.qty / totalNetworkUnits) * 100));
         return '<button type="button" class="stk-row" data-nav-party="'+esc(p.party)+'" aria-label="'+esc(p.party)+', '+p.lines+' parts, '+p.qty+' units, open">'+
-          '<span class="stk-main"><span class="stk-name">'+esc(p.party)+'</span><span class="stk-sub">'+p.lines+' part'+(p.lines===1?"":"s")+'</span></span>'+
+          '<span class="stk-main">' +
+            '<span class="stk-name">'+esc(p.party)+'</span>' +
+            '<span class="stk-sub">'+p.lines+' part'+(p.lines===1?"":"s")+' &middot; '+netSharePct+'% of network</span>' +
+            '<div class="stk-meter-wrap"><div class="stk-meter-bar"><div class="stk-meter-fill" style="width:'+netSharePct+'%;"></div></div></div>' +
+          '</span>'+
           '<span class="stk-qty">'+p.qty+'<small>units</small></span><span class="stk-chev" aria-hidden="true">›</span></button>'; }).join("") +'</div>'+
       stkCap(parties, CAP);
   }
@@ -6591,10 +6729,23 @@
         '<div class="browse-head">' + esc((state.browseGroup + " · ") + (GROUP_LABELS[state.browseGroup] || "")) + '</div>' +
         '<div class="tiles">' + sections.map(function(s, idx){
           var cnt = sc[s];
-          var pct = Math.round((cnt / groupTotal) * 100);
+          var inStockCount = 0;
+          state.catalog.forEach(function(r, cIdx){
+            if (String(r.group) === g2 && r.section === s && stockClass(cIdx) === "here") inStockCount++;
+          });
+          var inStockPct = cnt > 0 ? Math.round((inStockCount / cnt) * 100) : 0;
           return '<button class="tile" type="button" data-browse-section="' + esc(s) + '" aria-label="' + esc(s) + '">' +
             '<span class="t-name">' + esc(s) + '</span>' +
             '<span class="t-count">' + cnt + ' parts</span>' +
+            '<div class="tile-meter-wrap">' +
+              '<div class="tile-meter-bar" title="' + inStockPct + '% Ready in warehouse">' +
+                '<div class="tile-meter-in" style="width:' + inStockPct + '%;"></div>' +
+              '</div>' +
+              '<div class="tile-meter-labels">' +
+                '<span>' + inStockPct + '% ready</span>' +
+                '<span>' + (100 - inStockPct) + '% orderable</span>' +
+              '</div>' +
+            '</div>' +
           '</button>';
         }).join("") + '</div>';
       $("browse-back").onclick = function(){ state.browseGroup = null; $("filter-group").value = ""; refreshSectionOptions(); renderCatalogBody(); };
@@ -6733,14 +6884,29 @@
       // A real count ("12 ready") is a number rather than a constant, so it always stays.
       var stockBadgeHtml = '';
       if (sClass !== "unknown"){
-        var label = null, cls = "";
+        var label = null, gCls = "", fillWidth = "100%";
         if (sClass === "here"){
-          if (typeof av === "number"){ cls = "stock-in"; label = '✓ ' + av + ' ready / तैयार ' + av; }
-          else if (sClass !== dominantStock){ cls = "stock-in"; label = '✓ In stock / स्टॉक में'; }
+          gCls = "gauge-in";
+          if (typeof av === "number"){
+            fillWidth = Math.min(100, Math.max(25, av * 10)) + "%";
+            label = '✓ ' + av + ' ready / तैयार ' + av;
+          } else {
+            fillWidth = "100%";
+            label = '✓ In stock / तैयार स्टॉक';
+          }
         } else if (sClass === "chain"){
-          if (sClass !== dominantStock){ cls = "stock-chain"; label = '⏳ Orderable / मंगाया जा सकता है'; }
-        } else { cls = "stock-out"; label = '✕ Out of stock / स्टॉक नहीं'; }
-        if (label) stockBadgeHtml = '<span class="stock-badge ' + cls + '">' + label + '</span>';
+          gCls = "gauge-chain";
+          fillWidth = "50%";
+          label = '⏳ Orderable from supplier / मंगाया जा सकता है';
+        } else {
+          gCls = "gauge-out";
+          fillWidth = "0%";
+          label = '✕ Out of stock / स्टॉक नहीं';
+        }
+        stockBadgeHtml = '<div class="part-stock-gauge ' + gCls + '" title="' + esc(label) + '">' +
+          '<span class="stock-gauge-bar"><span class="stock-gauge-fill" style="width:' + fillWidth + ';"></span></span>' +
+          '<span class="stock-gauge-label">' + label + '</span>' +
+        '</div>';
       }
       var controlsHtml;
       if (outOfStock){
@@ -6884,20 +7050,39 @@
     }
     var hasOOS = false, hasUnpriced = false, skipped = 0;
     
-    // Graphical Cart Machinery & Spend Breakdown
-    var cartGroupSpend = {};
-    var cartTotalQty = 0;
+    // Graphical Cart Fulfillment & Readiness Gauge
+    var readyLines = 0, chainLines = 0, oosLines = 0;
     keys.forEach(function(k){
       var r = state.catalog[k];
       if (!r) return;
-      var q = state.cart[k] || 0;
-      cartTotalQty += q;
-      var pr = netRate(k) || 0;
-      var g = r.group || 1;
-      cartGroupSpend[g] = (cartGroupSpend[g] || 0) + (pr * q);
+      var sk = stockClass(k);
+      if (sk === "here") readyLines++;
+      else if (sk === "chain") chainLines++;
+      else if (sk === "none") oosLines++;
     });
+    var totalCartLines = keys.length || 1;
+    var readyPct = Math.round((readyLines / totalCartLines) * 100);
+    var chainPct = Math.round((chainLines / totalCartLines) * 100);
+    var oosPct = 100 - readyPct - chainPct;
 
-    wrap.innerHTML = keys.map(function(k){
+    var cartFulfillmentHtml = '<div class="cart-fulfillment-card">' +
+      '<div class="cart-fulfillment-head">' +
+        '<span>Order Fulfillment Readiness / डिस्पैच तैयारी</span>' +
+        '<span>' + (readyLines === totalCartLines ? '✓ 100% Ready today' : readyLines + ' / ' + totalCartLines + ' ready') + '</span>' +
+      '</div>' +
+      '<div class="cart-fulfillment-bar">' +
+        '<div class="cart-fulfillment-fill-ready" style="width:' + readyPct + '%;" title="' + readyLines + ' lines ready in warehouse"></div>' +
+        '<div class="cart-fulfillment-fill-chain" style="width:' + chainPct + '%;" title="' + chainLines + ' lines ordered in from supplier"></div>' +
+        '<div class="cart-fulfillment-fill-oos" style="width:' + oosPct + '%;" title="' + oosLines + ' lines out of stock"></div>' +
+      '</div>' +
+      '<div class="cart-fulfillment-legend">' +
+        '<span style="color:var(--green-dark);">● ' + readyLines + ' ready today / तैयार</span>' +
+        (chainLines > 0 ? '<span style="color:#d97706;">● ' + chainLines + ' from supplier / मंगाया जा रहा है</span>' : '') +
+        (oosLines > 0 ? '<span style="color:var(--danger);">● ' + oosLines + ' out of stock / स्टॉक नहीं</span>' : '') +
+      '</div>' +
+    '</div>';
+
+    wrap.innerHTML = cartFulfillmentHtml + keys.map(function(k){
       // A cart entry whose catalog row is missing (stale cart, catalogue not loaded yet) used to
       // vanish from the list AND from the totals, leaving a live "Send order" button over a ₹0
       // screen with nothing on it. Reproduced live: badge said 3, the list was blank, the button
