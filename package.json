@@ -5,9 +5,13 @@
   "main": "sw.js",
   "scripts": {
     "start": "npx http-server -p 8080",
+    "dashboard": "npm run --prefix dashboard dev",
+    "build:dashboard": "npm run --prefix dashboard build",
+    "test:dashboard": "node verify-dashboard.cjs",
     "test": "cypress run --spec cypress/integration/spares.spec.js --browser chrome",
     "a11y": "axe \"http://localhost:8080?dev=true\""
   },
+
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Rajputnaresh/farmingtools-spares-site.git"
