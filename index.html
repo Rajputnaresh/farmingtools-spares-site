@@ -569,124 +569,16 @@
 
   
   /* =========================================================
-     GRAPHICAL REPRESENTATIONS & VISUAL DRILL-DOWN STYLES
+     AGRICULTURAL SPARES PALETTE TOKENS
      ========================================================= */
-  
-  /* Stable accessible 5-step palette tokens for multi-item distributions */
-  .chart-color-0 { background: #0F5132 !important; } /* Deep Forest Green */
-  .chart-color-1 { background: #198754 !important; } /* Mid Vibrant Green */
-  .chart-color-2 { background: #0284c7 !important; } /* Sky Tech Blue */
-  .chart-color-3 { background: #d97706 !important; } /* Warm Amber */
-  .chart-color-4 { background: #7c3aed !important; } /* Muted Violet */
-  .chart-color-other { background: #64748b !important; } /* Neutral Slate */
+  .chart-color-0 { background: #0F5132 !important; }
+  .chart-color-1 { background: #198754 !important; }
+  .chart-color-2 { background: #0284c7 !important; }
+  .chart-color-3 { background: #d97706 !important; }
+  .chart-color-4 { background: #7c3aed !important; }
+  .chart-color-other { background: #64748b !important; }
 
-  .graph-bar-card {
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: var(--r-lg);
-    padding: 14px 16px;
-    margin-bottom: 14px;
-    box-shadow: var(--shadow-xs);
-  }
-  .graph-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-  .graph-title {
-    font-size: 13.5px;
-    font-weight: 800;
-    color: var(--green-dark);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .graph-total {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--muted);
-    font-variant-numeric: tabular-nums;
-  }
-  .graph-distribution-bar {
-    display: flex;
-    height: 14px;
-    border-radius: var(--r-pill);
-    overflow: hidden;
-    background: var(--border);
-    gap: 2px;
-    margin-bottom: 12px;
-  }
-  .graph-segment {
-    height: 100%;
-    cursor: pointer;
-    transition: opacity 0.15s ease, transform 0.15s ease;
-    position: relative;
-  }
-  .graph-segment::after {
-    content: "";
-    position: absolute;
-    top: -15px;
-    bottom: -15px;
-    left: 0;
-    right: 0;
-    z-index: 1;
-  }
-  .graph-segment:hover, .graph-segment:active {
-    opacity: 0.82;
-  }
-  .graph-seg-1 { background: #0F5132; } /* Dark Forest Green */
-  .graph-seg-2 { background: #198754; } /* Mid Vibrant Green */
-  .graph-seg-3 { background: #0d6efd; } /* Tech Azure Blue */
-  .graph-seg-4 { background: #d97706; } /* Amber Orange */
-
-  .graph-legend-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px 12px;
-  }
-  .graph-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: none;
-    border: 1px solid transparent;
-    padding: 6px 8px;
-    border-radius: var(--r-md);
-    cursor: pointer;
-    text-align: left;
-    min-height: 44px;
-    transition: background 0.15s ease, border-color 0.15s ease;
-  }
-  .graph-legend-item:hover, .graph-legend-item:active {
-    background: var(--green-light);
-    border-color: var(--green-mid);
-  }
-  .graph-legend-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex: 0 0 10px;
-  }
-  .graph-legend-name {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--text);
-    line-height: 1.25;
-    flex: 1 1 auto;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .graph-legend-val {
-    font-size: 11.5px;
-    font-weight: 800;
-    color: var(--muted);
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* Subsystem graphical flow explorer */
+  /* Subsystem tactile pills */
   .subsystem-flow-card {
     background: #fff;
     border: 1px solid var(--border);
@@ -702,7 +594,7 @@
     margin-bottom: 8px;
   }
   .subsystem-flow-title {
-    font-size: 12.5px;
+    font-size: 13px;
     font-weight: 800;
     color: var(--green-dark);
     display: flex;
@@ -761,6 +653,55 @@
     color: var(--muted);
   }
 
+  /* Order status filter pills in My Orders */
+  .order-filter-pill-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .order-filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1px solid var(--border);
+    padding: 7px 12px;
+    border-radius: var(--r-pill);
+    cursor: pointer;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text);
+    min-height: 44px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .order-filter-pill:hover, .order-filter-pill:active {
+    background: var(--green-light);
+    border-color: var(--green-mid);
+  }
+  .order-filter-pill.active {
+    background: var(--green-dark);
+    border-color: var(--green-dark);
+    color: #fff;
+  }
+  .order-filter-pill.active .order-filter-dot {
+    border-color: #fff;
+  }
+  .order-filter-pill.active .order-filter-count {
+    color: rgba(255,255,255,0.9);
+  }
+  .order-filter-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: 0 0 8px;
+  }
+  .order-filter-count {
+    font-size: 11.5px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
   /* Visual stock & availability progress meters */
   .tile-meter-wrap {
     margin-top: 8px;
@@ -815,28 +756,6 @@
     justify-content: space-between;
     font-size: 11.5px;
     font-weight: 700;
-  }
-
-  /* God Mode distribution charts */
-  .god-graph-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-  .god-graph-tile {
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: var(--r-md);
-    padding: 12px 14px;
-  }
-  .god-graph-head {
-    font-size: 12px;
-    font-weight: 800;
-    color: var(--green-dark);
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
   }
 
   /* browse landing (progressive disclosure over 1,746 SKUs) */
@@ -3407,43 +3326,26 @@
       return !activeStatusFilter || o.status === activeStatusFilter;
     });
 
-    var ordBarHtml = '<div class="graph-bar-card" style="margin-bottom:14px;" role="region" aria-label="My Orders Breakdown">' +
-      '<div class="graph-head">' +
-        '<span class="graph-title">' +
-          '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3h8a1 1 0 0 1 1 1v16l-4.5-2.5L8 20V4a1 1 0 0 1 1-1z"/><path d="M9 8h6M9 12h6"/></svg>' +
-          'Order History Pipeline / ऑर्डर स्थिति</span>' +
-        '<span class="graph-total">Total: ' + inr(myTotalSpend) + (activeStatusFilter ? ' (Filtered)' : '') + '</span>' +
-      '</div>' +
-      '<div class="graph-distribution-bar">';
+    var ordPillsHtml = '<div class="order-filter-pill-grid" role="region" aria-label="Filter orders by status">';
     var stColors = { placed: "#d97706", billed: "#0F5132", completed: "#198754", rejected: "#b91c1c" };
-    Object.keys(myStatusCounts).forEach(function(st){
-      var scnt = myStatusCounts[st];
-      var spct = ((scnt / totMyOrders) * 100).toFixed(1);
-      ordBarHtml += '<div class="graph-segment" style="width:' + spct + '%;background:' + (stColors[st]||"#64748b") + ';" ' +
-        'data-order-filter="' + esc(st) + '" title="' + esc(ORDER_STATUS_LABEL[st]||st) + ': ' + scnt + ' (' + spct + '%)"></div>';
-    });
-    ordBarHtml += '</div><div class="graph-legend-grid">';
-    
-    // Add "All" option if filtered
-    if (activeStatusFilter){
-      ordBarHtml += '<button type="button" class="graph-legend-item" data-order-filter="" style="grid-column: 1 / -1;background:var(--green-light);border-color:var(--green-mid);">' +
-        '<span class="graph-legend-name">⚡ Show All Orders / सभी ऑर्डर दिखाएँ (' + rows.length + ')</span>' +
-      '</button>';
-    }
+    var isAllAct = !activeStatusFilter;
+    ordPillsHtml += '<button type="button" class="order-filter-pill' + (isAllAct ? ' active' : '') + '" data-order-filter="">' +
+      '<span>All / सभी</span>' +
+      '<span class="order-filter-count">(' + rows.length + ')</span>' +
+    '</button>';
 
     Object.keys(myStatusCounts).forEach(function(st){
       var scnt = myStatusCounts[st];
-      var spct = Math.round((scnt / totMyOrders) * 100);
       var isAct = activeStatusFilter === st;
-      ordBarHtml += '<button type="button" class="graph-legend-item' + (isAct ? ' active' : '') + '" data-order-filter="' + esc(st) + '" style="' + (isAct ? 'background:var(--green-light);border-color:var(--green);font-weight:800;' : '') + '">' +
-        '<span class="graph-legend-dot" style="background:' + (stColors[st]||"#64748b") + ';"></span>' +
-        '<span class="graph-legend-name">' + esc(ORDER_STATUS_LABEL[st]||st) + '</span>' +
-        '<span class="graph-legend-val">' + scnt + ' (' + spct + '%)</span>' +
+      ordPillsHtml += '<button type="button" class="order-filter-pill' + (isAct ? ' active' : '') + '" data-order-filter="' + esc(st) + '">' +
+        '<span class="order-filter-dot" style="background:' + (stColors[st]||"#64748b") + ';"></span>' +
+        '<span>' + esc(ORDER_STATUS_LABEL[st]||st) + '</span>' +
+        '<span class="order-filter-count">(' + scnt + ')</span>' +
       '</button>';
     });
-    ordBarHtml += '</div></div>';
+    ordPillsHtml += '</div>';
 
-    box.innerHTML = ordBarHtml + filteredOrderRows.map(function(o){
+    box.innerHTML = ordPillsHtml + filteredOrderRows.map(function(o){
       var badge = (o.status === "billed" || o.status === "completed") ? "badge-green" : (o.status === "rejected" ? "badge-red" : "badge-amber");
       var d = o.created_at ? new Date(o.created_at).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }) : "";
       // amended = supplier adjusted quantities before billing; ship_to shows on forwarded
@@ -3765,38 +3667,32 @@
   }
 
   function renderGodNetworksList(){
-    // Graphical Importer Distribution
-    var impCounts = {};
+    var sel = $("gm-filter-importer");
+    if (!sel) return;
+    var current = sel.value;
+    var importers = [];
+    var seen = {};
     _gmNetworksData.forEach(function(p){
-      var iname = p.importer_name || "Direct";
-      impCounts[iname] = (impCounts[iname] || 0) + 1;
+      if (p.importer_id && !seen[p.importer_id]){
+        seen[p.importer_id] = true;
+        importers.push({ id: p.importer_id, name: p.importer_name || "Importer" });
+      }
     });
-    var totNet = _gmNetworksData.length || 1;
-    var netGraphHtml = '<div class="graph-bar-card" style="margin-bottom:12px;">' +
-      '<div class="graph-head"><span class="graph-title">Network Distribution by Importer / आयातक वार नेटवर्क</span><span class="graph-total">' + totNet + ' total parties</span></div>' +
-      '<div class="graph-distribution-bar">';
-    var idxColor = 0;
-    Object.keys(impCounts).forEach(function(inm){
-      var cnt = impCounts[inm];
-      var pct = ((cnt / totNet) * 100).toFixed(1);
-      var col = 'hsl(' + ((idxColor * 75) % 360) + ', 60%, 40%)';
-      netGraphHtml += '<div class="graph-segment" style="width:' + pct + '%;background:' + col + ';" title="' + esc(inm) + ': ' + cnt + ' (' + pct + '%)"></div>';
-      idxColor++;
-    });
-    netGraphHtml += '</div><div class="graph-legend-grid">';
-    idxColor = 0;
-    Object.keys(impCounts).slice(0, 4).forEach(function(inm){
-      var cnt = impCounts[inm];
-      var pct = Math.round((cnt / totNet) * 100);
-      var col = 'hsl(' + ((idxColor * 75) % 360) + ', 60%, 40%)';
-      netGraphHtml += '<div class="graph-legend-item" style="cursor:default;">' +
-        '<span class="graph-legend-dot" style="background:' + col + ';"></span>' +
-        '<span class="graph-legend-name">' + esc(inm) + '</span>' +
-        '<span class="graph-legend-val">' + cnt + ' (' + pct + '%)</span>' +
-      '</div>';
-      idxColor++;
-    });
-    netGraphHtml += '</div></div>';
+    sel.innerHTML = '<option value="">All Importers / सभी आयातक (' + importers.length + ')</option>' +
+      importers.map(function(imp){
+        return '<option value="' + esc(imp.id) + '">' + esc(imp.name) + '</option>';
+      }).join("");
+    if (current) sel.value = current;
+    if (!sel._wired){
+      sel._wired = true;
+      sel.onchange = renderGodNetworksList;
+      var q = $("gm-search-party");
+      if (q) q.oninput = renderGodNetworksList;
+    }
+  }
+
+  function renderGodNetworksList(){
+
     var sel = $("gm-filter-importer");
     var impId = sel ? sel.value : "";
     var q = (($("gm-search-party") || {}).value || "").trim().toLowerCase();
@@ -3821,7 +3717,7 @@
       return;
     }
 
-    body.innerHTML = netGraphHtml + rows.map(function(p){
+    body.innerHTML = rows.map(function(p){
       var roleColor = p.role === "importer" ? "#1b4332" : (p.role === "distributor" ? "#2d6a4f" : (p.role === "dealer" ? "#40916c" : "#52b788"));
       var roleBg = p.role === "importer" ? "#d8f3dc" : "#e8f5e9";
       var marginText = p.margin_pct != null ? (p.margin_pct + '%') : (p.role === "shopkeeper" ? "3× (MRP)" : "Default");
@@ -4034,35 +3930,8 @@
       return;
     }
 
-    // Graphical status distribution
-    var statusCounts = {};
-    _gmOrdersData.forEach(function(o){ statusCounts[o.status] = (statusCounts[o.status] || 0) + 1; });
-    var totO = _gmOrdersData.length || 1;
-    var ordGraphHtml = '<div class="graph-bar-card" style="margin-bottom:12px;">' +
-      '<div class="graph-head"><span class="graph-title">Order Pipeline Distribution / ऑर्डर स्थिति</span><span class="graph-total">' + totO + ' total</span></div>' +
-      '<div class="graph-distribution-bar">';
-    
-    var sColors = { placed: "#d97706", billed: "#0F5132", completed: "#198754", rejected: "#b91c1c" };
-    Object.keys(statusCounts).forEach(function(st){
-      var scnt = statusCounts[st];
-      var spct = ((scnt / totO) * 100).toFixed(1);
-      ordGraphHtml += '<div class="graph-segment" style="width:' + spct + '%;background:' + (sColors[st]||"#64748b") + ';" ' +
-        'title="' + esc(ORDER_STATUS_LABEL[st]||st) + ': ' + scnt + ' (' + spct + '%)"></div>';
-    });
-    ordGraphHtml += '</div><div class="graph-legend-grid">';
-    Object.keys(statusCounts).forEach(function(st){
-      var scnt = statusCounts[st];
-      var spct = Math.round((scnt / totO) * 100);
-      ordGraphHtml += '<div class="graph-legend-item" style="cursor:default;">' +
-        '<span class="graph-legend-dot" style="background:' + (sColors[st]||"#64748b") + ';"></span>' +
-        '<span class="graph-legend-name">' + esc(ORDER_STATUS_LABEL[st]||st) + '</span>' +
-        '<span class="graph-legend-val">' + scnt + ' (' + spct + '%)</span>' +
-      '</div>';
-    });
-    ordGraphHtml += '</div></div>';
-
-    var html = ordGraphHtml + '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Showing ' + rows.length + ' orders</div>';
-    html += '<div style="overflow-x:auto;"><table class="gm-order-table">' +
+    var html = '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Showing ' + rows.length + ' orders</div>' +
+      '<div style="overflow-x:auto;"><table class="gm-order-table">' +
       '<thead><tr>' +
         '<th>PI / Date</th>' +
         '<th>Buyer</th>' +
@@ -4136,28 +4005,8 @@
     // party names for "from <dealer>"
     var pName = {}; (state.parties || []).forEach(function(p){ pName[p.id] = p.name; });
 
-    var totalReqVal = ords.reduce(function(acc, o){ return acc + Number(o.grand||0); }, 0);
-    var reqGraphHtml = '';
-    if (ords.length > 0){
-      reqGraphHtml = '<div class="graph-bar-card" style="margin-bottom:14px;" role="region" aria-label="Requests Pipeline Meter">' +
-        '<div class="graph-head">' +
-          '<span class="graph-title">' +
-            '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 6a3 3 0 0 1 0 6M17 20a6 6 0 0 0-1.5-4"/></svg>' +
-            'Downline Demand Volume / कुल माँग राशि</span>' +
-          '<span class="graph-total">' + inr(totalReqVal) + '</span>' +
-        '</div>' +
-        '<div class="graph-distribution-bar">' +
-          '<div class="graph-segment" style="width:100%;background:var(--warn-border);" title="' + ords.length + ' requests awaiting review"></div>' +
-        '</div>' +
-        '<div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:700;color:var(--muted);">' +
-          '<span>' + ords.length + ' Dealer POs pending fulfillment</span>' +
-          '<span>Action: Confirm or Counter</span>' +
-        '</div>' +
-      '</div>';
-    }
-
     if (!ords.length){ dbox.innerHTML = '<p style="color:var(--muted);font-size:14px;margin:8px 2px;">No pending requests / कोई अनुरोध नहीं</p>'; }
-    else dbox.innerHTML = reqGraphHtml + ords.map(function(o){
+    else dbox.innerHTML = ords.map(function(o){
       var ls = byO[o.id] || [];
       // photo + name, editable qty AND rate (counter-price), live amount, per-line ✕ to decline
       var lineHtml = ls.map(function(l){
@@ -4251,26 +4100,6 @@
       bDisp.classList.toggle("hidden", dispTotal === 0);
     }
 
-    // Graphical Dispatch Readiness Meter
-    var totalDisAmt = bd.reduce(function(a,b){ return a + Number(b.grand||0); }, 0) +
-                      be.reduce(function(a,b){ return a + Number(b.grand||0); }, 0);
-    var dispGraphHtml = '<div class="graph-bar-card" style="margin-bottom:14px;" role="region" aria-label="Dispatch Readiness">' +
-      '<div class="graph-head">' +
-        '<span class="graph-title">' +
-          '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>' +
-          'Dispatch Queue / भेजने योग्य पार्सल</span>' +
-        '<span class="graph-total">Value: ' + inr(totalDisAmt) + '</span>' +
-      '</div>' +
-      '<div class="graph-distribution-bar">' +
-        '<div class="graph-segment" style="width:' + (dispTotal > 0 ? (bd.length / dispTotal * 100).toFixed(1) : 50) + '%;background:var(--green-dark);" title="Dealer Shipments: ' + bd.length + '"></div>' +
-        '<div class="graph-segment" style="width:' + (dispTotal > 0 ? (be.length / dispTotal * 100).toFixed(1) : 50) + '%;background:var(--green);" title="Direct Farmer Deliveries: ' + be.length + '"></div>' +
-      '</div>' +
-      '<div class="ledger-graph-legend">' +
-        '<span style="color:var(--green-dark);">B2B Dealer Orders: ' + bd.length + '</span>' +
-        '<span style="color:var(--green);">B2C Retail Orders: ' + be.length + '</span>' +
-      '</div>' +
-    '</div>';
-
     var dIds = bd.map(function(o){ return o.id; }), eIds = be.map(function(o){ return o.id; });
     var dLines = dIds.length ? (((await sb.rpc("order_lines_json", { p_ids: dIds })).data) || []) : [];
     var eLines = eIds.length ? (((await sb.rpc("enduser_order_lines_json", { p_ids: eIds })).data) || []) : [];
@@ -4348,7 +4177,7 @@
         '<div class="req-msg" id="dm-'+kind+'-'+o.id+'"></div></details>';
     }
     var dispN = 0;
-    disp.innerHTML = dispGraphHtml + (dispTotal
+    disp.innerHTML = (dispTotal
       ? ('<p class="more-hint" style="margin:0 0 10px;">'+dispTotal+' order'+(dispTotal === 1 ? '' : 's')+
           ' billed and awaiting dispatch. Each parcel requires carrier/LR info before completion. / '+
           'हर ऑर्डर अलग पार्सल है — कूरियर और एलआर नंबर भरें।</p>'+
@@ -6031,40 +5860,11 @@
       .filter(function(p){ return !q || p.party.toLowerCase().indexOf(q) !== -1; })
       .sort(function(a,b){ return a.party.localeCompare(b.party); });
     if (!parties.length){ card.innerHTML = '<div style="color:var(--muted);font-size:13px;">No match for "'+esc(q)+'".</div>'; return; }
-    var totalNetworkUnits = parties.reduce(function(a, b){ return a + b.qty; }, 0) || 1;
-    var stockDistBar = '<div class="graph-bar-card" style="margin-bottom:12px;" role="region" aria-label="Network Stock Distribution">' +
-      '<div class="graph-head">' +
-        '<span class="graph-title">' +
-          '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>' +
-          'Network Stock Distribution / स्टॉक वितरण</span>' +
-        '<span class="graph-total">' + totalNetworkUnits + ' total units</span>' +
-      '</div>' +
-      '<div class="graph-distribution-bar" title="Stock share by location">';
-    
-    parties.slice(0, 8).forEach(function(p, idx){
-      var pct = ((p.qty / totalNetworkUnits) * 100).toFixed(1);
-      var color = 'hsl(' + ((idx * 65) % 360) + ', 60%, 38%)';
-      stockDistBar += '<div class="graph-segment" style="width:' + pct + '%;background:' + color + ';" ' +
-        'data-nav-party="' + esc(p.party) + '" title="' + esc(p.party) + ': ' + p.qty + ' units (' + pct + '%)"></div>';
-    });
-    stockDistBar += '</div><div class="graph-legend-grid">';
-    parties.slice(0, 4).forEach(function(p, idx){
-      var pct = Math.round((p.qty / totalNetworkUnits) * 100);
-      var color = 'hsl(' + ((idx * 65) % 360) + ', 60%, 38%)';
-      stockDistBar += '<button type="button" class="graph-legend-item" data-nav-party="' + esc(p.party) + '">' +
-        '<span class="graph-legend-dot" style="background:' + color + ';"></span>' +
-        '<span class="graph-legend-name">' + esc(p.party) + '</span>' +
-        '<span class="graph-legend-val">' + p.qty + ' u (' + pct + '%)</span>' +
-      '</button>';
-    });
-    stockDistBar += '</div></div>';
-
-    card.innerHTML = stockDistBar +
+    card.innerHTML =
       '<div class="stk-count">'+parties.length+' part'+(parties.length===1?"y":"ies")+' holding stock — tap to see parts / देखें</div>'+
       '<div class="stk-list">'+ parties.slice(0,CAP).map(function(p){
-        var barPct = Math.round((p.qty / totalNetworkUnits) * 100);
         return '<button type="button" class="stk-row" data-nav-party="'+esc(p.party)+'" aria-label="'+esc(p.party)+', '+p.lines+' parts, '+p.qty+' units, open">'+
-          '<span class="stk-main"><span class="stk-name">'+esc(p.party)+'</span><span class="stk-sub">'+p.lines+' part'+(p.lines===1?"":"s")+' ('+barPct+'% of network)</span></span>'+
+          '<span class="stk-main"><span class="stk-name">'+esc(p.party)+'</span><span class="stk-sub">'+p.lines+' part'+(p.lines===1?"":"s")+'</span></span>'+
           '<span class="stk-qty">'+p.qty+'<small>units</small></span><span class="stk-chev" aria-hidden="true">›</span></button>'; }).join("") +'</div>'+
       stkCap(parties, CAP);
   }
@@ -6751,42 +6551,11 @@
   }
 
   function renderBrowse(body){
-    var totalParts = state.catalog.length || 1;
     if (state.browseGroup === null){
       var groups = Array.from(new Set(state.catalog.map(function(r){ return r.group; }))).sort();
       var gc = countBy(function(r){ return r.group; });
 
-      // Graphical Distribution Bar across the 4 machine groups
-      var graphBarHtml = '<div class="graph-bar-card" role="region" aria-label="Machine group distribution visualizer">' +
-        '<div class="graph-head">' +
-          '<div class="graph-title">' +
-            '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>' +
-            'Machine Group Distribution / मशीन समूह वितरण</div>' +
-          '<div class="graph-total">' + totalParts + ' total SKUs</div>' +
-        '</div>' +
-        '<div class="graph-distribution-bar" title="Tap any segment to drill down">';
-      
-      groups.forEach(function(g){
-        var cnt = gc[g] || 0;
-        var pct = ((cnt / totalParts) * 100).toFixed(1);
-        graphBarHtml += '<div class="graph-segment graph-seg-' + g + '" style="width:' + pct + '%;" ' +
-          'data-browse-group="' + esc(g) + '" title="' + esc(GROUP_LABELS[g] || g) + ': ' + cnt + ' parts (' + pct + '%)"></div>';
-      });
-      graphBarHtml += '</div><div class="graph-legend-grid">';
-
-      groups.forEach(function(g){
-        var cnt = gc[g] || 0;
-        var pct = Math.round((cnt / totalParts) * 100);
-        var shortName = (GROUP_LABELS[g] || ("Group " + g)).split("/")[0].trim();
-        graphBarHtml += '<button type="button" class="graph-legend-item" data-browse-group="' + esc(g) + '">' +
-          '<span class="graph-legend-dot graph-seg-' + g + '"></span>' +
-          '<span class="graph-legend-name">' + esc(shortName) + '</span>' +
-          '<span class="graph-legend-val">' + cnt + ' <span style="font-weight:500;opacity:0.8;">(' + pct + '%)</span></span>' +
-        '</button>';
-      });
-      graphBarHtml += '</div></div>';
-
-      body.innerHTML = graphBarHtml +
+      body.innerHTML =
         '<div class="browse-head">Browse by Machinery / मशीन चुनें (Tap to Explore)</div>' +
         '<div class="tiles">' + groups.map(function(g){
           var label = g + " · " + (GROUP_LABELS[g] || ("Group " + g));
@@ -6818,40 +6587,14 @@
       var sections = Object.keys(sc).sort();
       var groupTotal = Object.values(sc).reduce(function(a, b){ return a + b; }, 0) || 1;
 
-      // Section distribution bar
-      var secBarHtml = '<div class="graph-bar-card" role="region" aria-label="Model distribution">' +
-        '<div class="graph-head">' +
-          '<div class="graph-title">' +
-            '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>' +
-            'Model Breakdown / मॉडल वितरण</div>' +
-          '<div class="graph-total">' + groupTotal + ' parts in ' + sections.length + ' models</div>' +
-        '</div>' +
-        '<div class="graph-distribution-bar">';
-      
-      var STABLE_COLORS = ["#0F5132", "#198754", "#0284c7", "#d97706", "#7c3aed", "#475569"];
-      sections.forEach(function(s, idx){
-        var cnt = sc[s] || 0;
-        var pct = ((cnt / groupTotal) * 100).toFixed(1);
-        var color = STABLE_COLORS[idx % STABLE_COLORS.length];
-        secBarHtml += '<div class="graph-segment" style="width:' + pct + '%;background:' + color + ';" ' +
-          'data-browse-section="' + esc(s) + '" title="' + esc(s) + ': ' + cnt + ' parts (' + pct + '%)"></div>';
-      });
-      secBarHtml += '</div></div>';
-
       body.innerHTML = '<button class="browse-back" id="browse-back" type="button">&larr; All groups / सभी समूह</button>' +
         '<div class="browse-head">' + esc((state.browseGroup + " · ") + (GROUP_LABELS[state.browseGroup] || "")) + '</div>' +
-        secBarHtml +
         '<div class="tiles">' + sections.map(function(s, idx){
           var cnt = sc[s];
           var pct = Math.round((cnt / groupTotal) * 100);
           return '<button class="tile" type="button" data-browse-section="' + esc(s) + '" aria-label="' + esc(s) + '">' +
             '<span class="t-name">' + esc(s) + '</span>' +
-            '<span class="t-count">' + cnt + ' parts (' + pct + '% of group)</span>' +
-            '<div class="tile-meter-wrap">' +
-              '<div class="tile-meter-bar">' +
-                '<div class="tile-meter-in" style="width:' + pct + '%;background:' + (["#0F5132", "#198754", "#0284c7", "#d97706", "#7c3aed", "#475569"][idx % 6]) + ';"></div>' +
-              '</div>' +
-            '</div>' +
+            '<span class="t-count">' + cnt + ' parts</span>' +
           '</button>';
         }).join("") + '</div>';
       $("browse-back").onclick = function(){ state.browseGroup = null; $("filter-group").value = ""; refreshSectionOptions(); renderCatalogBody(); };
@@ -6906,8 +6649,8 @@
         '<div class="subsystem-flow-head">' +
           '<span class="subsystem-flow-title">' +
             '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>' +
-            'Subsystem Anatomy Explorer / कलपुर्जे आरेख</span>' +
-          '<span style="font-size:11px;font-weight:700;color:var(--muted);">' + (_selectedSubsystem ? 'Filtered' : 'Tap to focus') + '</span>' +
+            'Parts by Subsystem / पुर्जे प्रकार</span>' +
+          '<span style="font-size:11px;font-weight:700;color:var(--muted);">' + (_selectedSubsystem ? 'Filtered / छांटा गया' : 'Tap to filter / चुनें') + '</span>' +
         '</div>' +
         '<div class="subsystem-flow-strip">' +
           '<button type="button" class="subsystem-flow-item' + (!_selectedSubsystem ? ' active' : '') + '" data-sub-flow="">' +
@@ -7154,33 +6897,7 @@
       cartGroupSpend[g] = (cartGroupSpend[g] || 0) + (pr * q);
     });
 
-    var cartGrandEstimated = Object.values(cartGroupSpend).reduce(function(a, b){ return a + b; }, 0) || 1;
-    // Compact, vertical-conserving Cart composition bar (< 48px height)
-    var cartGraphHtml = '<div style="background:#fff;border:1px solid var(--border);border-radius:var(--r-md);padding:8px 12px;margin-bottom:12px;" role="region" aria-label="Cart Spend Breakdown">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;font-weight:700;margin-bottom:6px;">' +
-        '<span style="color:var(--green-dark);">Order Composition / ' + keys.length + ' lines (' + cartTotalQty + ' units)</span>' +
-        '<span style="color:var(--muted);">' + inr(cartGrandEstimated) + '</span>' +
-      '</div>' +
-      '<div class="graph-distribution-bar" style="margin-bottom:6px;height:8px;" title="Spend breakdown across machine categories">';
-    
-    Object.keys(cartGroupSpend).forEach(function(g){
-      var sp = cartGroupSpend[g];
-      var pct = ((sp / cartGrandEstimated) * 100).toFixed(1);
-      cartGraphHtml += '<div class="graph-segment graph-seg-' + g + '" style="width:' + pct + '%;" ' +
-        'title="' + esc(GROUP_LABELS[g]||g) + ': ' + inr(sp) + ' (' + pct + '%)"></div>';
-    });
-    cartGraphHtml += '</div>' +
-      '<div style="display:flex;flex-wrap:wrap;gap:8px 14px;font-size:11px;color:var(--muted);font-weight:600;">' +
-      Object.keys(cartGroupSpend).map(function(g){
-        var sp = cartGroupSpend[g];
-        var pct = Math.round((sp / cartGrandEstimated) * 100);
-        var shortName = (GROUP_LABELS[g] || ("Group " + g)).split("/")[0].trim();
-        return '<span style="display:inline-flex;align-items:center;gap:4px;">' +
-          '<span class="graph-legend-dot graph-seg-' + g + '" style="width:7px;height:7px;"></span>' +
-          esc(shortName) + ' ' + inr(sp) + ' (' + pct + '%)</span>';
-      }).join("") + '</div></div>';
-
-    wrap.innerHTML = cartGraphHtml + keys.map(function(k){
+    wrap.innerHTML = keys.map(function(k){
       // A cart entry whose catalog row is missing (stale cart, catalogue not loaded yet) used to
       // vanish from the list AND from the totals, leaving a live "Send order" button over a ₹0
       // screen with nothing on it. Reproduced live: badge said 3, the list was blank, the button
