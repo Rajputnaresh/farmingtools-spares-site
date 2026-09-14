@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=5, viewport-fit=cover">
 <!-- the catalogue was only fetched after the Supabase bundle parsed, costing ~550ms of dead time
      on first load; preloading starts it with the scripts instead -->
 <link rel="preload" as="fetch" href="catalog.json" crossorigin>
@@ -25,7 +25,7 @@
 <style>
   :root{
     /* Brand palette - Deep industrial forest green with clean slate accents */
-    --green:#0F5132; --green-dark:#0A3622; --green-light:#E8F5E9; --green-mid:#A3D9B1;
+    --green:#0F5132; --green-dark:#0A3622; --green-light:#E8F5E9; --green-mid:#A3D9B1; --amber:#d97706;
     --green-accent:#16A34A;
     --border:#E2E8F0; --border-dark:#CBD5E1;
     --text:#0F172A; --muted:#475569; --bg:#F8FAFC; --surface:#FFFFFF;
@@ -574,7 +574,7 @@
   .chart-color-0 { background: #0F5132 !important; }
   .chart-color-1 { background: #198754 !important; }
   .chart-color-2 { background: #0284c7 !important; }
-  .chart-color-3 { background: #d97706 !important; }
+  .chart-color-3 { background: var(--amber) !important; }
   .chart-color-4 { background: #7c3aed !important; }
   .chart-color-other { background: #64748b !important; }
 
@@ -858,6 +858,9 @@
     height: 100%;
     border-radius: var(--r-pill);
     transition: width 0.2s ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .stock-gauge-fill { transition: none; }
   }
   .gauge-in .stock-gauge-fill { background: var(--green); }
   .gauge-chain .stock-gauge-fill { background: #d97706; }
