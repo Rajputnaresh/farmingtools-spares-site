@@ -794,19 +794,19 @@
   .req-msg{ font-size:12.5px; margin-top:6px; color:var(--muted); }
   .req-msg.err{ color:var(--danger); }
   .fwd-eu{ margin-top:8px; border-top:1px dashed var(--border); padding-top:8px; }
-  /* More hub */
-  .more-card{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:14px 16px; margin-bottom:12px; }
+  /* More hub (Business Command Center) */
+  .more-card{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:14px 16px; margin-bottom:12px; box-shadow:var(--shadow-xs); }
   .more-profile{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
-  .more-profile-name{ font-size:16px; font-weight:800; color:var(--green-dark); letter-spacing:-0.01em; }
+  .more-profile-name{ font-size:17px; font-weight:800; color:var(--green-dark); letter-spacing:-0.01em; }
   .more-profile-role{ display:inline-block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; padding:2px 8px; border-radius:var(--r-pill); background:var(--green-light); color:var(--green-dark); margin-top:4px; }
-  .more-profile-loc{ font-size:12px; color:var(--muted); margin-top:4px; }
-  .more-kpis{ display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
-  .more-kpi-item{ display:flex; flex-direction:column; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:8px 10px; }
-  .more-kpi-lbl{ font-size:11px; font-weight:700; color:var(--muted); }
-  .more-kpi-val{ font-size:16px; font-weight:800; color:var(--green-dark); margin-top:2px; font-variant-numeric:tabular-nums; }
+  .more-profile-loc{ font-size:12.5px; color:var(--muted); margin-top:4px; }
+  .more-kpis{ display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+  .more-kpi-item{ display:flex; flex-direction:column; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:10px 12px; transition:border-color .15s ease; }
+  .more-kpi-lbl{ font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.4px; }
+  .more-kpi-val{ font-size:17px; font-weight:800; color:var(--green-dark); margin-top:2px; font-variant-numeric:tabular-nums; }
   .more-link{ display:block; width:100%; text-align:left; background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:14px; margin-bottom:8px; font-size:14px; font-weight:600; color:var(--green-dark); text-decoration:none; }
-  .more-signout{ color:var(--danger); }
-  .more-sec{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); margin-bottom:10px; overflow:hidden; }
+  .more-signout{ color:var(--danger); border-color:var(--danger-border); background:var(--danger-tint); }
+  .more-sec{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); margin-bottom:12px; overflow:hidden; box-shadow:var(--shadow-xs); }
   .more-sec > summary{ position:relative; padding:15px 38px 15px 16px; font-size:14.5px; font-weight:700; color:var(--green-dark); cursor:pointer; list-style:none; }
   .more-sec > summary::-webkit-details-marker{ display:none; }
   .more-sec > summary::after{ content:"⌄"; position:absolute; top:14px; right:16px; font-size:16px; color:var(--muted); transition:transform .2s var(--ease-quint); transform-origin:center; }
@@ -821,18 +821,21 @@
   /* grouped More menu: intent headers + informative closed rows */
   .more-group{ font-size:13px; font-weight:700; color:var(--green-dark); margin:18px 2px 6px; }
   .more-group:first-of-type{ margin-top:14px; }
-  /* Tabs, because these are separate jobs done at separate times — not one long settings page. */
-  .more-tabs{ display:flex; gap:6px; overflow-x:auto; overflow-y:hidden; padding:2px 2px 10px;
-    -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+  /* Modern segmented tabs with distinct icons & pill styling */
+  .more-tabs{ display:flex; gap:6px; overflow-x:auto; overflow-y:hidden; padding:4px 2px 12px;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none; border-bottom:1px solid var(--border); margin-bottom:14px; }
   .more-tabs::-webkit-scrollbar{ display:none; }
   .more-tab{ position:relative; flex:1 0 auto; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; gap:2px; min-width:68px; min-height:56px; padding:8px 10px;
+    justify-content:center; gap:3px; min-width:72px; min-height:58px; padding:8px 10px;
     border:1px solid var(--border); border-radius:var(--r-md); background:#fff; color:var(--muted);
-    font:inherit; font-weight:700; cursor:pointer; transition:background-color .15s ease, color .15s ease, border-color .15s ease; }
+    font:inherit; font-weight:700; cursor:pointer; transition:all .15s ease; box-shadow:var(--shadow-xs); }
   .more-tab .ico{ width:20px; height:20px; }
+  .more-tab .ico svg{ stroke-width:2; }
   .mt-en{ font-size:12px; line-height:1.1; }
   .mt-hi{ font-size:10.5px; font-weight:600; opacity:.85; line-height:1.1; }
-  .more-tab[aria-selected="true"]{ background:var(--green-dark); border-color:var(--green-dark); color:#fff; }
+  .more-tab:hover:not([aria-selected="true"]){ background:var(--hover-faint); color:var(--text); border-color:var(--border-strong); }
+  .more-tab[aria-selected="true"]{ background:var(--green-dark); border-color:var(--green-dark); color:#fff; box-shadow:var(--shadow-sm); }
+  .more-tab[aria-selected="true"] .ico svg{ stroke:#fff; }
   .more-tab[aria-selected="true"] .mt-hi{ opacity:.95; }
   .mt-dot{ position:absolute; top:4px; right:6px; min-width:16px; height:16px; padding:0 4px;
     border-radius:var(--r-pill); background:var(--danger); color:#fff; font-size:10.5px; font-weight:800;
@@ -1262,7 +1265,7 @@
   <button id="nav-orders" class="hidden" aria-label="My orders / मेरे ऑर्डर"><span class="ico" data-ico="orders" aria-hidden="true"></span><span class="nl">Orders</span><span class="nl-hi">ऑर्डर</span></button>
   <button id="nav-requests" class="hidden" aria-label="Requests / अनुरोध"><span class="ico" data-ico="bell" aria-hidden="true"></span><span class="nav-badge hidden" id="req-badge">0</span><span class="nl">Requests</span><span class="nl-hi">अनुरोध</span></button>
   <button id="nav-dispatch" class="hidden" aria-label="Dispatch / डिस्पैच"><span class="ico" data-ico="truck" aria-hidden="true"></span><span class="nav-badge hidden" id="disp-badge">0</span><span class="nl">Dispatch</span><span class="nl-hi">डिस्पैच</span></button>
-  <button id="nav-more" class="hidden" aria-label="More / अधिक"><span class="ico" data-ico="more" aria-hidden="true"></span><span class="nl">More</span><span class="nl-hi">अधिक</span></button>
+  <button id="nav-more" class="hidden" aria-label="Hub / व्यापार"><span class="ico" data-ico="more" aria-hidden="true"></span><span class="nl">Hub</span><span class="nl-hi">व्यापार</span></button>
 </nav>
 
 <main id="main">
@@ -1513,9 +1516,9 @@
     <div id="dispatch-full-list"></div>
   </section>
 
-  <!-- More (business hub) -->
+  <!-- More (Business Command Center) -->
   <section id="view-more" class="hidden">
-    <h2 class="view-title">More / अधिक</h2>
+    <h2 class="view-title">Business Hub / व्यापार केंद्र</h2>
     <div id="more-body"></div>
   </section>
 
@@ -2062,7 +2065,7 @@
     img.replaceWith(ph);
   }
   window.thumbFail = thumbFail;
-  window.__ver = "v142";   // runtime version marker — support asks "which version?", the console answers
+  window.__ver = "v143";   // runtime version marker — support asks "which version?", the console answers
   function inr(n){ return "₹" + Number(n).toLocaleString("en-IN"); }
 
   // The cart survives a reload but the name and phone beside it did not — on a patchy
@@ -4178,13 +4181,20 @@
       '<span class="ms-hint">Approve new signups / नए पंजीकरण स्वीकृत करें</span></summary>'+
       '<div id="m-approvals-card"><div style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</div></div></details>';
 
+    // Reorganized Hub Tabs:
+    // 1. "money" (Ledger & Balances + Glossary)
+    // 2. "stock" (Network Inventory + Transfer Challans + Import/Correct)
+    // 3. "network" (Dealer Directory, Commission Margins, Approvals)
+    // 4. "shop" (Shopfront Link, Counter POS, Retail Markups)
+    // 5. "account" (Business Address, GSTIN, Bank UPI / QR)
+    // 6. "parts" (Product Master Hub - Importer only)
     var tabs = [
-      { id:"money", en:"Money",   hi:"पैसा",    ico:"rupee",   html: secGlossary + secMoney },
-      { id:"stock", en:"Stock",   hi:"स्टॉक",   ico:"box",     html: secStock + secTransfer + (isImporter ? secExternal + secCorrect : "") },
-      { id:"sell",  en:"Warehouse", hi:"गोदाम",   ico:"warehouse", html: secCustOrder + secLink + secPrice + secAddress + secPay,
-        alert: detailsMissing },
-      { id:"team",  en:"Network", hi:"नेटवर्क", ico:"people",  html: secMargins + secAddDealer + secApprovals },
-      { id:"parts", en:"Parts",   hi:"पुर्ज़े",  ico:"page",    html: partsHubHtml }
+      { id:"money", en:"Money", hi:"पैसा", ico:"rupee", html: secMoney + secGlossary },
+      { id:"stock", en:"Stock", hi:"स्टॉक", ico:"box", html: secStock + secTransfer + (isImporter ? secExternal + secCorrect : "") },
+      { id:"network", en:"Network", hi:"नेटवर्क", ico:"people", html: secApprovals + secAddDealer + secMargins },
+      { id:"shop", en:"Storefront", hi:"दुकान", ico:"shop", html: secLink + secCustOrder + secPrice },
+      { id:"account", en:"Settings", hi:"सेटिंग्स", ico:"manage", html: secAddress + secPay, alert: detailsMissing },
+      { id:"parts", en:"Catalog Master", hi:"मास्टर कैटलॉग", ico:"page", html: partsHubHtml }
     ].filter(function(t){ return t.html; });
 
     if (!state.moreTab || !tabs.some(function(t){ return t.id === state.moreTab; })) state.moreTab = tabs[0].id;
@@ -4197,7 +4207,7 @@
             ' aria-selected="'+on+'" aria-controls="panel-'+t.id+'" tabindex="'+(on?0:-1)+'">'+
             svgIco(t.ico)+'<span class="mt-en">'+esc(t.en)+'</span><span class="mt-hi">'+esc(t.hi)+'</span>'+
             (t.alert ? '<span class="mt-dot" aria-label="needs attention">!</span>' : '')+
-            (t.id === "team" ? '<span class="mt-dot hidden" id="tab-dot-team">!</span>' : '')+
+            (t.id === "network" ? '<span class="mt-dot hidden" id="tab-dot-team">!</span>' : '')+
           '</button>';
         }).join("")+
       '</div>'+
@@ -5444,6 +5454,8 @@
     var rows = r.data || [];
     var bdg = $("m-badge-appr");
     if (bdg){ bdg.textContent = String(rows.length); bdg.classList.toggle("hidden", !rows.length); }
+    var dotTeam = $("tab-dot-team");
+    if (dotTeam) dotTeam.classList.toggle("hidden", !rows.length);
     var kAppr = $("more-kpi-appr-val");
     if (kAppr) kAppr.textContent = String(rows.length);
     if (!rows.length){ card.innerHTML = '<div style="color:var(--muted);font-size:13px;">No pending registrations.</div>'; return; }
