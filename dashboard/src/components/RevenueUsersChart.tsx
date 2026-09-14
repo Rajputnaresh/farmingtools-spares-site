@@ -31,43 +31,43 @@ const CustomTooltip: FC<CustomTooltipProps> = ({ active, payload, label, selecte
     const units = payload.find((p) => p.dataKey === 'units')?.value;
 
     return (
-      <div className="rounded-xl border border-slate-200 bg-white/95 p-3.5 shadow-lg backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95">
-        <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-2 dark:border-slate-800">
-          <p className="font-semibold text-slate-900 dark:text-white">
-            {label} 2026 Spares Activity
+      <div className="rounded-xl border border-[#dbe7de] bg-white/95 p-4 shadow-md backdrop-blur-xs dark:border-[#14532d] dark:bg-[#0e3d22]/95">
+        <div className="flex items-center justify-between gap-3 border-b border-[#dbe7de] pb-2 dark:border-[#14532d]">
+          <p className="font-bold text-[#1c2420] dark:text-white text-sm">
+            {label} 2026 चालान व पुर्जे विवरण
           </p>
           {isSelected && (
-            <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-              Active Selection
+            <span className="inline-flex items-center rounded-full bg-[#e9f4ed] px-2 py-0.5 text-[11px] font-bold text-[#14532d] dark:bg-[#14532d] dark:text-[#f6f8f5]">
+              सक्रिय चयन (Selected)
             </span>
           )}
         </div>
 
-        <div className="mt-2.5 space-y-1.5 text-xs">
-          <div className="flex items-center justify-between gap-4">
-            <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-              Turnover / राजस्व:
+        <div className="mt-3 space-y-2 text-xs font-semibold">
+          <div className="flex items-center justify-between gap-5">
+            <span className="flex items-center gap-1.5 text-[#3d4a42] dark:text-[#dbe7de]">
+              <span className="h-3 w-3 rounded-full bg-[#1b7a43]" />
+              टर्नओवर (Turnover):
             </span>
-            <span className="font-semibold text-slate-900 dark:text-white">
+            <span className="font-extrabold text-[#1c2420] dark:text-white tabular-nums">
               {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(rev ?? 0)}
             </span>
           </div>
 
-          <div className="flex items-center justify-between gap-4">
-            <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
-              <span className="h-2.5 w-2.5 rounded-full bg-indigo-500" />
-              Parts Dispatched / पुर्जे:
+          <div className="flex items-center justify-between gap-5">
+            <span className="flex items-center gap-1.5 text-[#3d4a42] dark:text-[#dbe7de]">
+              <span className="h-3 w-3 rounded-full bg-[#f0b429]" />
+              भेजे गए पुर्जे (Units):
             </span>
-            <span className="font-semibold text-slate-900 dark:text-white">
+            <span className="font-extrabold text-[#1c2420] dark:text-white tabular-nums">
               {new Intl.NumberFormat('en-IN').format(units ?? 0)} pcs
             </span>
           </div>
         </div>
 
-        <p className="mt-2.5 flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-          <MousePointerClick className="h-3 w-3" />
-          Click point to drill down into itemized part lines
+        <p className="mt-3 flex items-center gap-1.5 text-xs font-bold text-[#1b7a43] dark:text-[#f0b429]">
+          <MousePointerClick className="h-3.5 w-3.5" />
+          विस्तृत चालान देखने हेतु क्लिक करें
         </p>
       </div>
     );
@@ -97,40 +97,40 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/90">
+    <div className="rounded-xl border border-[#dbe7de] bg-white p-6 shadow-xs dark:border-[#14532d] dark:bg-[#14532d]/60">
       {/* Chart Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#dbe7de] dark:border-[#14532d]">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-              Spares Turnover vs. Dispatched Units
+            <h2 className="text-lg font-extrabold text-[#1c2420] dark:text-white">
+              मासिक पुर्जे मांग व चालान (Spares Demand &amp; Turnover)
             </h2>
             {selectedPeriod && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                Drilled: {selectedPeriod}
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#e9f4ed] px-2.5 py-1 text-xs font-bold text-[#14532d] dark:bg-[#0e3d22] dark:text-[#f6f8f5] border border-[#dbe7de] dark:border-[#1b7a43]">
+                {selectedPeriod} चयनित
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     onSelectPeriod(null);
                   }}
-                  className="ml-1 hover:text-emerald-900 dark:hover:text-emerald-200"
+                  className="ml-1 h-5 w-5 flex items-center justify-center rounded-full hover:bg-[#dbe7de] dark:hover:bg-[#14532d] text-[#14532d] dark:text-[#f6f8f5]"
                   aria-label="Clear drill-down"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-3.5 w-3.5" />
                 </button>
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Network ordering momentum across all 1,746 cataloged genuine SKUs. Click any month to inspect line-item dispatches.
+          <p className="text-xs font-medium text-[#5f6f66] dark:text-[#dbe7de]/90 mt-0.5">
+            1,746 चालू पुर्जों पर राजस्थान व पंजाब डीलर नेटवर्क की मासिक मांग। किसी भी माह पर टैप कर चालान सूची देखें।
           </p>
         </div>
 
-        {/* Quick Month Filter Pills */}
-        <div className="flex items-center gap-1.5 self-start sm:self-auto">
-          <span className="text-xs font-medium text-slate-400 dark:text-slate-500 mr-1 hidden sm:inline">
-            Period:
+        {/* Quick Month Filter Buttons - 44px Minimum Touch Target */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <span className="text-xs font-bold text-[#3d4a42] dark:text-[#dbe7de] mr-1 hidden sm:inline">
+            माह चुनें:
           </span>
           {data.map((item) => {
             const isSelected = selectedPeriod === item.month;
@@ -140,10 +140,10 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
                 type="button"
                 data-testid={`chart-period-btn-${item.month}`}
                 onClick={() => onSelectPeriod(isSelected ? null : item.month)}
-                className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+                className={`min-h-[44px] min-w-[44px] px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center shadow-xs cursor-pointer ${
                   isSelected
-                    ? "bg-slate-900 text-white shadow-sm dark:bg-emerald-600 dark:text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                    ? "bg-[#1b7a43] text-white shadow-xs dark:bg-[#f0b429] dark:text-[#3d2c00]"
+                    : "bg-[#f6f8f5] text-[#1c2420] hover:bg-[#e9f4ed] border border-[#dbe7de] dark:border-[#14532d] dark:bg-[#0e3d22] dark:text-[#f6f8f5] dark:hover:bg-[#14532d]"
                 }`}
               >
                 {item.month}
@@ -154,28 +154,28 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
             <button
               type="button"
               onClick={() => onSelectPeriod(null)}
-              className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-1.5 py-1"
+              className="min-h-[44px] px-3 text-xs font-bold text-[#5f6f66] hover:text-[#1c2420] dark:text-[#dbe7de] dark:hover:text-white"
             >
-              Reset
+              रीसेट
             </button>
           )}
         </div>
       </div>
 
       {/* Chart Instruction Banner */}
-      <div className="mt-3 flex items-center justify-between px-1 text-xs text-slate-400 dark:text-slate-500">
-        <span className="flex items-center gap-1">
-          <Info className="h-3.5 w-3.5" />
-          Tip: Click any area point to drill down into genuine parts.
+      <div className="mt-3 flex items-center justify-between px-1 text-xs font-bold text-[#5f6f66] dark:text-[#dbe7de]">
+        <span className="flex items-center gap-1.5">
+          <Info className="h-4 w-4 text-[#1b7a43] dark:text-[#f0b429]" />
+          सुझाव: ग्राफ के किसी भी बिंदु पर टैप कर पार्ट्स चालान देखें
         </span>
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            Turnover (₹ INR)
+            <span className="h-3 w-3 rounded-full bg-[#1b7a43]" />
+            टर्नओवर (₹ INR)
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-indigo-500" />
-            Units Dispatched
+            <span className="h-3 w-3 rounded-full bg-[#f0b429]" />
+            भेजे गए पार्ट्स (Units)
           </span>
         </div>
       </div>
@@ -191,27 +191,27 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
           >
             <defs>
               <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10b981" stopOpacity={0.45} />
-                <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                <stop offset="5%" stopColor="#1b7a43" stopOpacity={0.4} />
+                <stop offset="95%" stopColor="#1b7a43" stopOpacity={0.02} />
               </linearGradient>
-              <linearGradient id="usersGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
-                <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0} />
+              <linearGradient id="unitsGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#f0b429" stopOpacity={0.4} />
+                <stop offset="95%" stopColor="#f0b429" stopOpacity={0.02} />
               </linearGradient>
             </defs>
 
             <CartesianGrid
               strokeDasharray="3 3"
               vertical={false}
-              stroke="currentColor"
-              className="text-slate-200/80 dark:text-slate-800/80"
+              stroke="#dbe7de"
+              className="dark:stroke-[#1b7a43]/30"
             />
 
             <XAxis
               dataKey="month"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#64748b', fontSize: 12 }}
+              tick={{ fill: '#3d4a42', fontSize: 13, fontWeight: 700 }}
               dy={10}
             />
 
@@ -219,7 +219,7 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
               yAxisId="left"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#64748b', fontSize: 11 }}
+              tick={{ fill: '#1b7a43', fontSize: 12, fontWeight: 700 }}
               tickFormatter={(val) => `₹${val >= 100000 ? `${(val / 100000).toFixed(1)}L` : `${(val / 1000).toFixed(0)}k`}`}
               dx={-5}
             />
@@ -229,7 +229,7 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
               orientation="right"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#64748b', fontSize: 11 }}
+              tick={{ fill: '#b45309', fontSize: 12, fontWeight: 700 }}
               tickFormatter={(val) => `${val} pcs`}
               dx={5}
             />
@@ -241,13 +241,13 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
               type="monotone"
               dataKey="revenue"
               name="Turnover"
-              stroke="#10b981"
-              strokeWidth={2.5}
+              stroke="#1b7a43"
+              strokeWidth={3}
               fillOpacity={1}
               fill="url(#revenueGrad)"
               activeDot={{
-                r: 6,
-                stroke: '#10b981',
+                r: 7,
+                stroke: '#1b7a43',
                 strokeWidth: 2,
                 fill: '#ffffff',
                 className: 'cursor-pointer animate-pulse',
@@ -259,13 +259,13 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
               type="monotone"
               dataKey="units"
               name="Units Dispatched"
-              stroke="#6366f1"
-              strokeWidth={2.5}
+              stroke="#f0b429"
+              strokeWidth={3}
               fillOpacity={1}
-              fill="url(#usersGrad)"
+              fill="url(#unitsGrad)"
               activeDot={{
-                r: 6,
-                stroke: '#6366f1',
+                r: 7,
+                stroke: '#f0b429',
                 strokeWidth: 2,
                 fill: '#ffffff',
                 className: 'cursor-pointer animate-pulse',
@@ -277,3 +277,4 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
     </div>
   );
 };
+

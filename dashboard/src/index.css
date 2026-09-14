@@ -4,55 +4,61 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 100 13% 97%; /* #f6f8f5 warm page ground */
+    --foreground: 153 13% 12%; /* #1c2420 strong ink */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 153 13% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 151 75% 25%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 151 75% 25%;
+    --popover-foreground: 153 13% 12%;
+    --primary: 147 64% 29%; /* #1b7a43 standing crop green */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 136 33% 94%; /* #e9f4ed first shoot tint */
+    --secondary-foreground: 147 61% 20%;
+    --muted: 136 20% 93%;
+    --muted-foreground: 147 8% 40%; /* #5f6f66 */
+    --accent: 42 87% 55%; /* #f0b429 harvest amber */
+    --accent-foreground: 43 100% 12%; /* #3d2c00 amber ink */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 133 16% 86%; /* #dbe7de hairline */
+    --input: 133 16% 86%;
+    --ring: 147 64% 29%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 6.5%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 6.5%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 142 71% 45%;
-    --primary-foreground: 144 61% 10%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --background: 147 62% 9%; /* #0e3d22 night field green */
+    --foreground: 100 13% 97%; /* #f6f8f5 */
+    --card: 147 61% 14%; /* #14532d deep furrow green */
+    --card-foreground: 100 13% 97%;
+    --popover: 147 61% 14%;
+    --popover-foreground: 100 13% 97%;
+    --primary: 147 64% 38%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 147 50% 18%;
+    --secondary-foreground: 100 13% 97%;
+    --muted: 147 50% 18%;
+    --muted-foreground: 133 20% 70%;
+    --accent: 42 87% 55%;
+    --accent-foreground: 43 100% 12%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 142 71% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 147 40% 22%;
+    --input: 147 40% 22%;
+    --ring: 147 64% 38%;
   }
 }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: 'Mukta', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #f6f8f5;
+  color: #1c2420;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
 #root {

@@ -7,7 +7,30 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Mukta', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+      },
       colors: {
+        brand: {
+          green: "#1b7a43",
+          deep: "#14532d",
+          night: "#0e3d22",
+          tint: "#e9f4ed",
+          amber: "#f0b429",
+          amberInk: "#3d2c00",
+        },
+        ink: {
+          DEFAULT: "#1c2420",
+          body: "#3d4a42",
+          muted: "#5f6f66",
+          label: "#63736a",
+        },
+        hairline: {
+          DEFAULT: "#dbe7de",
+          light: "#eef2ee",
+        },
+        page: "#f6f8f5",
+        whatsapp: "#25d366",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -39,6 +62,9 @@ export default {
         },
       },
       borderRadius: {
+        control: '12px',
+        tile: '12px',
+        card: '14px',
         xl: '0.75rem',
         '2xl': '1rem',
       }

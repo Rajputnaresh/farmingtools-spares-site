@@ -55,7 +55,7 @@ export function App() {
   }, [selectedPeriod, metrics.filteredMonthlyData]);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#f6f8f5] text-[#1c2420] transition-colors duration-200 dark:bg-[#0e3d22] dark:text-[#f6f8f5] flex flex-col font-sans">
       <Header
         currentFilter={filter}
         onFilterChange={setFilter}
@@ -66,27 +66,32 @@ export function App() {
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Layer 1: Overview - Executive KPI Summary Cards */}
+        {/* Layer 1: Overview - Executive KPI Summary Cards with State Sync */}
         <section aria-labelledby="kpi-heading">
           <div className="flex items-center justify-between mb-3">
-            <h2 id="kpi-heading" className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Executive Overview &bull; KrishiGears Business Health
+            <h2 id="kpi-heading" className="text-xs font-extrabold uppercase tracking-wider text-[#3d4a42] dark:text-[#dbe7de]">
+              व्यापार स्थिति • KrishiGears Business Health
             </h2>
-            <span className="text-xs text-slate-400 dark:text-slate-500">
-              {metrics.catalogCount} Verified SKUs &bull; Q1 2026
+            <span className="text-xs font-bold text-[#5f6f66] dark:text-[#dbe7de]/90">
+              {metrics.catalogCount} सत्यापित पुर्जे (SKUs) &bull; Q1 2026
             </span>
           </div>
-          <KPICards metrics={metrics} />
+          <KPICards
+            metrics={metrics}
+            selectedPeriod={selectedPeriod}
+            selectedMonthData={selectedMonthData}
+            onResetPeriod={() => setSelectedPeriod(null)}
+          />
         </section>
 
-        {/* Layer 2: Zoom & Filter - Interactive AreaChart */}
+        {/* Layer 2: Trend & Exploration - High-Contrast AreaChart */}
         <section aria-labelledby="visual-heading">
           <div className="flex items-center justify-between mb-3">
-            <h2 id="visual-heading" className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Performance Trend &amp; Demand Velocity
+            <h2 id="visual-heading" className="text-xs font-extrabold uppercase tracking-wider text-[#3d4a42] dark:text-[#dbe7de]">
+              मासिक पुर्जे मांग व चालान • Monthly Spares Demand
             </h2>
-            <span className="text-xs text-slate-400 dark:text-slate-500">
-              Interactive Zoom / Point Click to Drill Down
+            <span className="text-xs font-bold text-[#5f6f66] dark:text-[#dbe7de]/90">
+              टैप कर माह चुनें / Click point to inspect dispatches
             </span>
           </div>
           <RevenueUsersChart
@@ -96,15 +101,15 @@ export function App() {
           />
         </section>
 
-        {/* Layer 3: Details-on-Demand - Granular Drill-Down Data Table OR Empty State */}
+        {/* Layer 3: Details-on-Demand - Granular Drill-Down Data Table OR Clean Empty State */}
         <section aria-labelledby="drilldown-heading">
           <div className="flex items-center justify-between mb-3">
-            <h2 id="drilldown-heading" className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Details-On-Demand &bull; Line-Item Dispatches
+            <h2 id="drilldown-heading" className="text-xs font-extrabold uppercase tracking-wider text-[#3d4a42] dark:text-[#dbe7de]">
+              चालान व पुर्जे विवरण • Line-Item Invoices &amp; Dispatches
             </h2>
             {selectedPeriod && (
-              <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                Filtered to {selectedPeriod} Dispatches
+              <span className="text-xs font-bold text-[#1b7a43] dark:text-[#f0b429]">
+                {selectedPeriod} 2026 के चालानों पर फ़िल्टर
               </span>
             )}
           </div>
@@ -126,10 +131,10 @@ export function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-400 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>KrishiGears (Jaipur, GSTIN 08EQLPD7160R1Z2) &bull; FarmingTools.in Spares Intelligence</span>
-          <span>1,746 Genuine Parts &bull; Progressive Disclosure Architecture</span>
+      <footer className="border-t border-[#dbe7de] bg-white py-6 text-center text-xs text-[#5f6f66] dark:border-[#14532d] dark:bg-[#0e3d22] dark:text-[#dbe7de]/90">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 font-medium">
+          <span>कृषि गियर्स जयपुर (KrishiGears Jaipur, GSTIN 08EQLPD7160R1Z2) &bull; FarmingTools.in</span>
+          <span>1,746 असली पुर्जे &bull; भारतीय किसानों व ग्रामीण डीलरों को समर्पित सेवा</span>
         </div>
       </footer>
     </div>
@@ -137,3 +142,4 @@ export function App() {
 }
 
 export default App;
+
