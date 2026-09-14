@@ -7220,11 +7220,13 @@
       };
     });
     // attached once here; updateAuthButton() only relabels it and toggles visibility
-    $("auth-btn").onclick = function(){
-      // public storefront: nobody is signed in, so this is "back to the login screen", not a sign-out
-      if (state.publicMode){ location.href = location.pathname; return; }
-      doSignOut();
-    };
+    if ($("auth-btn")){
+      $("auth-btn").onclick = function(){
+        // public storefront: nobody is signed in, so this is "back to the login screen", not a sign-out
+        if (state.publicMode){ location.href = location.pathname; return; }
+        doSignOut();
+      };
+    }
     // The home page's public entrance. Navigating rather than mutating state in place reuses the
     // whole tested ?s= retail path end to end, and leaves the customer with a URL they can
     // bookmark or forward on WhatsApp — which is how these links actually travel.
