@@ -65,7 +65,7 @@
   .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
   .toast{
     position:fixed; left:50%; bottom:76px; transform:translateX(-50%);
-    background:#0F172A; color:#fff; font-size:13.5px; font-weight:700;
+    background:var(--text); color:#fff; font-size:13.5px; font-weight:700;
     padding:11px 18px; border-radius:var(--r-md); z-index:var(--z-modal); max-width:90vw; text-align:center;
     box-shadow:var(--shadow-lg); border:1px solid rgba(255,255,255,0.1);
     opacity:1; transition:opacity .25s ease-out;
@@ -86,14 +86,15 @@
   /* header & navigation architecture */
   header.app-header{
     position:sticky; top:0; z-index:var(--z-nav);
-    background:linear-gradient(180deg, #0F5132 0%, #0c3e27 100%); color:#fff;
+    background:linear-gradient(180deg, var(--green) 0%, var(--green-dark) 100%); color:#fff;
     display:flex; align-items:center; justify-content:space-between;
     padding:8px 12px; gap:8px;
     box-shadow:0 1px 4px rgba(0,0,0,0.18);
     border-bottom:1px solid rgba(255,255,255,0.12);
   }
-  header.app-header h1{ font-size:15px; margin:0; font-weight:800; line-height:1.2; letter-spacing:-0.01em; }
-  header.app-header .sub{ display:block; font-size:11px; opacity:.92; font-weight:500; letter-spacing:0.01em; }
+  header.app-header h1{ font-size:15px; margin:0; font-weight:800; line-height:1.2; letter-spacing:-0.01em; color:#fff; }
+  header.app-header .sub{ display:block; font-size:11.5px; color:#fff; font-weight:600; letter-spacing:0.01em; }
+  header.app-header .sub .l-en, header.app-header .sub .l-hi{ color:#fff; }
   header.app-header.authed .sub{ display:none; }
   header.app-header.authed .brand-btn{ min-height:44px; }
   .brand-btn{ background:none; border:none; padding:2px 4px; margin:0; text-align:left; color:#fff;
@@ -132,9 +133,10 @@
   /* Drawer Navigation & Overlay */
   .drawer-overlay{
     position:fixed; inset:0; background:rgba(15,23,42,0.48); backdrop-filter:blur(2px);
-    z-index:var(--z-modal); opacity:0; pointer-events:none; transition:opacity .2s ease;
+    z-index:var(--z-modal); opacity:0; pointer-events:none; visibility:hidden;
+    transition:opacity .2s ease, visibility .2s ease;
   }
-  .drawer-overlay.open{ opacity:1; pointer-events:auto; }
+  .drawer-overlay.open{ opacity:1; pointer-events:auto; visibility:visible; }
   .app-drawer{
     position:fixed; top:0; right:0; bottom:0; width:min(340px, 86vw);
     background:#fff; z-index:calc(var(--z-modal) + 1);
@@ -158,7 +160,7 @@
   .dp-role{ font-size:11.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.4px; }
   .drawer-close{
     background:#fff; border:1px solid var(--border); border-radius:var(--r-sm);
-    width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center;
+    width:44px; height:44px; min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center;
     font-size:20px; color:var(--text); cursor:pointer; flex:none;
   }
   .drawer-close:active{ background:var(--surface); }
@@ -307,7 +309,7 @@
   #view-god-mode{ padding:16px; max-width:960px; margin:0 auto; }
   .gm-header{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; padding-bottom:12px; border-bottom:2px solid var(--border); }
   .gm-title{ color:var(--green-dark); font-size:18px; font-weight:800; margin:0; display:flex; align-items:center; gap:6px; }
-  .gm-badge{ font-size:10px; font-weight:700; text-transform:uppercase; background:#1b4332; color:#d8f3dc; padding:2px 7px; border-radius:12px; letter-spacing:0.5px; }
+  .gm-badge{ font-size:10px; font-weight:700; text-transform:uppercase; background:var(--green-dark); color:var(--green-light); padding:2px 7px; border-radius:12px; letter-spacing:0.5px; }
   .gm-subtitle{ font-size:12px; color:var(--muted); margin-top:2px; }
   .gm-kpis{ display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:16px; }
   .gm-kpi{ background:#fff; border:1px solid var(--border); border-radius:var(--r-md); padding:12px 14px; display:flex; flex-direction:column; box-shadow:var(--shadow-xs); }
@@ -457,13 +459,13 @@
     padding:2px; flex:none;
   }
   .lang-pill{
-    background:none; border:none; color:rgba(255,255,255,.82); font-size:11px; font-weight:700;
+    background:none; border:none; color:#ffffff; font-size:11.5px; font-weight:700;
     padding:3px 7px; min-height:34px; min-width:32px; border-radius:var(--r-pill);
     cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
     transition:background-color .15s ease, color .15s ease;
   }
-  .lang-pill.active{ background:#fff; color:var(--green-dark); box-shadow:var(--shadow-xs); }
-  @media (hover:hover){ .lang-pill:not(.active):hover{ background:rgba(255,255,255,.16); color:#fff; } }
+  .lang-pill.active{ background:#fff; color:var(--green-dark); font-weight:800; box-shadow:var(--shadow-xs); }
+  @media (hover:hover){ .lang-pill:not(.active):hover{ background:rgba(255,255,255,.24); color:#fff; } }
 
   /* 3-tier parts finder & filter bar */
   .pf-toggle-bar{
@@ -506,8 +508,8 @@
   }
   .subsystem-chip{
     background:var(--surface); border:1px solid var(--border); border-radius:var(--r-pill);
-    padding:5px 12px; font-size:12px; font-weight:700; color:var(--text); cursor:pointer;
-    min-height:36px; display:inline-flex; align-items:center; justify-content:center;
+    padding:6px 14px; font-size:12px; font-weight:700; color:var(--text); cursor:pointer;
+    min-height:44px; display:inline-flex; align-items:center; justify-content:center;
     transition:all .15s ease;
   }
   .subsystem-chip.active{
@@ -571,12 +573,12 @@
   /* =========================================================
      AGRICULTURAL SPARES PALETTE TOKENS
      ========================================================= */
-  .chart-color-0 { background: #0F5132 !important; }
-  .chart-color-1 { background: #198754 !important; }
+  .chart-color-0 { background: var(--green) !important; }
+  .chart-color-1 { background: var(--green-accent) !important; }
   .chart-color-2 { background: #0284c7 !important; }
   .chart-color-3 { background: var(--amber) !important; }
   .chart-color-4 { background: #7c3aed !important; }
-  .chart-color-other { background: #64748b !important; }
+  .chart-color-other { background: var(--muted) !important; }
 
   /* Subsystem tactile pills */
   .subsystem-flow-card {
@@ -863,7 +865,7 @@
     .stock-gauge-fill { transition: none; }
   }
   .gauge-in .stock-gauge-fill { background: var(--green); }
-  .gauge-chain .stock-gauge-fill { background: #d97706; }
+  .gauge-chain .stock-gauge-fill { background: var(--amber); }
   .gauge-out .stock-gauge-fill { background: var(--border); width: 0% !important; }
   .stock-gauge-label {
     white-space: nowrap;
@@ -920,7 +922,7 @@
     height: 100%;
   }
   .cart-fulfillment-fill-chain {
-    background: #d97706;
+    background: var(--amber);
     height: 100%;
   }
   .cart-fulfillment-fill-oos {
@@ -1107,7 +1109,7 @@
     display:flex; gap:8px; margin-top:10px; padding-top:8px; border-top:1px dashed var(--border);
   }
   .ship-label-btn{
-    flex:1; min-height:36px; padding:6px 12px; font-size:12px; font-weight:700;
+    flex:1; min-height:44px; padding:6px 12px; font-size:12px; font-weight:700;
     border-radius:var(--r-sm); background:var(--surface); border:1px solid var(--border);
     color:var(--text); display:inline-flex; align-items:center; justify-content:center; gap:6px;
     cursor:pointer;
@@ -1274,7 +1276,7 @@
   /* Parts sub-navigation segmented tabs */
   .parts-subtabs{ display:flex; gap:6px; overflow-x:auto; padding:0 0 12px; margin-bottom:12px; border-bottom:1px solid var(--border); scrollbar-width:none; -webkit-overflow-scrolling:touch; }
   .parts-subtabs::-webkit-scrollbar{ display:none; }
-  .parts-subtab{ display:inline-flex; align-items:center; gap:6px; padding:9px 14px; min-height:42px; border-radius:var(--r-md); border:1px solid var(--border); background:#fff; color:var(--muted); font:inherit; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; transition:all .15s ease; }
+  .parts-subtab{ display:inline-flex; align-items:center; gap:6px; padding:9px 14px; min-height:44px; border-radius:var(--r-md); border:1px solid var(--border); background:#fff; color:var(--muted); font:inherit; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; transition:all .15s ease; }
   .parts-subtab:hover{ border-color:var(--border-strong); color:var(--text); }
   .parts-subtab.active{ background:var(--green-dark); border-color:var(--green-dark); color:#fff; }
   .parts-subtab .ps-count{ display:inline-block; font-size:11px; padding:1px 6px; border-radius:var(--r-pill); background:var(--green-light); color:var(--green-dark); }
@@ -1291,7 +1293,7 @@
   .pp-who-info .pw-sub{ font-size:12.5px; color:var(--muted); line-height:1.4; }
   .pp-who .pw-code{ color:var(--green); font-weight:800; font-size:13.5px; }
   .pp-who-actions{ display:flex; gap:8px; flex-shrink:0; }
-  .pw-pick-btn{ display:inline-flex; align-items:center; justify-content:center; padding:8px 12px; min-height:40px; border-radius:var(--r-md); border:1px solid var(--border); background:#fff; color:var(--green-dark); font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; }
+  .pw-pick-btn{ display:inline-flex; align-items:center; justify-content:center; padding:8px 12px; min-height:44px; border-radius:var(--r-md); border:1px solid var(--border); background:#fff; color:var(--green-dark); font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; }
   .pw-pick-btn:hover{ border-color:var(--green); }
 
   .pp-meter{ margin-bottom:14px; background:#fff; border:1px solid var(--border); border-radius:var(--r-md); padding:10px 12px; }
@@ -1308,7 +1310,7 @@
   /* Shelf category filter chips */
   .shelf-chips{ display:flex; gap:6px; overflow-x:auto; padding:2px 0 10px; margin-bottom:10px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
   .shelf-chips::-webkit-scrollbar{ display:none; }
-  .shelf-chip{ display:inline-flex; align-items:center; gap:4px; padding:6px 12px; min-height:34px; border-radius:var(--r-pill); border:1px solid var(--border); background:#fff; color:var(--text); font:inherit; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; transition:all .15s ease; }
+  .shelf-chip{ display:inline-flex; align-items:center; gap:4px; padding:6px 14px; min-height:44px; border-radius:var(--r-pill); border:1px solid var(--border); background:#fff; color:var(--text); font:inherit; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; transition:all .15s ease; }
   .shelf-chip:hover{ border-color:var(--green); }
   .shelf-chip.active{ background:var(--green-light); border-color:var(--green); color:var(--green-dark); font-weight:700; }
 
@@ -1333,7 +1335,7 @@
     padding:8px 12px; margin-bottom:10px; font-size:13px;
   }
   .counter-mode-btn{
-    display:inline-flex; align-items:center; gap:6px; min-height:36px; padding:6px 14px;
+    display:inline-flex; align-items:center; gap:6px; min-height:44px; padding:6px 14px;
     border-radius:var(--r-pill); border:1px solid var(--border); background:#fff;
     color:var(--text); font:inherit; font-size:12.5px; font-weight:700; cursor:pointer;
     transition:all .15s ease;
@@ -1358,7 +1360,7 @@
   .counter-drawer-sub{ font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; }
   .counter-drawer-actions{ display:flex; gap:8px; flex:none; }
   .counter-drawer-btn{
-    min-height:40px; padding:6px 14px; border-radius:var(--r-md); font-size:13px; font-weight:700;
+    min-height:44px; padding:6px 14px; border-radius:var(--r-md); font-size:13px; font-weight:700;
     cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px;
   }
   .counter-bill-btn{
@@ -1518,7 +1520,7 @@
     .modal-head h3{ font-size:13px; }
     .modal-note{ display:none; }        /* the price caveat is on every row already */
     .modal-zoom-row{ padding-block:4px; }
-    .modal-zoom-row button{ min-height:36px; }
+    .modal-zoom-row button{ min-height:44px; }
   }
   .modal-head{ display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-bottom:1px solid var(--border); }
   .modal-head h3{ margin:0; font-size:14px; }
@@ -1582,7 +1584,7 @@
       top:0; bottom:0; right:auto; width:96px;
       flex-direction:column; justify-content:flex-start; gap:4px;
       border-top:none; border-right:1px solid var(--border);
-      padding:16px 8px; background:#fafbfc;
+      padding:16px 8px; background:var(--bg);
     }
     nav.bottom-nav button{
       flex:0 0 auto; width:100%; min-height:64px; border-radius:var(--r-md);
@@ -1660,7 +1662,7 @@
 </header>
 
 <!-- Slide-over Navigation Drawer -->
-<div class="drawer-overlay" id="drawer-overlay" aria-hidden="true">
+<div class="drawer-overlay" id="drawer-overlay" aria-hidden="true" inert tabindex="-1">
   <aside class="app-drawer" id="app-drawer" role="dialog" aria-label="Application Menu / मेन्यू" aria-modal="true">
     <div class="drawer-header">
       <div class="drawer-profile">
@@ -3218,7 +3220,12 @@
     if (!overlay) return;
     overlay.classList.toggle("open", !!open);
     overlay.setAttribute("aria-hidden", open ? "false" : "true");
-    if (open) updateDrawerProfile();
+    if (open){
+      overlay.removeAttribute("inert");
+      updateDrawerProfile();
+    } else {
+      overlay.setAttribute("inert", "");
+    }
   }
 
   function updateAuthButton(){
@@ -3447,7 +3454,7 @@
     });
 
     var ordPillsHtml = '<div class="order-filter-pill-grid" role="region" aria-label="Filter orders by status">';
-    var stColors = { placed: "#d97706", billed: "#0F5132", completed: "#198754", rejected: "#b91c1c" };
+    var stColors = { placed: "var(--amber)", billed: "var(--green)", completed: "var(--green-accent)", rejected: "var(--danger)" };
     var isAllAct = !activeStatusFilter;
     ordPillsHtml += '<button type="button" class="order-filter-pill' + (isAllAct ? ' active' : '') + '" data-order-filter="">' +
       '<span>All / सभी</span>' +
@@ -3458,7 +3465,7 @@
       var scnt = myStatusCounts[st];
       var isAct = activeStatusFilter === st;
       ordPillsHtml += '<button type="button" class="order-filter-pill' + (isAct ? ' active' : '') + '" data-order-filter="' + esc(st) + '">' +
-        '<span class="order-filter-dot" style="background:' + (stColors[st]||"#64748b") + ';"></span>' +
+        '<span class="order-filter-dot" style="background:' + (stColors[st]||"var(--muted)") + ';"></span>' +
         '<span>' + esc(ORDER_STATUS_LABEL[st]||st) + '</span>' +
         '<span class="order-filter-count">(' + scnt + ')</span>' +
       '</button>';
@@ -3480,11 +3487,11 @@
       if (o.lr_url) extra += '<a href="' + esc(o.lr_url) + '" target="_blank" rel="noopener" style="font-size:12.5px;font-weight:700;color:var(--green-dark);display:block;">View LR / एलआर देखें</a>';
       // once billed/completed, the buyer can pull the seller's Proforma Invoice (seller = their
       // direct supplier — the importer stays hidden on a drop-shipped shopkeeper order)
-      if (o.status === "billed" || o.status === "completed") extra += '<button class="list-reset" data-viewpi="' + o.id + '" style="padding:2px 0;min-height:36px;display:block;">📄 View invoice (PI) / इनवॉइस देखें</button>';
+      if (o.status === "billed" || o.status === "completed") extra += '<button class="list-reset" data-viewpi="' + o.id + '" style="padding:4px 0;min-height:44px;display:inline-flex;align-items:center;">📄 View invoice (PI) / इनवॉइस देखें</button>';
       // delivery is only real once the receiver says so
       if (o.received_at) extra += '<div style="font-size:12.5px;font-weight:700;color:var(--green-dark);">✓ Received / मिल गया</div>';
       else if (o.status === "billed" || o.status === "completed")
-        extra += '<button class="btn-soft" data-got="' + o.id + '" style="margin-top:6px;padding:6px 12px;min-height:40px;font-size:13px;">Mark received / मिल गया</button>';
+        extra += '<button class="btn-soft" data-got="' + o.id + '" style="margin-top:6px;padding:6px 12px;min-height:44px;font-size:13px;">Mark received / मिल गया</button>';
       return '<div class="order-row">' +
         '<div><strong>' + esc(o.pi_number || "") + '</strong><div style="font-size:12px;color:var(--muted);">' + d + '</div>' + extra + '</div>' +
         '<div style="text-align:right;"><span class="' + badge + '">' + (ORDER_STATUS_LABEL[o.status] || o.status || "") + '</span>' +
@@ -7080,7 +7087,7 @@
       '</div>' +
       '<div class="cart-fulfillment-legend">' +
         '<span style="color:var(--green-dark);">● ' + readyLines + ' ready today / तैयार</span>' +
-        (chainLines > 0 ? '<span style="color:#d97706;">● ' + chainLines + ' from supplier / मंगाया जा रहा है</span>' : '') +
+        (chainLines > 0 ? '<span style="color:var(--amber);">● ' + chainLines + ' from supplier / मंगाया जा रहा है</span>' : '') +
         (oosLines > 0 ? '<span style="color:var(--danger);">● ' + oosLines + ' out of stock / स्टॉक नहीं</span>' : '') +
       '</div>' +
     '</div>';
