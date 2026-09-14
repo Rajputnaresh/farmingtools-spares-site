@@ -278,6 +278,41 @@
   .admin-form .field-label{ margin:10px 0 4px; }
   .admin-form select{ width:100%; padding:12px; border:1px solid var(--border); border-radius:var(--r-md); font-size:15px; min-height:48px; background:#fff; }
   .admin-form-actions{ display:flex; gap:8px; margin-top:14px; }
+  /* layout: God Mode reads like a different product because it bypassed the token system.
+     These two classes replace its inline-style escapes with the same tokens every other
+     surface uses. */
+  .gm-focus-box{ border:1.5px solid var(--green); box-shadow:var(--shadow-xs); margin-bottom:16px; }
+  .gm-btn-primary{ background:var(--green-dark); color:#fff; border-color:var(--green-dark); }
+
+  /* Registration wizard (onboard P1: chunk the 9-field wall into 4 steps) */
+  .reg-wiz{ margin-top:10px; }
+  .reg-steps{
+    display:flex; align-items:center; gap:4px; margin-bottom:14px;
+    list-style:none; padding:0; font-size:11.5px; font-weight:700; color:var(--muted);
+  }
+  .reg-steps li{ display:flex; align-items:center; gap:5px; white-space:nowrap; }
+  .reg-steps li + li::before{ content:""; width:16px; height:2px; background:var(--border); border-radius:1px; margin:0 5px; }
+  .reg-steps .rs-num{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:20px; height:20px; border-radius:50%; border:1.5px solid var(--border);
+    background:var(--surface); color:var(--muted); font-size:11px; font-weight:800; flex:none;
+  }
+  .reg-steps li.done .rs-num{ background:var(--green-light); border-color:var(--green-mid); color:var(--green-dark); }
+  .reg-steps li.cur .rs-num{ background:var(--green-dark); border-color:var(--green-dark); color:#fff; }
+  .reg-steps li.cur{ color:var(--text); }
+  .reg-step-sec{ display:none; }
+  .reg-step-sec.cur{ display:block; }
+  .reg-btn-row{ display:flex; gap:10px; margin-top:16px; }
+  .reg-btn-row .btn{ flex:1; }
+  .reg-hint{ font-size:12px; color:var(--muted); margin:4px 0 8px; }
+  .reg-steps-hint{
+    background:var(--green-light); border:1px solid var(--green-mid); border-radius:var(--r-md);
+    padding:10px 12px; font-size:12.5px; color:var(--green-dark); margin-bottom:12px; line-height:1.5;
+  }
+  .glossary-dl{ margin:8px 0 0; }
+  .glossary-dl dt{ font-weight:800; color:var(--green-dark); font-size:13px; margin-top:10px; }
+  .glossary-dl dd{ margin:2px 0 0; font-size:12.5px; color:var(--text); line-height:1.45; }
+  .view-sub{ font-size:12.5px; color:var(--muted); margin:0 0 12px; line-height:1.5; }
   .admin-form-actions .btn{ flex:1; margin-top:0; }
   /* admin stock editor */
   .stock-tools{ margin-top:24px; border-top:1px solid var(--border); padding-top:14px; }
@@ -526,6 +561,16 @@
     width:34px; height:34px; border-radius:var(--r-sm); line-height:1; cursor:pointer; }
   .line-x:hover{ background:var(--danger-tint); }
   .item-actions{ display:flex; align-items:center; gap:8px; margin-left:auto; flex:0 1 auto; flex-wrap:wrap; }
+  /* layout: one hero per row — the buy/stepper action leads; Catalog (diagram) and the
+     counter-bill button support. Below 430px the support buttons drop their text so
+     three fat targets stop wrestling for one thumb-width row. */
+  @media (max-width:430px){
+    .item-actions .diagram-btn{ padding:8px 9px; font-size:11.5px; gap:4px; }
+    .item-actions .diagram-btn .db-txt{ display:none; }
+    .item-actions .counter-bill-btn{ padding:8px 10px; font-size:11.5px; }
+    .item-actions .add-btn, .item-actions .stepper{ flex:1 1 100%; order:3; }
+    .item-actions{ gap:6px; }
+  }
   .diagram-btn{
     background:#fff; color:var(--text); border:1px solid var(--border); border-radius:var(--r-md);
     padding:8px 12px; font-size:12.5px; font-weight:700; min-height:44px;
@@ -1265,33 +1310,64 @@
 
     <div id="register-box" class="hidden">
       <p class="tag">The importer will approve it before you can order / मंज़ूरी के बाद ऑर्डर कर सकेंगे</p>
-      <label class="field-label" for="reg-business">Business name / दुकान का नाम</label>
-      <input type="text" id="reg-business" placeholder="e.g. Sharma Agro" autocomplete="organization">
-      <label class="field-label" for="reg-phone">Phone / फ़ोन</label>
-      <input type="text" id="reg-phone" placeholder="10-digit mobile" inputmode="tel" autocomplete="tel">
-      <label class="field-label" for="reg-email">Email / ईमेल</label>
-      <input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email" autocapitalize="none">
-      <label class="field-label" for="reg-address">Delivery address / पता — where your parcels should come</label>
-      <input type="text" id="reg-address" placeholder="Shop no., street, landmark" autocomplete="street-address" maxlength="300">
-      <div class="row2">
-        <div><label class="field-label" for="reg-city">City / शहर</label>
-        <input type="text" id="reg-city" placeholder="e.g. Jaipur" autocomplete="address-level2"></div>
-        <div><label class="field-label" for="reg-pin">PIN code / पिन</label>
-        <input type="text" id="reg-pin" placeholder="6 digits" inputmode="numeric" autocomplete="postal-code" maxlength="6"></div>
+      <!-- 4 steps instead of a 9-field wall: each screen asks one question cluster and
+           validates before advancing, so a phone-sized screen never scrolls through
+           everything at once and a typo is caught in the step where it was made. -->
+      <div class="reg-steps-hint">
+        <b>How it works / कैसे चलता है:</b> 1. Send your details → 2. The importer verifies your shop → 3. Your dealer prices unlock. Usually 1–2 days.
+        <br><span lang="hi" class="l-hi">1. जानकारी भेजें → 2. आयातक आपकी दुकान जाँचेगा → 3. डीलर दरें खुल जाएँगी। आम तौर पर 1–2 दिन।</span>
       </div>
-      <label class="field-label" for="reg-gstin">GSTIN <span style="color:var(--muted);font-weight:400;">(optional / वैकल्पिक)</span></label>
-      <input type="text" id="reg-gstin" placeholder="15-digit GST number" autocapitalize="characters" maxlength="15">
-      <label class="field-label" for="reg-upi">Bank UPI ID <span style="color:var(--muted);font-weight:400;">(optional / वैकल्पिक)</span></label>
-      <input type="text" id="reg-upi" placeholder="name@bank — shown on your bills" inputmode="email" autocapitalize="none">
-      <label class="field-label" for="reg-password">Create a password / पासवर्ड बनाएँ</label>
-      <div class="pw-wrap">
-        <input type="password" id="reg-password" placeholder="at least 6 characters" autocomplete="new-password">
-        <button type="button" class="pw-toggle" data-pw-toggle="reg-password" aria-label="Show password / पासवर्ड दिखाएँ">Show</button>
+      <ol class="reg-steps" id="reg-steps">
+        <li data-step="1" aria-current="step"><span class="rs-num">1</span><span>Shop / दुकान</span></li>
+        <li data-step="2"><span class="rs-num">2</span><span>Address / पता</span></li>
+        <li data-step="3"><span class="rs-num">3</span><span>GST &amp; UPI</span></li>
+        <li data-step="4"><span class="rs-num">4</span><span>Password / पासवर्ड</span></li>
+      </ol>
+      <div class="reg-wiz">
+        <div class="reg-step-sec cur" data-step="1">
+          <label class="field-label" for="reg-business">Business name / दुकान का नाम</label>
+          <input type="text" id="reg-business" placeholder="e.g. Sharma Agro" autocomplete="organization">
+          <label class="field-label" for="reg-phone">Phone / फ़ोन</label>
+          <input type="text" id="reg-phone" placeholder="10-digit mobile" inputmode="tel" autocomplete="tel">
+          <label class="field-label" for="reg-email">Email / ईमेल</label>
+          <input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email" autocapitalize="none">
+          <p class="reg-hint">The importer calls or WhatsApps this number to verify your shop. <span lang="hi" class="l-hi">आयातक इसी नंबर पर दुकान पक्की करेगा।</span></p>
+        </div>
+        <div class="reg-step-sec" data-step="2">
+          <label class="field-label" for="reg-address">Delivery address / पता — where your parcels should come</label>
+          <input type="text" id="reg-address" placeholder="Shop no., street, landmark" autocomplete="street-address" maxlength="300">
+          <div class="row2">
+            <div><label class="field-label" for="reg-city">City / शहर</label>
+            <input type="text" id="reg-city" placeholder="e.g. Jaipur" autocomplete="address-level2"></div>
+            <div><label class="field-label" for="reg-pin">PIN code / पिन</label>
+            <input type="text" id="reg-pin" placeholder="6 digits" inputmode="numeric" autocomplete="postal-code" maxlength="6"></div>
+          </div>
+          <p class="reg-hint">Parcels are couriered to this address — check the PIN. <span lang="hi" class="l-hi">पार्सल इसी पते पर आता है — पिन जाँच लें।</span></p>
+        </div>
+        <div class="reg-step-sec" data-step="3">
+          <label class="field-label" for="reg-gstin">GSTIN <span style="color:var(--muted);font-weight:400;">(optional / वैकल्पिक)</span></label>
+          <input type="text" id="reg-gstin" placeholder="15-digit GST number" autocapitalize="characters" maxlength="15">
+          <label class="field-label" for="reg-upi">Bank UPI ID <span style="color:var(--muted);font-weight:400;">(optional / वैकल्पिक)</span></label>
+          <input type="text" id="reg-upi" placeholder="name@bank — shown on your bills" inputmode="email" autocapitalize="none">
+          <p class="reg-hint">GSTIN prints on your bills; UPI lets customers pay you directly. Both can wait. <span lang="hi" class="l-hi">GSTIN बिल पर छपता है; UPI से ग्राहक सीधे भुगतान कर सकते हैं। दोनों बाद में भी चलेंगे।</span></p>
+        </div>
+        <div class="reg-step-sec" data-step="4">
+          <label class="field-label" for="reg-password">Create a password / पासवर्ड बनाएँ</label>
+          <div class="pw-wrap">
+            <input type="password" id="reg-password" placeholder="at least 6 characters" autocomplete="new-password">
+            <button type="button" class="pw-toggle" data-pw-toggle="reg-password" aria-label="Show password / पासवर्ड दिखाएँ">Show</button>
+          </div>
+          <p class="reg-hint">6+ characters. You'll use it to sign in every time. <span lang="hi" class="l-hi">6+ अक्षर। हर बार साइन इन में लगेगा।</span></p>
+        </div>
+        <div class="reg-btn-row">
+          <button type="button" class="btn btn-outline hidden" id="reg-back">&larr; Back / पीछे</button>
+          <button type="button" class="btn btn-primary" id="reg-next">Continue / आगे</button>
+        </div>
+        <button class="btn btn-primary hidden" id="register-submit">Send registration / भेजें</button>
+        <div id="register-error" class="login-error hidden" role="alert"></div>
+        <div id="register-done" class="pi-success hidden" style="margin-top:12px;"></div>
+        <button class="btn btn-outline" id="register-cancel">&larr; Back to sign in / वापस</button>
       </div>
-      <button class="btn btn-primary" id="register-submit">Send registration / भेजें</button>
-      <div id="register-error" class="login-error hidden" role="alert"></div>
-      <div id="register-done" class="pi-success hidden" style="margin-top:12px;"></div>
-      <button class="btn btn-outline" id="register-cancel">&larr; Back to sign in / वापस</button>
     </div>
   </section>
 
@@ -1418,6 +1494,8 @@
   <!-- Requests (supplier: orders placed to me + retail orders on my shop) -->
   <section id="view-requests" class="hidden">
     <h2 class="view-title">Commercial Requests / व्यावसायिक अनुरोध</h2>
+    <!-- first-use hint: what lands here and what to do with it (clarify) -->
+    <p class="view-sub" id="req-view-hint">Price and stock questions from your farmers, and their retail orders. Reply from WhatsApp or phone — they came in from the shop app. / किसानों के दाम-स्टॉक सवाल और उनके ऑर्डर। फ़ोन या व्हाट्सऐप से जवाब दें।</p>
     <div id="req-dealer-list"></div>
     <h3 style="color:var(--green-dark);font-size:15px;margin:18px 0 6px;">Retail orders / खुदरा ऑर्डर</h3>
     <div id="req-retail-list"></div>
@@ -1426,6 +1504,8 @@
   <!-- Dispatch (supplier: physical packing, courier labels, AWB/LR) -->
   <section id="view-dispatch" class="hidden">
     <h2 class="view-title">Ready for Dispatch / भेजना बाकी</h2>
+    <!-- first-use hint: what this screen is for (clarify) -->
+    <p class="view-sub" id="dispatch-view-hint">Billed orders waiting to be packed and handed to the transporter. Enter the Bilty/LR or AWB number after dispatch so the dealer can trace the parcel. / बिल बन चुके ऑर्डर — पैक कर ट्रांसपोर्टर को दें। भेजने के बाद बिल्टी/LR या AWB नंबर भरें ताकि डीलर माल खोज सके।</p>
     <div id="dispatch-full-list"></div>
   </section>
 
@@ -1468,12 +1548,12 @@
           <option value="">All Importers / सभी आयातक</option>
         </select>
         <input type="search" id="gm-search-party" placeholder="Search party, phone, city, PIN... / खोजें">
-        <button type="button" class="gm-exit-btn" id="gm-new-importer-btn" style="background:var(--green-dark);color:#fff;border-color:var(--green-dark);">+ New Importer</button>
+        <button type="button" class="gm-exit-btn gm-btn-primary" id="gm-new-importer-btn">+ New Importer</button>
         <button type="button" class="gm-exit-btn" id="gm-export-networks" title="Export to CSV">📥 Export CSV</button>
       </div>
 
       <!-- Quick Add Importer Form (Collapsible) -->
-      <div id="gm-new-importer-box" class="admin-form hidden" style="border:2px solid var(--green);margin-bottom:16px;">
+      <div id="gm-new-importer-box" class="admin-form gm-focus-box hidden">
         <h3 style="margin-top:0;">Add New Importer Tenant / नया आयातक जोड़ें</h3>
         <p style="font-size:12px;color:var(--muted);margin:0 0 10px;">Creates a new independent root network. All downline dealers under this importer will form their own private tree.</p>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;">
@@ -1978,6 +2058,7 @@
     img.replaceWith(ph);
   }
   window.thumbFail = thumbFail;
+  window.__ver = "v141";   // runtime version marker — support asks "which version?", the console answers
   function inr(n){ return "₹" + Number(n).toLocaleString("en-IN"); }
 
   // The cart survives a reload but the name and phone beside it did not — on a patchy
@@ -2486,6 +2567,65 @@
     applyLang();
     $("register-error").classList.add("hidden");
     if (!on) $("register-done").classList.add("hidden");
+    if (on) setRegStep(1);   // always enter the wizard at step 1 — never mid-way
+  }
+  // ---------- registration wizard (onboard) ----------
+  // 9 fields on one mobile screen was the single biggest drop-off wall in the app. The wizard
+  // asks one cluster at a time, validates in place, and only the last step can submit.
+  var _regStep = 1;
+  var REG_STEPS = [1, 2, 3, 4];
+  function setRegStep(n){
+    _regStep = n;
+    REG_STEPS.forEach(function(s){
+      var sec = document.querySelector('.reg-step-sec[data-step="' + s + '"]');
+      if (sec) sec.classList.toggle("cur", s === n);
+      var li = document.querySelector('.reg-steps li[data-step="' + s + '"]');
+      if (li){
+        li.classList.toggle("cur", s === n);
+        li.classList.toggle("done", s < n);
+        if (s === n) li.setAttribute("aria-current", "step"); else li.removeAttribute("aria-current");
+      }
+    });
+    var back = $("reg-back"), next = $("reg-next");
+    if (back) back.classList.toggle("hidden", n === 1);
+    if (next) next.textContent = (n === 4) ? "Send registration / भेजें" : "Continue / आगे";
+    var err = $("register-error"); if (err) err.classList.add("hidden");
+    // focus the first input of the new step without scrolling the page out from under it
+    var first = document.querySelector('.reg-step-sec.cur input');
+    if (first) try { first.focus({ preventScroll: true }); } catch(e){}
+  }
+  function validateRegStep(n){
+    // Returns true/false; writes the bilingual message into #register-error on failure.
+    var err = $("register-error");
+    function fail(msg){ err.textContent = msg; err.classList.remove("hidden"); return false; }
+    if (n === 1){
+      var biz = $("reg-business").value.trim(), phone = $("reg-phone").value.trim(), email = $("reg-email").value.trim();
+      if (!biz) return fail("Enter your business name. / दुकान का नाम लिखें।");
+      if (phone && phone.replace(/\D/g, "").length < 10)
+        return fail("Phone must be 10 digits, or leave it blank. / फ़ोन 10 अंकों का हो या खाली छोड़ें।");
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email))
+        return fail("That email does not look right — check for a typo. / ईमेल जाँच लें।");
+    }
+    if (n === 2){
+      var addr = $("reg-address").value.trim(), city = $("reg-city").value.trim(), pin = $("reg-pin").value.trim();
+      if (!addr) return fail("Where should parcels arrive? Enter your address. / पता लिखें — पार्सल यहीं आएगा।");
+      if (!city) return fail("Enter your city. / शहर लिखें।");
+      if (!/^[0-9]{6}$/.test(pin))
+        return fail("PIN code must be 6 digits. / पिन 6 अंकों का हो।");
+    }
+    if (n === 3){
+      var gstin = $("reg-gstin").value.trim().toUpperCase(), upi = $("reg-upi").value.trim();
+      if (gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(gstin))
+        return fail("GSTIN must be 15 characters like 08ABCDE1234F1Z5, or leave it blank. / GSTIN 15 अक्षर का हो (जैसे 08ABCDE1234F1Z5) या खाली छोड़ें।");
+      if (upi && !/^[a-zA-Z0-9.\-_]{2,}@[a-zA-Z][a-zA-Z0-9.\-_]{1,}$/.test(upi))
+        return fail("UPI ID should look like name@bank (e.g. balwan@okhdfc), or leave it blank. / UPI आईडी name@bank जैसी हो या खाली छोड़ें।");
+    }
+    if (n === 4){
+      var pw = $("reg-password").value;
+      if (pw.length < 6) return fail("Password must be at least 6 characters. / पासवर्ड कम से कम 6 अक्षर।");
+    }
+    err.classList.add("hidden");
+    return true;
   }
   function doRegister(){
     var biz = $("reg-business").value.trim(), phone = $("reg-phone").value.trim(),
@@ -2493,21 +2633,9 @@
         city = $("reg-city").value.trim(), gstin = $("reg-gstin").value.trim().toUpperCase(), upi = $("reg-upi").value.trim(),
         addr = $("reg-address").value.trim(), pin = $("reg-pin").value.trim();
     var err = $("register-error"); err.classList.add("hidden");
-    if (!biz || !email || !pw){ err.textContent = "Business name, email and password are required. / नाम, ईमेल, पासवर्ड ज़रूरी।"; err.classList.remove("hidden"); return; }
-    if (pw.length < 6){ err.textContent = "Password must be at least 6 characters. / पासवर्ड कम से कम 6 अक्षर।"; err.classList.remove("hidden"); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){
-      err.textContent = "That email does not look right — check for a typo. / ईमेल जाँच लें।"; err.classList.remove("hidden"); return; }
-    // phone and PIN reached the server unchecked; both are how a parcel and a phone call find you
-    if (phone && phone.replace(/\D/g, "").length < 10){
-      err.textContent = "Phone must be 10 digits, or leave it blank. / फ़ोन 10 अंकों का हो या खाली छोड़ें।"; err.classList.remove("hidden"); return; }
-    if (pin && !/^[0-9]{6}$/.test(pin)){
-      err.textContent = "PIN code must be 6 digits, or leave it blank. / पिन 6 अंकों का हो या खाली छोड़ें।"; err.classList.remove("hidden"); return; }
-    // GSTIN & UPI are optional — validate format only when the user filled them, so a
-    // typo'd tax/bank id can't reach the bill. Both left blank is fine.
-    if (gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(gstin)){
-      err.textContent = "GSTIN must be 15 characters like 08ABCDE1234F1Z5, or leave it blank. / GSTIN 15 अक्षर का हो (जैसे 08ABCDE1234F1Z5) या खाली छोड़ें।"; err.classList.remove("hidden"); return; }
-    if (upi && !/^[a-zA-Z0-9.\-_]{2,}@[a-zA-Z][a-zA-Z0-9.\-_]{1,}$/.test(upi)){
-      err.textContent = "UPI ID should look like name@bank (e.g. balwan@okhdfc), or leave it blank. / UPI आईडी name@bank जैसी हो या खाली छोड़ें।"; err.classList.remove("hidden"); return; }
+    // The wizard validated each cluster as the dealer advanced; re-run every gate once more
+    // so nothing depends on having stepped through the UI in order.
+    if (!validateRegStep(1) || !validateRegStep(2) || !validateRegStep(3) || !validateRegStep(4)) return;
     if (!sb){ err.textContent = "App not configured."; err.classList.remove("hidden"); return; }
     $("register-submit").disabled = true;
     sb.auth.signUp({ email: email, password: pw }).then(function(res){
@@ -2529,8 +2657,12 @@
         try { localStorage.setItem("kg_pending_email", email); } catch(e){} // so the login screen can show their status
         ["reg-business","reg-phone","reg-email","reg-password"].forEach(function(id){ $(id).value = ""; });
         var done = $("register-done");
-        done.textContent = "✓ Registration sent. The importer will approve your account, then you can sign in. / पंजीकरण भेजा गया; स्वीकृति के बाद साइन इन करें। " +
-          "If you were invited by your supplier, you can sign in right away. / अगर आपको इनवाइट किया गया है तो अभी साइन इन करें।";
+        // Every question this moment produces, answered once: what happened, what happens
+        // next, how long it takes, what to do if it never arrives, and the invite exception.
+        done.textContent = "✓ Registration sent. / पंजीकरण भेजा गया।\n" +
+          "What happens now: the importer checks your shop, usually within 1–2 days. Then sign in with this email and password — your dealer prices unlock automatically.\n" +
+          "अब क्या होगा: आयातक आपकी दुकान जाँचेगा — आम तौर पर 1–2 दिन। फिर इसी ईमेल से साइन इन करें; डीलर दरें खुल जाएँगी।\n" +
+          "If you were invited by your supplier, sign in right away. / इनवाइट से आए हैं तो अभी साइन इन करें।";
         done.classList.remove("hidden");
       });
     }).catch(function(){ $("register-submit").disabled = false; err.textContent = "Could not register. Try again. / पंजीकरण नहीं हुआ।"; err.classList.remove("hidden"); });
@@ -2657,7 +2789,11 @@
     if (li){
       var pend = null; try { pend = localStorage.getItem("kg_pending_email"); } catch(e){}
       if (pend){
-        li.textContent = "Your account (" + pend + ") is awaiting the importer's approval — you can sign in once approved. / स्वीकृति की प्रतीक्षा में।";
+        // A bare sentence left them wondering "how long?" and "who do I ask?". The banner now
+        // answers both: expected timing up front, in both languages.
+        li.innerHTML = "⌚ Awaiting the importer — " + esc(pend) +
+          "<br>Usually 1–2 days. Sign in once approved. " +
+          "<span lang='hi' class='l-hi'>उयातक की स्वीकृति की प्रतीक्षा — आम तौर पर 1–2 दिन। स्वीकृत होते ही साइन इन करें।</span>";
         li.classList.remove("hidden"); $("login-id").value = pend;
       } else li.classList.add("hidden");
     }
@@ -2915,21 +3051,44 @@
 
   function wireGodModeTabs(){
     var tabs = ["networks", "stock", "orders"];
+    // role=tablist obligations the More-hub tabs already met and these didn't: roving
+    // tabindex (only the selected tab is tabbable) and arrow/Home/End keys. (audit)
+    function gmSelect(t){
+      _gmTab = t;
+      tabs.forEach(function(ot){
+        var b = $("gm-tab-" + ot), p = $("gm-panel-" + ot);
+        if (b) {
+          b.classList.toggle("active", ot === t);
+          b.setAttribute("aria-selected", ot === t ? "true" : "false");
+          b.setAttribute("tabindex", ot === t ? "0" : "-1");
+        }
+        if (p) p.classList.toggle("hidden", ot !== t);
+      });
+      renderGodMode();
+    }
     tabs.forEach(function(t){
       var btn = $("gm-tab-" + t);
       if (btn && !btn._wired){
         btn._wired = true;
-        btn.onclick = function(){
-          _gmTab = t;
-          tabs.forEach(function(ot){
-            var b = $("gm-tab-" + ot), p = $("gm-panel-" + ot);
-            if (b) { b.classList.toggle("active", ot === t); b.setAttribute("aria-selected", ot === t ? "true" : "false"); }
-            if (p) p.classList.toggle("hidden", ot !== t);
-          });
-          renderGodMode();
-        };
+        btn.onclick = function(){ gmSelect(t); };
       }
     });
+    var gmBar = document.querySelector(".gm-tabs[role='tablist']");
+    if (gmBar && !gmBar._keyWired){
+      gmBar._keyWired = true;
+      gmBar.addEventListener("keydown", function(e){
+        var els = tabs.map(function(t){ return $("gm-tab-" + t); }).filter(Boolean);
+        var i = els.indexOf(document.activeElement); if (i < 0) return;
+        var n = null;
+        if (e.key === "ArrowRight" || e.key === "ArrowDown") n = (i + 1) % els.length;
+        else if (e.key === "ArrowLeft" || e.key === "ArrowUp") n = (i - 1 + els.length) % els.length;
+        else if (e.key === "Home") n = 0;
+        else if (e.key === "End") n = els.length - 1;
+        if (n === null) return;
+        e.preventDefault(); gmSelect(tabs[n]);
+        if (els[n]) els[n].focus();
+      });
+    }
     var exitBtn = $("gm-exit-btn");
     if (exitBtn && !exitBtn._wired){
       exitBtn._wired = true;
@@ -3583,7 +3742,21 @@
   }
 
   // new-customer-order line builder state + renderer with live totals
+  // v141: the bill survives refresh and modal dismissal — it's the shop's money on screen.
   var _coLines = [];
+  // persist the staged counter bill so a refresh or stray dismissal never eats it (harden)
+  function saveCoLines(){
+    try { localStorage.setItem("kg_counter_bill", JSON.stringify(_coLines)); } catch(e){}
+  }
+  function restoreCoLines(){
+    try {
+      var raw = localStorage.getItem("kg_counter_bill");
+      if (!raw) return;
+      var arr = JSON.parse(raw);
+      if (Array.isArray(arr)) _coLines = arr.filter(function(l){ return l && l.sku && l.qty > 0; });
+    } catch(e){ _coLines = []; }
+  }
+  restoreCoLines();
   function drawCoLines(){
     var box = $("m-co-lines"), sumBox = $("m-co-summary-bar");
     if (!box) return;
@@ -3979,12 +4152,30 @@
       '</div>'
     );
 
+    // Trade words every dealer knows but a first-time shop doesn't — one place, bilingual,
+    // collapsible so it costs nothing for anyone who doesn't need it. (clarify P1)
+    var secGlossary = '<details class="more-sec" id="m-glossary-sec"><summary>Trade words explained — व्यापारिक शब्द<span class="ms-hint">What the terms on bills and orders mean / शब्दों का मतलब</span></summary>'+
+      '<p class="more-hint">The words shops and transporters use, in plain language. / दुकान और ट्रांसपोर्टर के शब्द, आसान भाषा में।</p>'+
+      '<dl class="glossary-dl">'+
+        '<dt>Net rate / नेट दर</dt><dd>Your dealer price before GST — what you pay the importer. / GST से पहले आपकी डीलर क़ीमत।</dd>'+
+        '<dt>MRP</dt><dd>Maximum retail price — the sticker price a walk-in customer pays. / खुदरा क़ीमत जो ग्राहक देता है।</dd>'+
+        '<dt>Markup ×3 / मार्कअप</dt><dd>Customer price = your net rate × 3 (default). Change it in Warehouse → Customer price. / ग्राहक दर = नेट दर × 3 (डिफ़ॉल्ट)। गोदाम → ग्राहक मूल्य में बदलें।</dd>'+
+        '<dt>PO (Purchase Order) / परचेज़ ऑर्डर</dt><dd>Your order to the importer. No payment with it — they confirm first. / आयातक को आपका ऑर्डर। भुगतान बाद में — पहले पुष्टि।</dd>'+
+        '<dt>PI (Proforma Invoice)</dt><dd>The importer\'s confirmation document with final rates and GST. / आयातक की पुष्टि — अंतिम दरें और GST।</dd>'+
+        '<dt>GSTIN</dt><dd>Your GST number, 15 characters — printed on your bills. / आपका GST नंबर, 15 अक्षर — बिल पर छपता है।</dd>'+
+        '<dt>HSN code</dt><dd>Item classification used on GST bills. / GST बिल में माल का वर्गीकरण कोड।</dd>'+
+        '<dt>Challan / चलान</dt><dd>Document that travels WITH the parcel — proof of what\'s inside. / पार्सल के साथ जाने वाला कागज़ — अंदर क्या है, उसका प्रमाण।</dd>'+
+        '<dt>Bilty / LR (Lorry Receipt)</dt><dd>Transport receipt — shows the parcel was handed to the transporter. Quote its number to trace it. / ट्रांसपोर्ट रसीद — माल ट्रांसपोर्टर को मिलने का प्रमाण। नंबर बताने पर माल खोजा जा सकता है।</dd>'+
+        '<dt>AWB</dt><dd>Airway bill — same as Bilty, for courier. / बिल्टी जैसा ही, कूरियर के लिए।</dd>'+
+        '<dt>UPI</dt><dd>Instant payment ID (name@bank) — customers can pay you directly. / तुरंत भुगतान की आईडी — ग्राहक सीधे भुगतान कर सकते हैं।</dd>'+
+      '</dl></details>';
+
     var secApprovals = !isImporter ? '' : '<details class="more-sec"><summary>Pending registrations — पंजीकरण<span class="ms-badge hidden" id="m-badge-appr">0</span>'+
       '<span class="ms-hint">Approve new signups / नए पंजीकरण स्वीकृत करें</span></summary>'+
       '<div id="m-approvals-card"><div style="color:var(--muted);font-size:13px;">Loading… / लोड हो रहा है…</div></div></details>';
 
     var tabs = [
-      { id:"money", en:"Money",   hi:"पैसा",    ico:"rupee",   html: secMoney },
+      { id:"money", en:"Money",   hi:"पैसा",    ico:"rupee",   html: secGlossary + secMoney },
       { id:"stock", en:"Stock",   hi:"स्टॉक",   ico:"box",     html: secStock + secTransfer + (isImporter ? secExternal + secCorrect : "") },
       { id:"sell",  en:"Warehouse", hi:"गोदाम",   ico:"warehouse", html: secCustOrder + secLink + secPrice + secAddress + secPay,
         alert: detailsMissing },
@@ -4224,12 +4415,14 @@
       if (!qty) return;
       var ex = _coLines.filter(function(l){ return l.sku === sku; })[0];
       if (ex) ex.qty = Math.min(500, ex.qty + qty); else _coLines.push({ sku:sku, qty:qty });
+      saveCoLines();
       $("m-co-qty").value = "1"; pkClear("m-co-pk"); drawCoLines();
     };
     if ($("m-co-lines")) $("m-co-lines").onclick = function(e){
       var delBtn = e.target.closest("[data-co-del]");
       if (delBtn){
         _coLines = _coLines.filter(function(l){ return l.sku !== delBtn.getAttribute("data-co-del"); });
+        saveCoLines();
         drawCoLines(); return;
       }
       var incBtn = e.target.closest("[data-co-inc]");
@@ -4245,6 +4438,7 @@
         var lineDec = _coLines.filter(function(l){ return l.sku === skuDec; })[0];
         if (lineDec){
           if (lineDec.qty > 1){ lineDec.qty--; } else { _coLines = _coLines.filter(function(l){ return l.sku !== skuDec; }); }
+          saveCoLines();
           drawCoLines();
         }
         return;
@@ -4273,7 +4467,7 @@
       } else {
         m.textContent = "Order created ✓ — see it under Requests → retail.";
       }
-      _coLines = []; drawCoLines();
+      _coLines = []; saveCoLines(); drawCoLines();
       $("m-co-name").value=""; $("m-co-phone").value=""; $("m-co-addr").value="";
       showToast("Counter order created ✓ / ऑर्डर बना"); updateRequestBadge();
     };
@@ -4281,6 +4475,16 @@
     if ($("m-rm-save")) $("m-rm-save").onclick = async function(){
       var mult = parseFloat($("m-rm-mult").value), m = $("m-rm-msg"); m.className="req-msg";
       if (!(mult >= 1 && mult <= 20)){ m.className="req-msg err"; m.textContent = "Enter a multiple between 1 and 20."; return; }
+      // owner PIN gate — same protection the catalog bar got (harden)
+      var savedPin = null; try { savedPin = localStorage.getItem("kg_owner_pin"); } catch(e){}
+      if (savedPin){
+        var p = prompt("Enter owner PIN to change the markup / मालिक PIN डालें:");
+        if (p === null || p !== savedPin){ m.className="req-msg err"; m.textContent = "Wrong PIN — markup not changed. / PIN गलत — दर नहीं बदली।"; return; }
+      } else {
+        var p1 = prompt("Set an owner PIN (4 digits) to protect the markup / मालिक PIN बनाएँ (4 अंक):");
+        if (!p1 || !/^\d{4}$/.test((p1||"").trim())){ m.className="req-msg err"; m.textContent = "PIN must be 4 digits. / 4 अंक का PIN चाहिए।"; return; }
+        try { localStorage.setItem("kg_owner_pin", p1.trim()); } catch(e){}
+      }
       var r = await sb.rpc("set_retail_mult", { p_mult: mult });
       if (r.error){ m.className="req-msg err"; m.textContent = friendlyErr(r.error); return; }
       state.account.retailMult = mult; m.textContent = "Saved ✓ — customers now see "+mult+"× base."; showToast("Customer price updated ✓");
@@ -6005,7 +6209,7 @@
             rateHtml +
             '<div class="item-actions">' +
               '<button class="diagram-btn" type="button" data-diagram="' + idx + '" ' +
-                'aria-label="Catalog diagram / सूची पन्ना">' + svgIco("page") + 'Catalog</button>' +
+                'aria-label="Catalog diagram / सूची पन्ना">' + svgIco("page") + '<span class="db-txt">Catalog</span></button>' +
               counterBtnHtml +
               controlsHtml +
             '</div>' +
@@ -6750,6 +6954,26 @@
     $("show-register").onclick = function(){ showRegister(true); };
     $("register-cancel").onclick = function(){ showRegister(false); };
     $("register-submit").onclick = doRegister;
+    // wizard nav: Continue validates the current cluster, then advances (step 4 = submit)
+    if ("reg-next" in window || document.getElementById("reg-next")){
+      var rn = document.getElementById("reg-next");
+      if (rn) rn.onclick = function(){
+        if (!validateRegStep(_regStep)) return;
+        if (_regStep < 4){ setRegStep(_regStep + 1); return; }
+        doRegister();
+      };
+    }
+    var rb = document.getElementById("reg-back");
+    if (rb) rb.onclick = function(){ if (_regStep > 1) setRegStep(_regStep - 1); };
+    // Enter inside a step advances it (step 4 submits) — one-thumb flow
+    document.querySelectorAll(".reg-step-sec input").forEach(function(inp){
+      inp.addEventListener("keydown", function(e){
+        var rbox = document.getElementById("register-box");
+        if (e.key === "Enter" && rbox && !rbox.classList.contains("hidden")){
+          e.preventDefault(); if (rn) rn.click();
+        }
+      });
+    });
     document.querySelectorAll("[data-pw-toggle]").forEach(function(btn){
       btn.onclick = function(){
         var inp = $(btn.getAttribute("data-pw-toggle")); if (!inp) return;
@@ -6832,11 +7056,28 @@
       };
     }
     if ($("counter-mult-input")){
+      // The markup sets what every walk-in customer pays. Any staff member tapping the
+      // counter could reprice the whole shop. Changing it now needs the owner's PIN.
+      var _multLock = function(apply){
+        var savedPin = null; try { savedPin = localStorage.getItem("kg_owner_pin"); } catch(e){}
+        if (!savedPin){
+          // first change on this device: set the PIN now, so the next one is guarded
+          var p1 = prompt("Set an owner PIN (4 digits) to protect the markup / मालिक PIN बनाएँ (4 अंक):");
+          if (!p1 || !/^\d{4}$/.test(p1.trim())){ showToast("PIN must be 4 digits / 4 अंक का PIN चाहिए"); return false; }
+          try { localStorage.setItem("kg_owner_pin", p1.trim()); } catch(e){}
+          apply(); return true;
+        }
+        var p = prompt("Enter owner PIN to change the markup / मालिक PIN डालें:");
+        if (p === null || p !== savedPin){ showToast("Wrong PIN — markup unchanged / PIN गलत"); return false; }
+        apply(); return true;
+      };
       $("counter-mult-input").addEventListener("change", function(){
-        var mult = parseFloat(this.value) || 3;
-        if (state.account) state.account.retailMult = mult;
-        drawCoLines();
-        renderCatalogBody();
+        var inp = this, mult = parseFloat(inp.value) || 3;
+        _multLock(function(){
+          if (state.account) state.account.retailMult = mult;
+          drawCoLines();
+          renderCatalogBody();
+        }) || (inp.value = String((state.account && state.account.retailMult) || 3));
       });
     }
     if ($("cbd-view-btn")){
@@ -6920,7 +7161,7 @@
           }).then(function(res){
             if (!res.error){
               showToast("Recorded as Counter Order ✓ / दर्ज हुआ");
-              _coLines = []; drawCoLines(); renderCatalogBody(); updateRequestBadge();
+              _coLines = []; saveCoLines(); drawCoLines(); renderCatalogBody(); updateRequestBadge();
             }
           });
         }
@@ -7003,11 +7244,11 @@
           showPI();
         });
       }
-      if (!state.enduser) return submit();
       // The supplier side confirms fifteen separate stock- and money-moving actions before
-      // anything happens. The one action a retail buyer takes — committing to an order — used
-      // to fire on a single tap of a full-width button at the bottom of the screen, with no
-      // re-read and no way back. Same care on both sides of the counter.
+      // anything happens. The one action EVERY buyer takes — committing to an order — used
+      // to fire on a single tap for dealers, with no re-read and no way back (retail got the
+      // sheet in v140; the dealer tap was still unprotected). Same care on both sides of
+      // the counter, both sides of the app.
       var preview = buildPI();
       var lineCount = preview.lines.length;
       var shipLine = euShipTo() || "—";
@@ -7025,6 +7266,17 @@
                  (state.stalePrices ? "⚠ क़ीमतें दुकान से पक्की नहीं हो पाईं।\n" : "") +
                  "अभी भुगतान नहीं — दुकान पुष्टि करेगी।",
                  { okLabel: "Send order / ऑर्डर भेजें" }).then(function(go){ if (go) submit(); });
+      // Dealer PO path — the sheet retail already had: parts, total, supplier, and no-payment
+      // reminder, in both languages, before the order leaves the phone.
+      var dPrev = buildPI();
+      var dCount = dPrev.lines.length;
+      askConfirm("Send this PO to " + ((seller().company) || "your supplier") + "?\n\n" +
+                 dCount + " part" + (dCount === 1 ? "" : "s") + " · " + inr(dPrev.grand) + " total\n" +
+                 "No payment now — they confirm and send a PI.\n\n" +
+                 "यह परचेज़ ऑर्डर भेजें?\n" +
+                 dCount + " पुर्ज़े · " + inr(dPrev.grand) + "\n" +
+                 "अभी भुगतान नहीं — पुष्टि के बाद PI आएगी।",
+                 { okLabel: "Send PO / भेजें" }).then(function(go){ if (go) submit(); });
     };
     $("pi-back-btn").onclick = showCart;
 
@@ -7112,7 +7364,7 @@
       var cosku = coAddBtn.getAttribute("data-co-add-card");
       var ex = _coLines.filter(function(l){ return l.sku === cosku; })[0];
       if (ex) ex.qty = Math.min(500, ex.qty + 1); else _coLines.push({ sku:cosku, qty:1 });
-      drawCoLines();
+      saveCoLines(); drawCoLines();
       var cor = state.catalog[skuToIndex(cosku)];
       var comsg = "✓ Counter Bill: " + (cor && cor.product_code ? cor.product_code : cosku) + " (" + (ex ? ex.qty : 1) + ")";
       showToast(comsg);
