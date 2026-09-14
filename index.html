@@ -571,6 +571,15 @@
   /* =========================================================
      GRAPHICAL REPRESENTATIONS & VISUAL DRILL-DOWN STYLES
      ========================================================= */
+  
+  /* Stable accessible 5-step palette tokens for multi-item distributions */
+  .chart-color-0 { background: #0F5132 !important; } /* Deep Forest Green */
+  .chart-color-1 { background: #198754 !important; } /* Mid Vibrant Green */
+  .chart-color-2 { background: #0284c7 !important; } /* Sky Tech Blue */
+  .chart-color-3 { background: #d97706 !important; } /* Warm Amber */
+  .chart-color-4 { background: #7c3aed !important; } /* Muted Violet */
+  .chart-color-other { background: #64748b !important; } /* Neutral Slate */
+
   .graph-bar-card {
     background: #fff;
     border: 1px solid var(--border);
@@ -613,6 +622,15 @@
     cursor: pointer;
     transition: opacity 0.15s ease, transform 0.15s ease;
     position: relative;
+  }
+  .graph-segment::after {
+    content: "";
+    position: absolute;
+    top: -15px;
+    bottom: -15px;
+    left: 0;
+    right: 0;
+    z-index: 1;
   }
   .graph-segment:hover, .graph-segment:active {
     opacity: 0.82;
@@ -789,7 +807,7 @@
     height: 100%;
   }
   .ledger-graph-due {
-    background: var(--warn-border);
+    background: #C2410C; /* Terracotta Amber - 5.1:1 WCAG AA contrast against white */
     height: 100%;
   }
   .ledger-graph-legend {
@@ -3340,6 +3358,13 @@
     if (!state.account){ box.innerHTML = ""; return; }
     // one-time: open the seller's Proforma Invoice for a billed/completed order
     if (!box._piBound){ box._piBound = true; box.addEventListener("click", async function(e){
+      var f = e.target.closest && e.target.closest("[data-order-filter]");
+      if (f){
+        var stVal = f.getAttribute("data-order-filter");
+        window._orderFilterStatus = (window._orderFilterStatus === stVal || !stVal) ? null : stVal;
+        renderMyOrders();
+        return;
+      }
       var b = e.target.closest && e.target.closest("[data-viewpi]");
       if (b){ viewOrderPI(Number(b.getAttribute("data-viewpi"))); return; }
       // the buyer closes the loop: nobody but the receiver knows the parcel actually arrived
@@ -3377,12 +3402,17 @@
       myTotalSpend += Number(o.grand || 0);
     });
     var totMyOrders = rows.length || 1;
+    var activeStatusFilter = window._orderFilterStatus || null;
+    var filteredOrderRows = rows.filter(function(o){
+      return !activeStatusFilter || o.status === activeStatusFilter;
+    });
+
     var ordBarHtml = '<div class="graph-bar-card" style="margin-bottom:14px;" role="region" aria-label="My Orders Breakdown">' +
       '<div class="graph-head">' +
         '<span class="graph-title">' +
           '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3h8a1 1 0 0 1 1 1v16l-4.5-2.5L8 20V4a1 1 0 0 1 1-1z"/><path d="M9 8h6M9 12h6"/></svg>' +
           'Order History Pipeline / ऑर्डर स्थिति</span>' +
-        '<span class="graph-total">Total: ' + inr(myTotalSpend) + '</span>' +
+        '<span class="graph-total">Total: ' + inr(myTotalSpend) + (activeStatusFilter ? ' (Filtered)' : '') + '</span>' +
       '</div>' +
       '<div class="graph-distribution-bar">';
     var stColors = { placed: "#d97706", billed: "#0F5132", completed: "#198754", rejected: "#b91c1c" };
@@ -3390,21 +3420,30 @@
       var scnt = myStatusCounts[st];
       var spct = ((scnt / totMyOrders) * 100).toFixed(1);
       ordBarHtml += '<div class="graph-segment" style="width:' + spct + '%;background:' + (stColors[st]||"#64748b") + ';" ' +
-        'title="' + esc(ORDER_STATUS_LABEL[st]||st) + ': ' + scnt + ' (' + spct + '%)"></div>';
+        'data-order-filter="' + esc(st) + '" title="' + esc(ORDER_STATUS_LABEL[st]||st) + ': ' + scnt + ' (' + spct + '%)"></div>';
     });
     ordBarHtml += '</div><div class="graph-legend-grid">';
+    
+    // Add "All" option if filtered
+    if (activeStatusFilter){
+      ordBarHtml += '<button type="button" class="graph-legend-item" data-order-filter="" style="grid-column: 1 / -1;background:var(--green-light);border-color:var(--green-mid);">' +
+        '<span class="graph-legend-name">⚡ Show All Orders / सभी ऑर्डर दिखाएँ (' + rows.length + ')</span>' +
+      '</button>';
+    }
+
     Object.keys(myStatusCounts).forEach(function(st){
       var scnt = myStatusCounts[st];
       var spct = Math.round((scnt / totMyOrders) * 100);
-      ordBarHtml += '<div class="graph-legend-item" style="cursor:default;">' +
+      var isAct = activeStatusFilter === st;
+      ordBarHtml += '<button type="button" class="graph-legend-item' + (isAct ? ' active' : '') + '" data-order-filter="' + esc(st) + '" style="' + (isAct ? 'background:var(--green-light);border-color:var(--green);font-weight:800;' : '') + '">' +
         '<span class="graph-legend-dot" style="background:' + (stColors[st]||"#64748b") + ';"></span>' +
         '<span class="graph-legend-name">' + esc(ORDER_STATUS_LABEL[st]||st) + '</span>' +
         '<span class="graph-legend-val">' + scnt + ' (' + spct + '%)</span>' +
-      '</div>';
+      '</button>';
     });
     ordBarHtml += '</div></div>';
 
-    box.innerHTML = ordBarHtml + rows.map(function(o){
+    box.innerHTML = ordBarHtml + filteredOrderRows.map(function(o){
       var badge = (o.status === "billed" || o.status === "completed") ? "badge-green" : (o.status === "rejected" ? "badge-red" : "badge-amber");
       var d = o.created_at ? new Date(o.created_at).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }) : "";
       // amended = supplier adjusted quantities before billing; ship_to shows on forwarded
@@ -6789,10 +6828,11 @@
         '</div>' +
         '<div class="graph-distribution-bar">';
       
+      var STABLE_COLORS = ["#0F5132", "#198754", "#0284c7", "#d97706", "#7c3aed", "#475569"];
       sections.forEach(function(s, idx){
         var cnt = sc[s] || 0;
         var pct = ((cnt / groupTotal) * 100).toFixed(1);
-        var color = 'hsl(' + ((idx * 47) % 360) + ', 65%, 40%)';
+        var color = STABLE_COLORS[idx % STABLE_COLORS.length];
         secBarHtml += '<div class="graph-segment" style="width:' + pct + '%;background:' + color + ';" ' +
           'data-browse-section="' + esc(s) + '" title="' + esc(s) + ': ' + cnt + ' parts (' + pct + '%)"></div>';
       });
@@ -6809,7 +6849,7 @@
             '<span class="t-count">' + cnt + ' parts (' + pct + '% of group)</span>' +
             '<div class="tile-meter-wrap">' +
               '<div class="tile-meter-bar">' +
-                '<div class="tile-meter-in" style="width:' + pct + '%;background:hsl(' + ((idx * 47) % 360) + ', 65%, 40%);"></div>' +
+                '<div class="tile-meter-in" style="width:' + pct + '%;background:' + (["#0F5132", "#198754", "#0284c7", "#d97706", "#7c3aed", "#475569"][idx % 6]) + ';"></div>' +
               '</div>' +
             '</div>' +
           '</button>';
@@ -7115,14 +7155,13 @@
     });
 
     var cartGrandEstimated = Object.values(cartGroupSpend).reduce(function(a, b){ return a + b; }, 0) || 1;
-    var cartGraphHtml = '<div class="graph-bar-card" style="margin-bottom:14px;" role="region" aria-label="Cart Spend Breakdown">' +
-      '<div class="graph-head">' +
-        '<span class="graph-title">' +
-          '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9.5" cy="20" r="1.4"/><circle cx="17.5" cy="20" r="1.4"/><path d="M3 4h2l2.2 11a1 1 0 0 0 1 .8h8.2a1 1 0 0 0 1-.8L20 8H6"/></svg>' +
-          'Order Composition / कार्ट संरचना</span>' +
-        '<span class="graph-total">' + keys.length + ' lines (' + cartTotalQty + ' units)</span>' +
+    // Compact, vertical-conserving Cart composition bar (< 48px height)
+    var cartGraphHtml = '<div style="background:#fff;border:1px solid var(--border);border-radius:var(--r-md);padding:8px 12px;margin-bottom:12px;" role="region" aria-label="Cart Spend Breakdown">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;font-weight:700;margin-bottom:6px;">' +
+        '<span style="color:var(--green-dark);">Order Composition / ' + keys.length + ' lines (' + cartTotalQty + ' units)</span>' +
+        '<span style="color:var(--muted);">' + inr(cartGrandEstimated) + '</span>' +
       '</div>' +
-      '<div class="graph-distribution-bar" title="Spend breakdown across machine categories">';
+      '<div class="graph-distribution-bar" style="margin-bottom:6px;height:8px;" title="Spend breakdown across machine categories">';
     
     Object.keys(cartGroupSpend).forEach(function(g){
       var sp = cartGroupSpend[g];
@@ -7130,18 +7169,16 @@
       cartGraphHtml += '<div class="graph-segment graph-seg-' + g + '" style="width:' + pct + '%;" ' +
         'title="' + esc(GROUP_LABELS[g]||g) + ': ' + inr(sp) + ' (' + pct + '%)"></div>';
     });
-    cartGraphHtml += '</div><div class="graph-legend-grid">';
-    Object.keys(cartGroupSpend).forEach(function(g){
-      var sp = cartGroupSpend[g];
-      var pct = Math.round((sp / cartGrandEstimated) * 100);
-      var shortName = (GROUP_LABELS[g] || ("Group " + g)).split("/")[0].trim();
-      cartGraphHtml += '<div class="graph-legend-item" style="cursor:default;">' +
-        '<span class="graph-legend-dot graph-seg-' + g + '"></span>' +
-        '<span class="graph-legend-name">' + esc(shortName) + '</span>' +
-        '<span class="graph-legend-val">' + inr(sp) + ' (' + pct + '%)</span>' +
-      '</div>';
-    });
-    cartGraphHtml += '</div></div>';
+    cartGraphHtml += '</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px 14px;font-size:11px;color:var(--muted);font-weight:600;">' +
+      Object.keys(cartGroupSpend).map(function(g){
+        var sp = cartGroupSpend[g];
+        var pct = Math.round((sp / cartGrandEstimated) * 100);
+        var shortName = (GROUP_LABELS[g] || ("Group " + g)).split("/")[0].trim();
+        return '<span style="display:inline-flex;align-items:center;gap:4px;">' +
+          '<span class="graph-legend-dot graph-seg-' + g + '" style="width:7px;height:7px;"></span>' +
+          esc(shortName) + ' ' + inr(sp) + ' (' + pct + '%)</span>';
+      }).join("") + '</div></div>';
 
     wrap.innerHTML = cartGraphHtml + keys.map(function(k){
       // A cart entry whose catalog row is missing (stale cart, catalogue not loaded yet) used to
