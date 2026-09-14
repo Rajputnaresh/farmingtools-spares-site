@@ -235,23 +235,23 @@
   .gm-title{ color:var(--green-dark); font-size:18px; font-weight:800; margin:0; display:flex; align-items:center; gap:6px; }
   .gm-badge{ font-size:10px; font-weight:700; text-transform:uppercase; background:#1b4332; color:#d8f3dc; padding:2px 7px; border-radius:12px; letter-spacing:0.5px; }
   .gm-subtitle{ font-size:12px; color:var(--muted); margin-top:2px; }
-  .gm-kpis{ display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-bottom:14px; }
-  .gm-kpi{ background:#fff; border:1px solid var(--border); border-radius:var(--r-md); padding:10px 12px; display:flex; flex-direction:column; }
+  .gm-kpis{ display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:16px; }
+  .gm-kpi{ background:#fff; border:1px solid var(--border); border-radius:var(--r-md); padding:12px 14px; display:flex; flex-direction:column; box-shadow:var(--shadow-xs); }
   .gm-kpi-lbl{ font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
   .gm-kpi-val{ font-size:20px; font-weight:800; color:var(--green-dark); margin-top:3px; font-variant-numeric:tabular-nums; }
   .gm-tabs{ display:flex; gap:6px; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:6px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  .gm-tab-btn{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:9px 15px; font-size:13px; font-weight:700; color:var(--text); cursor:pointer; white-space:nowrap; min-height:44px; }
-  .gm-tab-btn.active{ background:var(--green-dark); color:#fff; border-color:var(--green-dark); }
+  .gm-tab-btn{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:9px 15px; font-size:13px; font-weight:700; color:var(--text); cursor:pointer; white-space:nowrap; min-height:44px; transition:all .12s ease; }
+  .gm-tab-btn.active{ background:var(--green-dark); color:#fff; border-color:var(--green-dark); box-shadow:var(--shadow-xs); }
   .gm-filter-bar{ display:flex; gap:8px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
   .gm-filter-bar select, .gm-filter-bar input{ padding:9px 12px; border:1px solid var(--border); border-radius:var(--r-md); font-size:13px; background:#fff; min-height:44px; }
   .gm-filter-bar input{ flex:1; min-width:180px; }
-  .gm-card{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:12px 14px; margin-bottom:10px; }
+  .gm-card{ background:#fff; border:1px solid var(--border); border-radius:var(--r-lg); padding:14px 16px; margin-bottom:12px; box-shadow:var(--shadow-xs); }
   .gm-card-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
   .gm-party-name{ font-size:14.5px; font-weight:700; color:var(--green-dark); }
   .gm-party-role{ font-size:11px; font-weight:700; text-transform:uppercase; padding:2px 6px; border-radius:4px; background:var(--green-light); color:var(--green-dark); }
   .gm-party-meta{ font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:12px; margin-top:4px; }
   .gm-party-meta strong{ color:var(--text); font-weight:600; }
-  .gm-stock-table, .gm-order-table{ width:100%; border-collapse:collapse; font-size:12.5px; margin-top:8px; }
+  .gm-stock-table, .gm-order-table{ width:100%; border-collapse:collapse; font-size:12.5px; margin-top:10px; border-radius:var(--r-md); overflow:hidden; }
   .gm-stock-table th, .gm-stock-table td, .gm-order-table th, .gm-order-table td{ padding:8px 10px; text-align:left; border-bottom:1px solid var(--border); }
   .gm-stock-table th, .gm-order-table th{ background:var(--surface); font-weight:700; color:var(--green-dark); font-size:12px; }
   .gm-stock-qty{ font-weight:800; color:var(--green-dark); font-variant-numeric:tabular-nums; }
@@ -367,12 +367,15 @@
   html[data-lang] .l-sep{ display:none; }
   html[data-lang="en"] .l-hi{ display:none; }
   html[data-lang="hi"] .l-en{ display:none; }
+  html[data-lang="mr"] .l-en{ display:none; }
   /* the nav labels are structural spans, not marked text, and `nav.bottom-nav button .nl` at
      (0,2,2) out-specifies a plain `html[data-lang] .nl` — match the nav selector to beat it */
   html[data-lang="en"] nav.bottom-nav button .nl-hi{ display:none; }
   html[data-lang="hi"] nav.bottom-nav button .nl{ display:none; }
+  html[data-lang="mr"] nav.bottom-nav button .nl{ display:none; }
   html[data-lang="en"] .logout-link .nl-hi{ display:none; }
   html[data-lang="hi"] .logout-link .nl{ display:none; }
+  html[data-lang="mr"] .logout-link .nl{ display:none; }
   /* segmented language toggle */
   .lang-switch-wrap{
     display:inline-flex; align-items:center; background:rgba(0,0,0,.24);
@@ -380,8 +383,8 @@
     padding:2px; flex:none;
   }
   .lang-pill{
-    background:none; border:none; color:rgba(255,255,255,.82); font-size:12px; font-weight:700;
-    padding:4px 9px; min-height:36px; min-width:38px; border-radius:var(--r-pill);
+    background:none; border:none; color:rgba(255,255,255,.82); font-size:11px; font-weight:700;
+    padding:3px 7px; min-height:34px; min-width:32px; border-radius:var(--r-pill);
     cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
     transition:background-color .15s ease, color .15s ease;
   }
@@ -681,7 +684,7 @@
   }
   .generate-btn{
     background:var(--green); color:#fff; border:none; border-radius:var(--r-md); padding:14px; width:100%; margin-top:14px;
-    font-size:15px; font-weight:800; min-height:50px; box-shadow:0 2px 6px rgba(15,81,50,0.3);
+    font-size:15px; font-weight:800; min-height:50px; box-shadow:var(--shadow-sm);
     display:flex; align-items:center; justify-content:center; gap:8px;
   }
   .generate-btn[disabled]{ opacity:.5; box-shadow:none; }
@@ -1239,10 +1242,11 @@
       <span class="sub">Spare parts ordering / स्पेयर पार्ट्स ऑर्डर</span>
     </span>
   </button>
-  <div class="lang-switch-wrap" id="lang-switch-wrap" role="group" aria-label="Select language / भाषा चुनें">
-    <button type="button" class="lang-pill active" data-lang-set="both" title="Both languages / दोनों भाषाएँ">A+अ</button>
+  <div class="lang-switch-wrap" id="lang-switch-wrap" role="group" aria-label="Select language / भाषा निवडा">
+    <button type="button" class="lang-pill active" data-lang-set="both" title="Both languages / दोनों भाषाएँ / दोन्ही भाषा">A+अ</button>
     <button type="button" class="lang-pill" data-lang-set="en" title="English only">EN</button>
     <button type="button" class="lang-pill" data-lang-set="hi" title="हिन्दी">हिन्दी</button>
+    <button type="button" class="lang-pill" data-lang-set="mr" title="मराठी">मराठी</button>
   </div>
   <div class="header-actions hidden" id="header-actions">
     <button class="logout-link" id="auth-btn" aria-label="Sign out / साइन आउट" title="Sign out / साइन आउट"><span class="ico" data-ico="logout" aria-hidden="true"></span><span class="lo-label"><span class="nl">Sign out</span><span class="nl-hi">साइन आउट</span></span></button>
@@ -1873,9 +1877,9 @@
   // header has ~19px of slack at 360px once a dealer is signed in — a segmented control does
   // not fit, and the effect is visible instantly, which is what makes a cycle acceptable here.
   var LANG_KEY = "kg_lang";
-  var LANG_MODES = ["both", "en", "hi"];
-  var LANG_LABEL = { both: "A+अ", en: "EN", hi: "हिन्दी" };
-  var LANG_NEXT_HINT = { both: "Switch to English", en: "Switch to Hindi / हिन्दी", hi: "Show both / दोनों भाषाएँ" };
+  var LANG_MODES = ["both", "en", "hi", "mr"];
+  var LANG_LABEL = { both: "A+अ", en: "EN", hi: "हिन्दी", mr: "मराठी" };
+  var LANG_NEXT_HINT = { both: "Switch to English", en: "Switch to Hindi / हिन्दी", hi: "Switch to Marathi / मराठी", mr: "Show both / सर्व भाषा" };
   function langMode(){
     try { var v = localStorage.getItem(LANG_KEY); return LANG_MODES.indexOf(v) >= 0 ? v : "both"; }
     catch(e){ return "both"; }
@@ -2058,7 +2062,7 @@
     img.replaceWith(ph);
   }
   window.thumbFail = thumbFail;
-  window.__ver = "v141";   // runtime version marker — support asks "which version?", the console answers
+  window.__ver = "v142";   // runtime version marker — support asks "which version?", the console answers
   function inr(n){ return "₹" + Number(n).toLocaleString("en-IN"); }
 
   // The cart survives a reload but the name and phone beside it did not — on a patchy
@@ -5857,14 +5861,14 @@
     return sv === "in" ? s === "here" : s === "none";
   }
   var COMMON_SUBSYSTEMS = [
-    { id: "carburetor", label: "Carburetor / कार्बोरेटर", tokens: ["carburetor","carb","carbu","carbutor"] },
-    { id: "starter", label: "Starter / स्टार्टर", tokens: ["starter","recoil","dori","pull"] },
-    { id: "piston", label: "Piston/Cyl / पिस्टन", tokens: ["piston","cylinder","ring"] },
-    { id: "clutch", label: "Clutch / क्लच", tokens: ["clutch","shoe","drum"] },
-    { id: "gear", label: "Gears/Shaft / गियर", tokens: ["gear","pinion","shaft","spindle"] },
-    { id: "blade", label: "Blade/Cutter / ब्लेड", tokens: ["blade","cutter","chakki","trimmer"] },
-    { id: "filter", label: "Filter / फ़िल्टर", tokens: ["filter","air"] },
-    { id: "seal", label: "Seals / सील-बेयरिंग", tokens: ["seal","oil seal","bearing","gasket"] }
+    { id: "carburetor", ico: "⚙️", label: "Carburetor / कार्बोरेटर", tokens: ["carburetor","carb","carbu","carbutor"] },
+    { id: "starter", ico: "🔄", label: "Starter / स्टार्टर (दोरी)", tokens: ["starter","recoil","dori","pull","rassi"] },
+    { id: "piston", ico: "🔩", label: "Piston/Cyl / पिस्टन-सिलेंडर", tokens: ["piston","cylinder","ring"] },
+    { id: "clutch", ico: "⚙️", label: "Clutch / क्लच (कटोरी)", tokens: ["clutch","shoe","drum","katora"] },
+    { id: "gear", ico: "⚙️", label: "Gears/Shaft / गियर-शाफ्ट", tokens: ["gear","pinion","shaft","spindle","danda"] },
+    { id: "blade", ico: "✂️", label: "Blade/Cutter / पाते-ब्लेड", tokens: ["blade","cutter","chakki","trimmer","patti"] },
+    { id: "filter", ico: "💨", label: "Air Filter / फिल्टर", tokens: ["filter","air","jaali"] },
+    { id: "seal", ico: "⭕", label: "Seals/Bearing / सील-बेयरिंग", tokens: ["seal","oil seal","bearing","gasket","goli"] }
   ];
   var _selectedSubsystem = null;
 
@@ -5903,8 +5907,9 @@
     var box = $("pf-subsystems-wrap"); if (!box) return;
     box.innerHTML = COMMON_SUBSYSTEMS.map(function(sub){
       var active = _selectedSubsystem === sub.id ? " active" : "";
+      var icoHtml = sub.ico ? '<span class="chip-ico" aria-hidden="true" style="margin-right:4px;">' + sub.ico + '</span>' : '';
       return '<button type="button" class="subsystem-chip' + active + '" data-sub="' + sub.id + '">' +
-        esc(sub.label) + '</button>';
+        icoHtml + esc(sub.label) + '</button>';
     }).join("");
     updatePfResetBtn();
   }
@@ -6147,6 +6152,10 @@
           : '<div class="rate-wrap"><span class="rate na">Rate on request</span></div>';
       }
 
+      // Compute stock status first
+      var outOfStock = sClass === "none";
+      var canOrder = canAdd && !outOfStock;
+
       // In Counter Mode: offer direct "+ Counter Bill" button
       var counterBtnHtml = '';
       if (isCounterMode && !outOfStock){
@@ -6171,10 +6180,6 @@
         } else { cls = "stock-out"; label = '✕ Out of stock / स्टॉक नहीं'; }
         if (label) stockBadgeHtml = '<span class="stock-badge ' + cls + '">' + label + '</span>';
       }
-
-      // only a part nobody in the chain holds is unorderable — then we record demand instead
-      var outOfStock = sClass === "none";
-      var canOrder = canAdd && !outOfStock;
       var controlsHtml;
       if (outOfStock){
         controlsHtml = '<button class="add-btn demand-btn" type="button" data-demand="' + idx + '">Request part / माँग दर्ज करें</button>';
@@ -6209,7 +6214,7 @@
             rateHtml +
             '<div class="item-actions">' +
               '<button class="diagram-btn" type="button" data-diagram="' + idx + '" ' +
-                'aria-label="Catalog diagram / सूची पन्ना">' + svgIco("page") + '<span class="db-txt">Catalog</span></button>' +
+                'title="Catalogue Diagram / सूची आरेख" aria-label="Catalog diagram / सूची पन्ना">' + svgIco("page") + '<span class="db-txt">Diagram</span></button>' +
               counterBtnHtml +
               controlsHtml +
             '</div>' +
