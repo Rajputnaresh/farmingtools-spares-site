@@ -83,34 +83,108 @@
     outline:3px solid var(--focus); outline-offset:2px; border-radius:var(--r-sm);
   }
 
-  /* header */
+  /* header & navigation architecture */
   header.app-header{
     position:sticky; top:0; z-index:var(--z-nav);
-    background:#0F5132; color:#fff;
+    background:linear-gradient(180deg, #0F5132 0%, #0c3e27 100%); color:#fff;
     display:flex; align-items:center; justify-content:space-between;
-    padding:10px 14px; gap:10px;
-    box-shadow:0 1px 3px rgba(0,0,0,0.14);
-    border-bottom:1px solid rgba(255,255,255,0.14);
+    padding:8px 12px; gap:8px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.18);
+    border-bottom:1px solid rgba(255,255,255,0.12);
   }
   header.app-header h1{ font-size:15px; margin:0; font-weight:800; line-height:1.2; letter-spacing:-0.01em; }
-  header.app-header .sub{ display:block; font-size:11px; opacity:.9; font-weight:500; letter-spacing:0.01em; }
+  header.app-header .sub{ display:block; font-size:11px; opacity:.92; font-weight:500; letter-spacing:0.01em; }
   header.app-header.authed .sub{ display:none; }
   header.app-header.authed .brand-btn{ min-height:44px; }
-  .brand-btn{ background:none; border:none; padding:0; margin:0; text-align:left; color:#fff;
-    min-height:44px; min-width:0; flex:1 1 auto; overflow:hidden; display:flex; align-items:center; gap:10px; }
+  .brand-btn{ background:none; border:none; padding:2px 4px; margin:0; text-align:left; color:#fff;
+    min-height:44px; min-width:0; flex:1 1 auto; overflow:hidden; display:flex; align-items:center; gap:8px;
+    border-radius:var(--r-sm); cursor:pointer; }
+  .brand-btn:focus-visible{ outline:2px solid #fff; outline-offset:2px; }
   .brand-btn h1{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   @media (max-width: 430px){
-    header.app-header.authed .brand-btn h1{ white-space:normal; overflow:visible; line-height:1.15; }
+    header.app-header.authed .brand-btn h1{ white-space:normal; overflow:visible; line-height:1.15; font-size:14.5px; }
   }
-  .brand-mark{ width:36px; height:36px; flex:none; display:block; border-radius:8px; }
+  .brand-mark{ width:34px; height:34px; flex:none; display:block; border-radius:8px; box-shadow:0 1px 2px rgba(0,0,0,0.25); }
   .brand-txt{ min-width:0; flex:1 1 auto; overflow:hidden; }
-  .header-actions{ display:flex; align-items:center; gap:8px; flex:0 0 auto; }
-  .icon-btn{ background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.18); color:#fff; border-radius:var(--r-md); min-height:44px; min-width:44px; display:inline-flex; align-items:center; justify-content:center; transition:background-color .15s ease; }
-  .cart-btn{
-    position:relative; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.18); color:#fff;
-    border-radius:var(--r-md); padding:8px 12px; min-height:44px; min-width:44px;
-    display:inline-flex; align-items:center; justify-content:center;
+  .header-actions{ display:flex; align-items:center; gap:6px; flex:0 0 auto; }
+  
+  /* Header Quick Action Buttons */
+  .hdr-btn{
+    background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.22); color:#fff;
+    border-radius:var(--r-md); min-height:44px; min-width:44px; padding:0 8px;
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    font-size:13px; font-weight:700; cursor:pointer;
+    transition:background-color .15s ease, border-color .15s ease, transform .1s ease;
   }
+  .hdr-btn:active{ background:rgba(255,255,255,.28); transform:scale(0.97); }
+  @media (hover:hover){ .hdr-btn:hover{ background:rgba(255,255,255,.22); border-color:rgba(255,255,255,.36); } }
+
+  .hdr-cart-btn{ position:relative; }
+  .hdr-cart-badge{
+    position:absolute; top:-4px; right:-4px;
+    background:#fff; color:var(--green-dark);
+    border-radius:var(--r-pill); font-size:11px; font-weight:800; min-width:18px; height:18px;
+    display:inline-flex; align-items:center; justify-content:center; padding:0 4px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.3); border:1.5px solid var(--green-dark);
+  }
+  .hdr-cart-badge.hidden{ display:none; }
+
+  /* Drawer Navigation & Overlay */
+  .drawer-overlay{
+    position:fixed; inset:0; background:rgba(15,23,42,0.48); backdrop-filter:blur(2px);
+    z-index:var(--z-modal); opacity:0; pointer-events:none; transition:opacity .2s ease;
+  }
+  .drawer-overlay.open{ opacity:1; pointer-events:auto; }
+  .app-drawer{
+    position:fixed; top:0; right:0; bottom:0; width:min(340px, 86vw);
+    background:#fff; z-index:calc(var(--z-modal) + 1);
+    box-shadow:-4px 0 24px rgba(15,23,42,0.22);
+    display:flex; flex-direction:column;
+    transform:translateX(100%); transition:transform .24s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .drawer-overlay.open .app-drawer{ transform:translateX(0); }
+  .drawer-header{
+    padding:16px; background:var(--green-light); border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .drawer-profile{ display:flex; align-items:center; gap:10px; min-width:0; }
+  .dp-avatar{
+    width:40px; height:40px; border-radius:var(--r-md); background:var(--green);
+    color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px;
+    flex:none; box-shadow:var(--shadow-xs);
+  }
+  .dp-info{ min-width:0; }
+  .dp-name{ font-size:14.5px; font-weight:800; color:var(--green-dark); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .dp-role{ font-size:11.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.4px; }
+  .drawer-close{
+    background:#fff; border:1px solid var(--border); border-radius:var(--r-sm);
+    width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center;
+    font-size:20px; color:var(--text); cursor:pointer; flex:none;
+  }
+  .drawer-close:active{ background:var(--surface); }
+  .drawer-body{ flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:20px; -webkit-overflow-scrolling:touch; }
+  .drawer-sec-title{ font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:8px; }
+  .drawer-menu-list{ display:flex; flex-direction:column; gap:4px; }
+  .drawer-menu-item{
+    display:flex; align-items:center; justify-content:space-between; width:100%; min-height:48px;
+    padding:10px 12px; border:1px solid transparent; border-radius:var(--r-md); background:none;
+    text-align:left; color:var(--text); font-size:14px; font-weight:700; cursor:pointer;
+    transition:background-color .12s ease, border-color .12s ease;
+  }
+  .drawer-menu-item:active{ background:var(--green-light); border-color:var(--green-mid); color:var(--green-dark); }
+  .drawer-menu-item .dmi-left{ display:flex; align-items:center; gap:10px; }
+  .drawer-menu-item .ico svg{ width:20px; height:20px; color:var(--green-dark); }
+  .drawer-menu-item .dmi-txt{ display:flex; flex-direction:column; line-height:1.2; }
+  .drawer-menu-item .dmi-en{ font-size:13.5px; font-weight:700; }
+  .drawer-menu-item .dmi-hi{ font-size:11.5px; font-weight:600; color:var(--muted); }
+  .drawer-menu-item .dmi-chev svg{ width:16px; height:16px; color:var(--muted); }
+  .drawer-footer{ padding:14px 16px; border-top:1px solid var(--border); background:var(--surface); }
+  .drawer-signout-btn{
+    width:100%; min-height:46px; border:1px solid var(--danger-border); background:#fff;
+    color:var(--danger); border-radius:var(--r-md); font-size:13.5px; font-weight:700;
+    display:inline-flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;
+  }
+  .drawer-signout-btn:active{ background:var(--danger-tint); }
   /* one consistent line-icon set */
   .ico{ display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
   .ico svg{ display:block; width:22px; height:22px; stroke:currentColor; fill:none; }
@@ -601,35 +675,38 @@
   @keyframes spin{ to{ transform:rotate(360deg); } }
   @media (prefers-reduced-motion: reduce){ .spinner{ animation:none; } }
 
-  /* bottom nav (catalog view) */
+  /* bottom nav (streamlined, modern active indicators & ergonomics) */
   nav.bottom-nav{
     position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid var(--border);
     display:flex; z-index:var(--z-nav);
-    box-shadow:0 -2px 10px rgba(15,23,42,0.06);
+    box-shadow:0 -3px 14px rgba(15,23,42,0.08);
     padding-bottom:env(safe-area-inset-bottom);
+    user-select:none;
   }
   nav.bottom-nav button{
-    flex:1; position:relative; background:none; border:none; padding:8px 2px; min-height:56px; font-size:11.5px; font-weight:600; color:var(--muted);
+    flex:1; position:relative; background:none; border:none; padding:6px 2px; min-height:56px; font-size:11.5px; font-weight:600; color:var(--muted);
     display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
-    transition:color .12s ease, background-color .12s ease;
+    transition:color .15s ease, background-color .15s ease;
+    -webkit-tap-highlight-color:transparent;
   }
   nav.bottom-nav button:active{ background:var(--hover-faint); }
-  nav.bottom-nav button.active{ color:var(--green); }
-  nav.bottom-nav button.active .ico svg{ stroke:var(--green); stroke-width:2.3; }
+  nav.bottom-nav button.active{ color:var(--green-dark); }
+  nav.bottom-nav button.active .ico svg{ stroke:var(--green-dark); stroke-width:2.4; filter:drop-shadow(0 1px 1px rgba(15,81,50,0.25)); }
   nav.bottom-nav button.active::after{
     content:""; position:absolute; top:0; left:50%; transform:translateX(-50%);
-    width:36px; height:3px; background:var(--green); border-radius:0 0 3px 3px;
+    width:42px; height:3.5px; background:var(--green); border-radius:0 0 3px 3px;
   }
   .nav-badge{
-    position:absolute; top:3px; right:8px; left:auto;
+    position:absolute; top:4px; right:calc(50% - 22px);
     min-width:18px; height:18px; padding:0 5px;
     background:var(--danger); color:#fff; border-radius:var(--r-pill);
-    font-size:11px; font-weight:700; line-height:18px; text-align:center;
-    font-variant-numeric:tabular-nums;
+    font-size:10.5px; font-weight:800; line-height:18px; text-align:center;
+    font-variant-numeric:tabular-nums; box-shadow:0 1px 3px rgba(0,0,0,0.2);
+    border:1.5px solid #fff;
   }
   nav.bottom-nav button .nl{ display:block; line-height:1.15; font-size:12px; }
-  nav.bottom-nav button .nl-hi{ display:block; font-size:11px; font-weight:600; opacity:.85; line-height:1.15; }
-  nav.bottom-nav button.active .nl{ font-weight:800; }
+  nav.bottom-nav button .nl-hi{ display:block; font-size:11px; font-weight:600; opacity:.88; line-height:1.15; }
+  nav.bottom-nav button.active .nl{ font-weight:800; color:var(--green-dark); }
   #cart-badge{ background:var(--green); }
 
   /* tabular figures */
@@ -1189,15 +1266,24 @@
     /* app shell: the phone tab bar becomes a fixed left rail — same buttons, same order,
        so nothing moves when a dealer switches between the shop desktop and their phone.
        The rail only claims space while the nav is visible (login stays full-width). */
-    body:has(nav.bottom-nav:not(.hidden)){ padding-left:92px; }
+    body:has(nav.bottom-nav:not(.hidden)){ padding-left:96px; }
     nav.bottom-nav{
-      top:0; bottom:0; right:auto; width:92px;
-      flex-direction:column; justify-content:flex-start; gap:2px;
+      top:0; bottom:0; right:auto; width:96px;
+      flex-direction:column; justify-content:flex-start; gap:4px;
       border-top:none; border-right:1px solid var(--border);
-      padding:10px 6px;
+      padding:16px 8px; background:#fafbfc;
     }
-    nav.bottom-nav button{ flex:0 0 auto; width:100%; min-height:60px; border-radius:var(--r-md); }
-    nav.bottom-nav button.active{ background:var(--green-light); }
+    nav.bottom-nav button{
+      flex:0 0 auto; width:100%; min-height:64px; border-radius:var(--r-md);
+      padding:8px 4px; gap:4px;
+    }
+    nav.bottom-nav button.active{ background:var(--green-light); color:var(--green-dark); }
+    nav.bottom-nav button.active::after{
+      top:50%; left:0; transform:translateY(-50%); width:3.5px; height:32px;
+      border-radius:0 3px 3px 0;
+    }
+    nav.bottom-nav button .nav-badge{ top:8px; right:14px; }
+    nav.bottom-nav button:hover:not(.active){ background:var(--hover-faint); }
     main{ max-width:1040px; padding-bottom:32px; }
     header.app-header{ padding-inline:max(16px, calc(50% - 520px)); }
     /* task views read best at column width; the catalogue uses the full grid */
@@ -1242,7 +1328,7 @@
     <img class="brand-mark" src="brand/logo-64.png" alt="" width="34" height="34" decoding="async">
     <span class="brand-txt">
       <h1>KrishiGears Spares</h1>
-      <span class="sub">Spare parts ordering / स्पेयर पार्ट्स ऑर्डर</span>
+      <span class="sub">Spare parts catalog / स्पेयर पार्ट्स</span>
     </span>
   </button>
   <div class="lang-switch-wrap" id="lang-switch-wrap" role="group" aria-label="Select language / भाषा निवडा">
@@ -1251,21 +1337,104 @@
     <button type="button" class="lang-pill" data-lang-set="hi" title="हिन्दी">हिन्दी</button>
     <button type="button" class="lang-pill" data-lang-set="mr" title="मराठी">मराठी</button>
   </div>
-  <div class="header-actions hidden" id="header-actions">
-    <button class="logout-link" id="auth-btn" aria-label="Sign out / साइन आउट" title="Sign out / साइन आउट"><span class="ico" data-ico="logout" aria-hidden="true"></span><span class="lo-label"><span class="nl">Sign out</span><span class="nl-hi">साइन आउट</span></span></button>
+  <div class="header-actions" id="header-actions">
+    <button class="hdr-btn hdr-cart-btn" id="hdr-cart-btn" type="button" aria-label="Cart / कार्ट" title="Cart / कार्ट">
+      <span class="ico" data-ico="cart" aria-hidden="true"></span>
+      <span class="hdr-cart-badge hidden" id="hdr-cart-badge">0</span>
+    </button>
+    <button class="hdr-btn" id="drawer-toggle-btn" type="button" aria-label="Open menu / मेन्यू खोलें" title="Menu / मेन्यू">
+      <span class="ico" data-ico="menu" aria-hidden="true"></span>
+    </button>
   </div>
 </header>
+
+<!-- Slide-over Navigation Drawer -->
+<div class="drawer-overlay" id="drawer-overlay" aria-hidden="true">
+  <aside class="app-drawer" id="app-drawer" role="dialog" aria-label="Application Menu / मेन्यू" aria-modal="true">
+    <div class="drawer-header">
+      <div class="drawer-profile">
+        <div class="dp-avatar" id="dp-avatar">KG</div>
+        <div class="dp-info">
+          <div class="dp-name" id="dp-name">KrishiGears Spares</div>
+          <div class="dp-role" id="dp-role">Public Catalog</div>
+        </div>
+      </div>
+      <button class="drawer-close" id="drawer-close-btn" type="button" aria-label="Close menu / मेन्यू बंद करें">&times;</button>
+    </div>
+    <div class="drawer-body">
+      <div>
+        <div class="drawer-sec-title">Language / भाषा</div>
+        <div class="lang-switch-wrap" style="width:100%;display:flex;justify-content:space-between;padding:3px;background:var(--surface);border:1px solid var(--border);">
+          <button type="button" class="lang-pill active" data-lang-set="both" style="flex:1;color:var(--text);" title="Both">A+अ</button>
+          <button type="button" class="lang-pill" data-lang-set="en" style="flex:1;color:var(--text);" title="English">EN</button>
+          <button type="button" class="lang-pill" data-lang-set="hi" style="flex:1;color:var(--text);" title="हिन्दी">हिन्दी</button>
+          <button type="button" class="lang-pill" data-lang-set="mr" style="flex:1;color:var(--text);" title="मराठी">मराठी</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="drawer-sec-title">Navigation / मुख्य पृष्ठ</div>
+        <div class="drawer-menu-list">
+          <button type="button" class="drawer-menu-item" id="dmi-catalog">
+            <div class="dmi-left"><span class="ico" data-ico="spares"></span><div class="dmi-txt"><span class="dmi-en">Parts Catalog</span><span class="dmi-hi">पुर्जे सूची</span></div></div>
+            <span class="dmi-chev"><span class="ico" data-ico="chevron_right"></span></span>
+          </button>
+          <button type="button" class="drawer-menu-item" id="dmi-cart">
+            <div class="dmi-left"><span class="ico" data-ico="cart"></span><div class="dmi-txt"><span class="dmi-en">Cart & Orders</span><span class="dmi-hi">कार्ट व ऑर्डर</span></div></div>
+            <span class="dmi-chev"><span class="ico" data-ico="chevron_right"></span></span>
+          </button>
+          <button type="button" class="drawer-menu-item hidden" id="dmi-orders">
+            <div class="dmi-left"><span class="ico" data-ico="orders"></span><div class="dmi-txt"><span class="dmi-en">My Orders</span><span class="dmi-hi">मेरे ऑर्डर</span></div></div>
+            <span class="dmi-chev"><span class="ico" data-ico="chevron_right"></span></span>
+          </button>
+          <button type="button" class="drawer-menu-item hidden" id="dmi-requests">
+            <div class="dmi-left"><span class="ico" data-ico="bell"></span><div class="dmi-txt"><span class="dmi-en">Buyer Requests</span><span class="dmi-hi">आए अनुरोध</span></div></div>
+            <span class="dmi-chev"><span class="ico" data-ico="chevron_right"></span></span>
+          </button>
+          <button type="button" class="drawer-menu-item hidden" id="dmi-dispatch">
+            <div class="dmi-left"><span class="ico" data-ico="truck"></span><div class="dmi-txt"><span class="dmi-en">Dispatch Queue</span><span class="dmi-hi">डिस्पैच सूची</span></div></div>
+            <span class="dmi-chev"><span class="ico" data-ico="chevron_right"></span></span>
+          </button>
+          <button type="button" class="drawer-menu-item hidden" id="dmi-hub">
+            <div class="dmi-left"><span class="ico" data-ico="more"></span><div class="dmi-txt"><span class="dmi-en">Business Hub</span><span class="dmi-hi">व्यापार केंद्र</span></div></div>
+            <span class="dmi-chev"><span class="ico" data-ico="chevron_right"></span></span>
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <div class="drawer-sec-title">Quick Actions / त्वरित कार्य</div>
+        <div class="drawer-menu-list">
+          <button type="button" class="drawer-menu-item" id="dmi-install">
+            <div class="dmi-left"><span class="ico" data-ico="download"></span><div class="dmi-txt"><span class="dmi-en">Install App</span><span class="dmi-hi">ऐप इंस्टॉल करें</span></div></div>
+            <span class="dmi-chev"><span class="ico" data-ico="chevron_right"></span></span>
+          </button>
+          <button type="button" class="drawer-menu-item" id="dmi-godmode">
+            <div class="dmi-left"><span class="ico" data-ico="shield"></span><div class="dmi-txt"><span class="dmi-en">Master Control (God Mode)</span><span class="dmi-hi">मास्टर कंट्रोल</span></div></div>
+            <span class="dmi-chev"><span class="ico" data-ico="chevron_right"></span></span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button type="button" class="drawer-signout-btn" id="drawer-auth-btn">
+        <span class="ico" data-ico="logout"></span>
+        <span id="drawer-auth-label">Sign out / साइन आउट</span>
+      </button>
+    </div>
+  </aside>
+</div>
 
 <!-- nav sits before <main> purely for tab order: it is position:fixed at every width, so its
      visual place (bottom bar on a phone, left rail on desktop) is unchanged. On desktop it
      renders at 0,0 — visually first — and DOM-last meant 458 Tab presses to reach it. -->
 <nav class="bottom-nav hidden" id="bottom-nav">
-  <button id="nav-catalog" class="active" aria-label="Spares / पुर्जे"><span class="ico" data-ico="spares" aria-hidden="true"></span><span class="nl">Spares</span><span class="nl-hi">पुर्जे</span></button>
-  <button id="nav-cart" aria-label="Cart / कार्ट"><span class="ico" data-ico="cart" aria-hidden="true"></span><span class="nav-badge hidden" id="cart-badge">0</span><span class="nl">Cart</span><span class="nl-hi">कार्ट</span></button>
-  <button id="nav-orders" class="hidden" aria-label="My orders / मेरे ऑर्डर"><span class="ico" data-ico="orders" aria-hidden="true"></span><span class="nl">Orders</span><span class="nl-hi">ऑर्डर</span></button>
-  <button id="nav-requests" class="hidden" aria-label="Requests / अनुरोध"><span class="ico" data-ico="bell" aria-hidden="true"></span><span class="nav-badge hidden" id="req-badge">0</span><span class="nl">Requests</span><span class="nl-hi">अनुरोध</span></button>
-  <button id="nav-dispatch" class="hidden" aria-label="Dispatch / डिस्पैच"><span class="ico" data-ico="truck" aria-hidden="true"></span><span class="nav-badge hidden" id="disp-badge">0</span><span class="nl">Dispatch</span><span class="nl-hi">डिस्पैच</span></button>
-  <button id="nav-more" class="hidden" aria-label="Hub / व्यापार"><span class="ico" data-ico="more" aria-hidden="true"></span><span class="nl">Hub</span><span class="nl-hi">व्यापार</span></button>
+  <button id="nav-catalog" class="active" aria-label="Spares / पुर्जे" type="button"><span class="ico" data-ico="spares" aria-hidden="true"></span><span class="nl">Spares</span><span class="nl-hi">पुर्जे</span></button>
+  <button id="nav-cart" aria-label="Cart / कार्ट" type="button"><span class="ico" data-ico="cart" aria-hidden="true"></span><span class="nav-badge hidden" id="cart-badge">0</span><span class="nl">Cart</span><span class="nl-hi">कार्ट</span></button>
+  <button id="nav-orders" class="hidden" aria-label="My orders / मेरे ऑर्डर" type="button"><span class="ico" data-ico="orders" aria-hidden="true"></span><span class="nl">Orders</span><span class="nl-hi">ऑर्डर</span></button>
+  <button id="nav-requests" class="hidden" aria-label="Requests / अनुरोध" type="button"><span class="ico" data-ico="bell" aria-hidden="true"></span><span class="nav-badge hidden" id="req-badge">0</span><span class="nl">Requests</span><span class="nl-hi">अनुरोध</span></button>
+  <button id="nav-dispatch" class="hidden" aria-label="Dispatch / डिस्पैच" type="button"><span class="ico" data-ico="truck" aria-hidden="true"></span><span class="nav-badge hidden" id="disp-badge">0</span><span class="nl">Dispatch</span><span class="nl-hi">डिस्पैच</span></button>
+  <button id="nav-more" class="hidden" aria-label="Hub / व्यापार" type="button"><span class="ico" data-ico="more" aria-hidden="true"></span><span class="nl">Hub</span><span class="nl-hi">व्यापार</span></button>
 </nav>
 
 <main id="main">
@@ -1757,7 +1926,11 @@
     more:    '<circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/>',
     spares:  '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.8 2.8-2.1-2.1 2.9-2.7z"/>',
     download:'<path d="M12 3v12"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/>',
-    truck:   '<rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle>'
+    truck:   '<rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle>',
+    menu:    '<line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line>',
+    close:   '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>',
+    chevron_right: '<polyline points="9 18 15 12 9 6"></polyline>',
+    shield:  '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>'
   };
   function svgRaw(name){
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -2706,19 +2879,52 @@
     location.reload();
   }
 
+  function updateDrawerProfile(){
+    var nameEl = $("dp-name"), roleEl = $("dp-role"), avatarEl = $("dp-avatar");
+    var isRetail = !!state.enduser;
+    var isBuyer = !isRetail && !!state.account;
+    if (isBuyer){
+      var comp = (state.account && (state.account.company || state.account.id)) || "Dealer";
+      var role = (state.account && state.account.role) || "Dealer";
+      if (nameEl) nameEl.textContent = comp;
+      if (roleEl) roleEl.textContent = role.toUpperCase() + " PORTAL";
+      if (avatarEl) avatarEl.textContent = comp.slice(0,2).toUpperCase();
+    } else if (isRetail){
+      var s = state.supplierInfo;
+      var sName = (s && s.name) || "Retail Catalog";
+      if (nameEl) nameEl.textContent = sName;
+      if (roleEl) roleEl.textContent = "FARMER / RETAIL";
+      if (avatarEl) avatarEl.textContent = sName.slice(0,2).toUpperCase();
+    } else {
+      if (nameEl) nameEl.textContent = "KrishiGears Spares";
+      if (roleEl) roleEl.textContent = "PUBLIC GUEST";
+      if (avatarEl) avatarEl.textContent = "KG";
+    }
+  }
+
+  function setDrawerOpen(open){
+    var overlay = $("drawer-overlay");
+    if (!overlay) return;
+    overlay.classList.toggle("open", !!open);
+    overlay.setAttribute("aria-hidden", open ? "false" : "true");
+    if (open) updateDrawerProfile();
+  }
+
   function updateAuthButton(){
+    var en = state.publicMode ? "Login / साइन इन" : "Sign out / साइन आउट";
+    var lbl = $("drawer-auth-label");
+    if (lbl) lbl.textContent = en;
+    var db = $("drawer-auth-btn");
+    if (db) db.classList.toggle("hidden", !!state.enduser && !state.publicMode);
     var b = $("auth-btn");
-    // No sign-out for retail customers — they never signed in. The one exception is the public
-    // storefront, which anyone can enter from the home page: a dealer who tapped "See all parts"
-    // to look something up would otherwise have no way back to their own login.
-    b.classList.toggle("hidden", !!state.enduser && !state.publicMode);
-    var en = state.publicMode ? "Login" : "Sign out", hi = state.publicMode ? "लॉगिन" : "साइन आउट";
-    var nl = b.querySelector(".nl"), nh = b.querySelector(".nl-hi");
-    if (nl) nl.textContent = en;
-    if (nh) nh.textContent = hi;
-    b.setAttribute("aria-label", en + " / " + hi);
-    b.setAttribute("title", en + " / " + hi);
+    if (b){
+      b.classList.toggle("hidden", !!state.enduser && !state.publicMode);
+      var nl = b.querySelector(".nl"), nh = b.querySelector(".nl-hi");
+      if (nl) nl.textContent = state.publicMode ? "Login" : "Sign out";
+      if (nh) nh.textContent = state.publicMode ? "लॉगिन" : "साइन आउट";
+    }
     $("app-header").classList.add("authed");
+    updateDrawerProfile();
   }
 
   // ---------- views ----------
@@ -2779,6 +2985,10 @@
     $("nav-requests").classList.toggle("hidden", !supplier);
     if ($("nav-dispatch")) $("nav-dispatch").classList.toggle("hidden", !supplier);
     $("nav-more").classList.toggle("hidden", !supplier);
+    if ($("dmi-orders")) $("dmi-orders").classList.toggle("hidden", !isBuyer || isRoot);
+    if ($("dmi-requests")) $("dmi-requests").classList.toggle("hidden", !supplier);
+    if ($("dmi-dispatch")) $("dmi-dispatch").classList.toggle("hidden", !supplier);
+    if ($("dmi-hub")) $("dmi-hub").classList.toggle("hidden", !supplier);
     // retail customers now get chain availability too, so the "ready today" chip is useful to them
     $("filter-stock").classList.remove("hidden"); // visibility is then decided per list, below
     if (supplier){ subscribeSellerAlerts(); updateRequestBadge();
@@ -6273,9 +6483,18 @@
   function updateCartBadge(){
     var count = Object.keys(state.cart).reduce(function(sum, k){ return sum + (state.cart[k] || 0); }, 0);
     var badge = $("cart-badge");
-    if (count > 0){ badge.textContent = count > 99 ? "99+" : String(count); badge.classList.remove("hidden"); }
-    else badge.classList.add("hidden");
-    if (count > _lastCartCount) bump(badge); // pop only when the count grows
+    var hdrBadge = $("hdr-cart-badge");
+    var txt = count > 99 ? "99+" : String(count);
+    if (count > 0){
+      if (badge){ badge.textContent = txt; badge.classList.remove("hidden"); }
+      if (hdrBadge){ hdrBadge.textContent = txt; hdrBadge.classList.remove("hidden"); }
+    } else {
+      if (badge) badge.classList.add("hidden");
+      if (hdrBadge) hdrBadge.classList.add("hidden");
+    }
+    if (count > _lastCartCount){
+      bump(badge); bump(hdrBadge);
+    }
     _lastCartCount = count;
   }
   // restart a CSS animation class (feedback bump/pulse) reliably on repeat triggers
@@ -7439,15 +7658,54 @@
     refreshInstallCta();   // login screen's install button; re-runs when the browser offers a prompt
     applyLang();
     if ($("lang-btn")) $("lang-btn").onclick = cycleLang;
-    var langWrap = $("lang-switch-wrap");
-    if (langWrap){
-      langWrap.addEventListener("click", function(e){
-        var btn = e.target.closest(".lang-pill");
-        if (btn){
-          var lang = btn.getAttribute("data-lang-set");
-          if (lang) setLanguage(lang);
+    document.addEventListener("click", function(e){
+      var btn = e.target.closest(".lang-pill");
+      if (btn){
+        var lang = btn.getAttribute("data-lang-set");
+        if (lang) setLanguage(lang);
+      }
+    });
+
+    // Drawer toggle wiring
+    var drawerToggle = $("drawer-toggle-btn");
+    if (drawerToggle) drawerToggle.onclick = function(){ setDrawerOpen(true); };
+    var drawerClose = $("drawer-close-btn");
+    if (drawerClose) drawerClose.onclick = function(){ setDrawerOpen(false); };
+    var drawerOverlay = $("drawer-overlay");
+    if (drawerOverlay){
+      drawerOverlay.onclick = function(e){
+        if (e.target === drawerOverlay) setDrawerOpen(false);
+      };
+    }
+    if ($("hdr-cart-btn")) $("hdr-cart-btn").onclick = showCart;
+
+    // Drawer menu items wiring
+    if ($("dmi-catalog")) $("dmi-catalog").onclick = function(){ setDrawerOpen(false); showCatalog(); };
+    if ($("dmi-cart")) $("dmi-cart").onclick = function(){ setDrawerOpen(false); showCart(); };
+    if ($("dmi-orders")) $("dmi-orders").onclick = function(){ setDrawerOpen(false); showOrders(); };
+    if ($("dmi-requests")) $("dmi-requests").onclick = function(){ setDrawerOpen(false); showRequests(); };
+    if ($("dmi-dispatch")) $("dmi-dispatch").onclick = function(){ setDrawerOpen(false); showDispatch(); };
+    if ($("dmi-hub")) $("dmi-hub").onclick = function(){ setDrawerOpen(false); showMore(); };
+    if ($("dmi-install")) $("dmi-install").onclick = function(){ setDrawerOpen(false); doInstall(); };
+    if ($("dmi-godmode")){
+      $("dmi-godmode").onclick = function(){
+        setDrawerOpen(false);
+        var entered = prompt("Enter Master Access Key / मास्टर की दर्ज करें:");
+        if (entered && entered.trim() === "krishigears@2026"){
+          try { localStorage.setItem("kg_god_mode", "1"); } catch(e){}
+          showGodMode();
+        } else if (entered) {
+          showToast("Access Denied / अनुमति नहीं है");
         }
-      });
+      };
+    }
+    var dAuth = $("drawer-auth-btn");
+    if (dAuth){
+      dAuth.onclick = function(){
+        setDrawerOpen(false);
+        if (state.publicMode){ location.href = location.pathname; return; }
+        doSignOut();
+      };
     }
     if ($("pf-toggle-bar")){
       $("pf-toggle-bar").addEventListener("click", function(){
