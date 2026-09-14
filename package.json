@@ -4,7 +4,9 @@
   "description": "",
   "main": "sw.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npx http-server -p 8080",
+    "test": "cypress run --spec cypress/integration/spares.spec.js --browser chrome",
+    "a11y": "axe \"http://localhost:8080?dev=true\""
   },
   "repository": {
     "type": "git",
