@@ -4,10 +4,11 @@ import { KPICards } from './components/KPICards';
 import { RevenueUsersChart } from './components/RevenueUsersChart';
 import { DrillDownTable } from './components/DrillDownTable';
 import { EmptyState } from './components/EmptyState';
-import { getMetricsForFilter, type TimeframeFilter } from './data/mockData';
+import { getKrishiGearsMetrics, type TimeframeFilter } from './data/krishigearsData';
 
 export function App() {
   const [filter, setFilter] = useState<TimeframeFilter>('all');
+  const [selectedCategory, setSelectedCategory] = useState<number>(0); // 0 = all
   const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -35,26 +36,31 @@ export function App() {
   const toggleTheme = () => setIsDark((prev) => !prev);
 
   // Compute metrics and scoped chart data
-  const metrics = useMemo(() => getMetricsForFilter(filter), [filter]);
+  const metrics = useMemo(
+    () => getKrishiGearsMetrics(filter, selectedCategory),
+    [filter, selectedCategory]
+  );
 
   // If filter changes and selected month is no longer in scope, reset selectedPeriod
   useEffect(() => {
-    if (selectedPeriod && !metrics.filteredData.some((d) => d.month === selectedPeriod)) {
+    if (selectedPeriod && !metrics.filteredMonthlyData.some((d) => d.month === selectedPeriod)) {
       setSelectedPeriod(null);
     }
-  }, [filter, metrics.filteredData, selectedPeriod]);
+  }, [filter, metrics.filteredMonthlyData, selectedPeriod]);
 
   // Find data for currently selected period
   const selectedMonthData = useMemo(() => {
     if (!selectedPeriod) return undefined;
-    return metrics.filteredData.find((d) => d.month === selectedPeriod);
-  }, [selectedPeriod, metrics.filteredData]);
+    return metrics.filteredMonthlyData.find((d) => d.month === selectedPeriod);
+  }, [selectedPeriod, metrics.filteredMonthlyData]);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100 flex flex-col">
       <Header
         currentFilter={filter}
         onFilterChange={setFilter}
+        selectedCategory={selectedCategory}
+        onCategoryChange={setSelectedCategory}
         isDark={isDark}
         onToggleTheme={toggleTheme}
       />
@@ -64,10 +70,10 @@ export function App() {
         <section aria-labelledby="kpi-heading">
           <div className="flex items-center justify-between mb-3">
             <h2 id="kpi-heading" className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Executive Overview
+              Executive Overview &bull; KrishiGears Business Health
             </h2>
             <span className="text-xs text-slate-400 dark:text-slate-500">
-              Scope: {filter === 'all' ? 'All Months' : filter === 'q1' ? 'Q1' : 'Last 30 Days'}
+              {metrics.catalogCount} Verified SKUs &bull; Q1 2026
             </span>
           </div>
           <KPICards metrics={metrics} />
@@ -77,14 +83,14 @@ export function App() {
         <section aria-labelledby="visual-heading">
           <div className="flex items-center justify-between mb-3">
             <h2 id="visual-heading" className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Performance Trend &amp; Period Selection
+              Performance Trend &amp; Demand Velocity
             </h2>
             <span className="text-xs text-slate-400 dark:text-slate-500">
-              Interactive Zoom / Point Click
+              Interactive Zoom / Point Click to Drill Down
             </span>
           </div>
           <RevenueUsersChart
-            data={metrics.filteredData}
+            data={metrics.filteredMonthlyData}
             selectedPeriod={selectedPeriod}
             onSelectPeriod={setSelectedPeriod}
           />
@@ -94,11 +100,11 @@ export function App() {
         <section aria-labelledby="drilldown-heading">
           <div className="flex items-center justify-between mb-3">
             <h2 id="drilldown-heading" className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Details-On-Demand
+              Details-On-Demand &bull; Line-Item Dispatches
             </h2>
             {selectedPeriod && (
               <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                Filtered to {selectedPeriod}
+                Filtered to {selectedPeriod} Dispatches
               </span>
             )}
           </div>
@@ -111,8 +117,9 @@ export function App() {
             />
           ) : (
             <EmptyState
-              data={metrics.filteredData}
+              data={metrics.filteredMonthlyData}
               onSelectPeriod={setSelectedPeriod}
+              onSelectCategory={setSelectedCategory}
             />
           )}
         </section>
@@ -121,8 +128,8 @@ export function App() {
       {/* Footer */}
       <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-400 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>KrishiGears &bull; FarmingTools.in Executive Analytics Portal</span>
-          <span>Progressive Disclosure Architecture &bull; Monotone Area Curves</span>
+          <span>KrishiGears (Jaipur, GSTIN 08EQLPD7160R1Z2) &bull; FarmingTools.in Spares Intelligence</span>
+          <span>1,746 Genuine Parts &bull; Progressive Disclosure Architecture</span>
         </div>
       </footer>
     </div>

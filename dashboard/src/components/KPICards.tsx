@@ -1,6 +1,6 @@
 import type { FC } from 'react';
-import { DollarSign, Users, Percent, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import type { DashboardMetrics } from '../data/mockData';
+import { IndianRupee, Boxes, CheckCircle2, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import type { DashboardMetrics } from '../data/krishigearsData';
 
 interface KPICardsProps {
   metrics: DashboardMetrics;
@@ -9,28 +9,28 @@ interface KPICardsProps {
 export const KPICards: FC<KPICardsProps> = ({ metrics }) => {
   const cards = [
     {
-      title: "Total Revenue",
-      value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(metrics.totalRevenue),
+      title: "Spares Turnover / टर्नओवर",
+      value: new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(metrics.totalRevenue),
       change: metrics.revenueChange,
-      icon: DollarSign,
-      iconBg: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400",
-      description: "vs. previous billing period",
+      icon: IndianRupee,
+      iconBg: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400",
+      description: "Net order value across dealer network",
     },
     {
-      title: "Active Users",
-      value: new Intl.NumberFormat('en-US').format(metrics.activeUsers),
-      change: metrics.usersChange,
-      icon: Users,
-      iconBg: "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400",
-      description: "unique active accounts",
+      title: "Genuine Catalog / कुल पुर्जे",
+      value: new Intl.NumberFormat('en-IN').format(metrics.catalogCount) + " SKUs",
+      change: metrics.unitsChange,
+      icon: Boxes,
+      iconBg: "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400",
+      description: `${metrics.totalUnits} units dispatched across Rajasthan/Punjab`,
     },
     {
-      title: "Conversion Rate",
-      value: `${metrics.conversionRate}%`,
-      change: metrics.conversionChange,
-      icon: Percent,
-      iconBg: "bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400",
-      description: "checkout conversion efficiency",
+      title: "Dispatch Rate / पूर्ति दर",
+      value: `${metrics.fulfillmentRate}%`,
+      change: metrics.fulfillmentChange,
+      icon: CheckCircle2,
+      iconBg: "bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400",
+      description: "Fitment-checked orders fulfilled",
     },
   ];
 

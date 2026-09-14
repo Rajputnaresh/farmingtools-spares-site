@@ -1726,7 +1726,12 @@
             <div class="dmi-left"><span class="ico" data-ico="shield"></span><div class="dmi-txt"><span class="dmi-en">Master Control (God Mode)</span><span class="dmi-hi">मास्टर कंट्रोल</span></div></div>
             <span class="dmi-chev"><span class="ico" data-ico="chevron_right"></span></span>
           </button>
+          <a href="./dashboard.html" class="drawer-menu-item" id="dmi-analytics" style="text-decoration:none;color:inherit;display:flex;align-items:center;">
+            <div class="dmi-left"><span class="ico" data-ico="chart"></span><div class="dmi-txt"><span class="dmi-en">Executive Analytics</span><span class="dmi-hi">एनालिटिक्स डैशबोर्ड</span></div></div>
+            <span class="dmi-chev"><span class="ico" data-ico="chevron_right"></span></span>
+          </a>
         </div>
+
       </div>
     </div>
     <div class="drawer-footer">
@@ -2243,8 +2248,10 @@
     menu:    '<line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line>',
     close:   '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>',
     chevron_right: '<polyline points="9 18 15 12 9 6"></polyline>',
-    shield:  '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>'
+    shield:  '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>',
+    chart:   '<line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line>'
   };
+
   function svgRaw(name){
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       (ICON_PATHS[name] || '') + '</svg>';
@@ -7964,7 +7971,7 @@
     if ($("view-dispatch")) $("view-dispatch").addEventListener("click", onRequestsClick);
     $("bill-file").addEventListener("change", onBillFileChosen);
     // history routing table + notification deep-link into Requests
-    VIEW_SHOW = { catalog:showCatalog, cart:showCart, orders:showOrders, requests:showRequests, dispatch:showDispatch, more:showMore, pi:showPI, godmode:showGodMode };
+    VIEW_SHOW = { catalog:showCatalog, cart:showCart, orders:showOrders, requests:showRequests, dispatch:showDispatch, more:showMore, pi:showPI, godmode:showGodMode, analytics:function(){ window.location.href = "./dashboard.html"; } };
     if (navigator.serviceWorker) navigator.serviceWorker.addEventListener("message", function(e){
       if (!e.data) return;
       if (e.data.go === "requests" && isSupplier()) showRequests();
@@ -7975,9 +7982,14 @@
     window.addEventListener("error", function(ev){ logEvent("error", (ev.message||"") + " @ " + (ev.filename||"") + ":" + (ev.lineno||"")); });
     window.addEventListener("unhandledrejection", function(ev){ logEvent("error", "unhandled: " + ((ev.reason && (ev.reason.message||ev.reason)) || "")); });
     if (location.hash === "#requests"){ window._deepReq = true; try { history.replaceState(null, "", location.pathname + location.search); } catch(e){} }
+    if (location.hash === "#analytics" || new URLSearchParams(location.search).get("view") === "analytics"){
+      window.location.href = "./dashboard.html";
+      return;
+    }
     if (location.hash === "#godmode" || new URLSearchParams(location.search).get("godmode") === "1" || localStorage.getItem("kg_god_mode") === "1"){
       window._deepGodMode = true;
     }
+
     $("generate-pi-btn").onclick = function(){
       if (!Object.keys(state.cart).some(function(k){ return state.cart[k] > 0; })) return;
       if (state.enduser){

@@ -9,12 +9,10 @@ import {
   Tooltip,
 } from 'recharts';
 import { MousePointerClick, X, Info } from 'lucide-react';
-import type { MonthData } from '../data/mockData';
-
-
+import type { MonthlyTrendData } from '../data/krishigearsData';
 
 interface RevenueUsersChartProps {
-  data: MonthData[];
+  data: MonthlyTrendData[];
   selectedPeriod: string | null;
   onSelectPeriod: (month: string | null) => void;
 }
@@ -30,17 +28,17 @@ const CustomTooltip: FC<CustomTooltipProps> = ({ active, payload, label, selecte
   if (active && payload && payload.length) {
     const isSelected = selectedPeriod === label;
     const rev = payload.find((p) => p.dataKey === 'revenue')?.value;
-    const usr = payload.find((p) => p.dataKey === 'users')?.value;
+    const units = payload.find((p) => p.dataKey === 'units')?.value;
 
     return (
       <div className="rounded-xl border border-slate-200 bg-white/95 p-3.5 shadow-lg backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95">
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-2 dark:border-slate-800">
           <p className="font-semibold text-slate-900 dark:text-white">
-            {label} Details
+            {label} 2026 Spares Activity
           </p>
           {isSelected && (
             <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-              Selected
+              Active Selection
             </span>
           )}
         </div>
@@ -49,27 +47,27 @@ const CustomTooltip: FC<CustomTooltipProps> = ({ active, payload, label, selecte
           <div className="flex items-center justify-between gap-4">
             <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-              Revenue:
+              Turnover / राजस्व:
             </span>
             <span className="font-semibold text-slate-900 dark:text-white">
-              {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(rev ?? 0)}
+              {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(rev ?? 0)}
             </span>
           </div>
 
           <div className="flex items-center justify-between gap-4">
             <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
               <span className="h-2.5 w-2.5 rounded-full bg-indigo-500" />
-              Active Users:
+              Parts Dispatched / पुर्जे:
             </span>
             <span className="font-semibold text-slate-900 dark:text-white">
-              {new Intl.NumberFormat('en-US').format(usr ?? 0)}
+              {new Intl.NumberFormat('en-IN').format(units ?? 0)} pcs
             </span>
           </div>
         </div>
 
         <p className="mt-2.5 flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
           <MousePointerClick className="h-3 w-3" />
-          Click to inspect transactions
+          Click point to drill down into itemized part lines
         </p>
       </div>
     );
@@ -105,11 +103,11 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-              Revenue vs. Users
+              Spares Turnover vs. Dispatched Units
             </h2>
             {selectedPeriod && (
               <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                Drilled down: {selectedPeriod}
+                Drilled: {selectedPeriod}
                 <button
                   type="button"
                   onClick={(e) => {
@@ -125,7 +123,7 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
             )}
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Interactive multi-metric performance over time. Click any month or point to filter transactions below.
+            Network ordering momentum across all 1,746 cataloged genuine SKUs. Click any month to inspect line-item dispatches.
           </p>
         </div>
 
@@ -168,16 +166,16 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
       <div className="mt-3 flex items-center justify-between px-1 text-xs text-slate-400 dark:text-slate-500">
         <span className="flex items-center gap-1">
           <Info className="h-3.5 w-3.5" />
-          Tip: Click any data point or area column to trigger progressive drill-down.
+          Tip: Click any area point to drill down into genuine parts.
         </span>
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            Revenue (USD)
+            Turnover (₹ INR)
           </span>
           <span className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-indigo-500" />
-            Users
+            Units Dispatched
           </span>
         </div>
       </div>
@@ -188,16 +186,16 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
           <AreaChart
             data={data}
             onClick={handleChartClick}
-            margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+            margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
             className="cursor-pointer"
           >
             <defs>
               <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                <stop offset="5%" stopColor="#10b981" stopOpacity={0.45} />
                 <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
               </linearGradient>
               <linearGradient id="usersGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.35} />
+                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
                 <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0} />
               </linearGradient>
             </defs>
@@ -222,7 +220,7 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
               axisLine={false}
               tickLine={false}
               tick={{ fill: '#64748b', fontSize: 11 }}
-              tickFormatter={(val) => `$${val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val}`}
+              tickFormatter={(val) => `₹${val >= 100000 ? `${(val / 100000).toFixed(1)}L` : `${(val / 1000).toFixed(0)}k`}`}
               dx={-5}
             />
 
@@ -232,7 +230,7 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
               axisLine={false}
               tickLine={false}
               tick={{ fill: '#64748b', fontSize: 11 }}
-              tickFormatter={(val) => `${val}`}
+              tickFormatter={(val) => `${val} pcs`}
               dx={5}
             />
 
@@ -242,7 +240,7 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
               yAxisId="left"
               type="monotone"
               dataKey="revenue"
-              name="Revenue"
+              name="Turnover"
               stroke="#10b981"
               strokeWidth={2.5}
               fillOpacity={1}
@@ -259,8 +257,8 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
             <Area
               yAxisId="right"
               type="monotone"
-              dataKey="users"
-              name="Users"
+              dataKey="units"
+              name="Units Dispatched"
               stroke="#6366f1"
               strokeWidth={2.5}
               fillOpacity={1}
