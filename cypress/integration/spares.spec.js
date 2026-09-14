@@ -1,6 +1,6 @@
 describe('KrishiGears Spares UI', () => {
   beforeEach(() => {
-    cy.visit('http://localhost:64729');
+    cy.visit('http://localhost:64729?dev=true');
   });
 
   it('renders stock gauge with correct classes', () => {
