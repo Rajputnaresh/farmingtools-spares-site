@@ -567,6 +567,260 @@
   .result-count{ font-size:13px; color:var(--muted); margin:4px 0 12px; font-weight:600; }
   .list-reset{ background:none; border:none; color:var(--green); font-weight:700; font-size:13.5px; min-height:44px; padding:6px 4px; margin-bottom:4px; display:inline-flex; align-items:center; gap:6px; }
 
+  
+  /* =========================================================
+     GRAPHICAL REPRESENTATIONS & VISUAL DRILL-DOWN STYLES
+     ========================================================= */
+  .graph-bar-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-xs);
+  }
+  .graph-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .graph-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: var(--green-dark);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .graph-total {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .graph-distribution-bar {
+    display: flex;
+    height: 14px;
+    border-radius: var(--r-pill);
+    overflow: hidden;
+    background: var(--border);
+    gap: 2px;
+    margin-bottom: 12px;
+  }
+  .graph-segment {
+    height: 100%;
+    cursor: pointer;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    position: relative;
+  }
+  .graph-segment:hover, .graph-segment:active {
+    opacity: 0.82;
+  }
+  .graph-seg-1 { background: #0F5132; } /* Dark Forest Green */
+  .graph-seg-2 { background: #198754; } /* Mid Vibrant Green */
+  .graph-seg-3 { background: #0d6efd; } /* Tech Azure Blue */
+  .graph-seg-4 { background: #d97706; } /* Amber Orange */
+
+  .graph-legend-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+  }
+  .graph-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 1px solid transparent;
+    padding: 6px 8px;
+    border-radius: var(--r-md);
+    cursor: pointer;
+    text-align: left;
+    min-height: 44px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .graph-legend-item:hover, .graph-legend-item:active {
+    background: var(--green-light);
+    border-color: var(--green-mid);
+  }
+  .graph-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex: 0 0 10px;
+  }
+  .graph-legend-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.25;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .graph-legend-val {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Subsystem graphical flow explorer */
+  .subsystem-flow-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 12px 14px;
+    margin: 8px 0 14px;
+    box-shadow: var(--shadow-xs);
+  }
+  .subsystem-flow-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .subsystem-flow-title {
+    font-size: 12.5px;
+    font-weight: 800;
+    color: var(--green-dark);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .subsystem-flow-strip {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  .subsystem-flow-item {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    min-height: 48px;
+    min-width: 76px;
+    transition: all 0.15s ease;
+  }
+  .subsystem-flow-item:hover {
+    background: var(--green-light);
+    border-color: var(--green-mid);
+  }
+  .subsystem-flow-item.active {
+    background: var(--green-dark);
+    border-color: var(--green-dark);
+    color: #fff;
+  }
+  .subsystem-flow-item.active .subsystem-flow-name,
+  .subsystem-flow-item.active .subsystem-flow-count {
+    color: #fff;
+  }
+  .subsystem-flow-ico {
+    font-size: 16px;
+    line-height: 1;
+  }
+  .subsystem-flow-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .subsystem-flow-count {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+
+  /* Visual stock & availability progress meters */
+  .tile-meter-wrap {
+    margin-top: 8px;
+    width: 100%;
+  }
+  .tile-meter-bar {
+    height: 5px;
+    background: var(--border);
+    border-radius: var(--r-pill);
+    overflow: hidden;
+    display: flex;
+  }
+  .tile-meter-in {
+    background: var(--green);
+    height: 100%;
+  }
+  .tile-meter-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+
+  /* Business Hub graphical ledger meter */
+  .ledger-graph-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 14px 16px;
+    margin: 12px 0 6px;
+  }
+  .ledger-graph-bar {
+    display: flex;
+    height: 12px;
+    border-radius: var(--r-pill);
+    overflow: hidden;
+    background: var(--border);
+    margin: 10px 0 8px;
+  }
+  .ledger-graph-owed {
+    background: var(--green);
+    height: 100%;
+  }
+  .ledger-graph-due {
+    background: var(--warn-border);
+    height: 100%;
+  }
+  .ledger-graph-legend {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11.5px;
+    font-weight: 700;
+  }
+
+  /* God Mode distribution charts */
+  .god-graph-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .god-graph-tile {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 12px 14px;
+  }
+  .god-graph-head {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--green-dark);
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+  }
+
   /* browse landing (progressive disclosure over 1,746 SKUs) */
   .browse-head{ font-size:16px; font-weight:800; color:var(--green-dark); margin:8px 0 14px; letter-spacing:-0.01em; }
   .browse-back{ background:none; border:none; color:var(--green); font-weight:700; font-size:13.5px; min-height:44px; padding:6px 4px; margin-bottom:6px; display:inline-flex; align-items:center; gap:6px; }
@@ -3674,7 +3928,34 @@
       return;
     }
 
-    var html = '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Showing ' + rows.length + ' orders</div>';
+    // Graphical status distribution
+    var statusCounts = {};
+    _gmOrdersData.forEach(function(o){ statusCounts[o.status] = (statusCounts[o.status] || 0) + 1; });
+    var totO = _gmOrdersData.length || 1;
+    var ordGraphHtml = '<div class="graph-bar-card" style="margin-bottom:12px;">' +
+      '<div class="graph-head"><span class="graph-title">Order Pipeline Distribution / ऑर्डर स्थिति</span><span class="graph-total">' + totO + ' total</span></div>' +
+      '<div class="graph-distribution-bar">';
+    
+    var sColors = { placed: "#d97706", billed: "#0F5132", completed: "#198754", rejected: "#b91c1c" };
+    Object.keys(statusCounts).forEach(function(st){
+      var scnt = statusCounts[st];
+      var spct = ((scnt / totO) * 100).toFixed(1);
+      ordGraphHtml += '<div class="graph-segment" style="width:' + spct + '%;background:' + (sColors[st]||"#64748b") + ';" ' +
+        'title="' + esc(ORDER_STATUS_LABEL[st]||st) + ': ' + scnt + ' (' + spct + '%)"></div>';
+    });
+    ordGraphHtml += '</div><div class="graph-legend-grid">';
+    Object.keys(statusCounts).forEach(function(st){
+      var scnt = statusCounts[st];
+      var spct = Math.round((scnt / totO) * 100);
+      ordGraphHtml += '<div class="graph-legend-item" style="cursor:default;">' +
+        '<span class="graph-legend-dot" style="background:' + (sColors[st]||"#64748b") + ';"></span>' +
+        '<span class="graph-legend-name">' + esc(ORDER_STATUS_LABEL[st]||st) + '</span>' +
+        '<span class="graph-legend-val">' + scnt + ' (' + spct + '%)</span>' +
+      '</div>';
+    });
+    ordGraphHtml += '</div></div>';
+
+    var html = ordGraphHtml + '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Showing ' + rows.length + ' orders</div>';
     html += '<div style="overflow-x:auto;"><table class="gm-order-table">' +
       '<thead><tr>' +
         '<th>PI / Date</th>' +
@@ -4450,10 +4731,30 @@
     var sup  = rows.filter(function(x){ return x.relation === "supplier"; });
     var owedToMe = cust.reduce(function(s,x){ return s + Number(x.outstanding||0); }, 0);
     var iOwe     = sup.reduce(function(s,x){ return s + Number(x.outstanding||0); }, 0);
+    var totalLedger = (owedToMe + iOwe) || 1;
+    var owedPct = Math.round((owedToMe / totalLedger) * 100);
+    var iOwePct = 100 - owedPct;
+
     var html =
       '<div class="money-row">'+
         '<div class="money-tile in"><div class="mt-lbl">They owe you / आपको मिलने हैं</div><div class="mt-val">'+inr(owedToMe)+'</div></div>'+
         '<div class="money-tile out"><div class="mt-lbl">You owe / आपको देने हैं</div><div class="mt-val">'+inr(iOwe)+'</div></div>'+
+      '</div>'+
+      '<div class="ledger-graph-card">' +
+        '<div class="graph-head">' +
+          '<span class="graph-title">' +
+            '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>' +
+            'Working Capital Health / व्यापार संतुलन</span>' +
+          '<span class="graph-total">Net: ' + (owedToMe >= iOwe ? ('+' + inr(owedToMe - iOwe)) : ('-' + inr(iOwe - owedToMe))) + '</span>' +
+        '</div>' +
+        '<div class="ledger-graph-bar">' +
+          '<div class="ledger-graph-owed" style="width:' + owedPct + '%;" title="Receivable: ' + inr(owedToMe) + ' (' + owedPct + '%)"></div>' +
+          '<div class="ledger-graph-due" style="width:' + iOwePct + '%;" title="Payable: ' + inr(iOwe) + ' (' + iOwePct + '%)"></div>' +
+        '</div>' +
+        '<div class="ledger-graph-legend">' +
+          '<span style="color:var(--green-dark);">Receivable: ' + owedPct + '%</span>' +
+          '<span style="color:var(--warn-ink);">Payable: ' + iOwePct + '%</span>' +
+        '</div>' +
       '</div>';
     function line(x){
       var out = Number(x.outstanding||0);
@@ -6274,27 +6575,107 @@
   }
 
   function renderBrowse(body){
+    var totalParts = state.catalog.length || 1;
     if (state.browseGroup === null){
       var groups = Array.from(new Set(state.catalog.map(function(r){ return r.group; }))).sort();
       var gc = countBy(function(r){ return r.group; });
-      body.innerHTML = '<div class="browse-head">Choose a machine group / मशीन समूह चुनें</div>' +
+
+      // Graphical Distribution Bar across the 4 machine groups
+      var graphBarHtml = '<div class="graph-bar-card" role="region" aria-label="Machine group distribution visualizer">' +
+        '<div class="graph-head">' +
+          '<div class="graph-title">' +
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>' +
+            'Machine Group Distribution / मशीन समूह वितरण</div>' +
+          '<div class="graph-total">' + totalParts + ' total SKUs</div>' +
+        '</div>' +
+        '<div class="graph-distribution-bar" title="Tap any segment to drill down">';
+      
+      groups.forEach(function(g){
+        var cnt = gc[g] || 0;
+        var pct = ((cnt / totalParts) * 100).toFixed(1);
+        graphBarHtml += '<div class="graph-segment graph-seg-' + g + '" style="width:' + pct + '%;" ' +
+          'data-browse-group="' + esc(g) + '" title="' + esc(GROUP_LABELS[g] || g) + ': ' + cnt + ' parts (' + pct + '%)"></div>';
+      });
+      graphBarHtml += '</div><div class="graph-legend-grid">';
+
+      groups.forEach(function(g){
+        var cnt = gc[g] || 0;
+        var pct = Math.round((cnt / totalParts) * 100);
+        var shortName = (GROUP_LABELS[g] || ("Group " + g)).split("/")[0].trim();
+        graphBarHtml += '<button type="button" class="graph-legend-item" data-browse-group="' + esc(g) + '">' +
+          '<span class="graph-legend-dot graph-seg-' + g + '"></span>' +
+          '<span class="graph-legend-name">' + esc(shortName) + '</span>' +
+          '<span class="graph-legend-val">' + cnt + ' <span style="font-weight:500;opacity:0.8;">(' + pct + '%)</span></span>' +
+        '</button>';
+      });
+      graphBarHtml += '</div></div>';
+
+      body.innerHTML = graphBarHtml +
+        '<div class="browse-head">Browse by Machinery / मशीन चुनें (Tap to Explore)</div>' +
         '<div class="tiles">' + groups.map(function(g){
           var label = g + " · " + (GROUP_LABELS[g] || ("Group " + g));
+          var cnt = gc[g] || 0;
+          var inStockCount = 0;
+          state.catalog.forEach(function(r, idx){
+            if (r.group === g && stockClass(idx) === "here") inStockCount++;
+          });
+          var inStockPct = cnt > 0 ? Math.round((inStockCount / cnt) * 100) : 0;
+
           return '<button class="tile" type="button" data-browse-group="' + esc(g) + '" data-g="' + esc(g) + '" aria-label="' + esc(label) + '">' +
             '<span class="t-chip">' + groupIconSvg(g) + '</span>' +
             '<span class="t-name">' + esc(label) + '</span>' +
-            '<span class="t-count">' + (gc[g]||0) + ' parts</span></button>';
+            '<span class="t-count">' + cnt + ' parts cataloged</span>' +
+            '<div class="tile-meter-wrap">' +
+              '<div class="tile-meter-bar" title="' + inStockPct + '% Ready in warehouse">' +
+                '<div class="tile-meter-in" style="width:' + inStockPct + '%;"></div>' +
+              '</div>' +
+              '<div class="tile-meter-labels">' +
+                '<span>' + inStockPct + '% ready</span>' +
+                '<span>' + (100 - inStockPct) + '% orderable</span>' +
+              '</div>' +
+            '</div>' +
+          '</button>';
         }).join("") + '</div>';
     } else {
       var g2 = String(state.browseGroup);
       var sc = countBy(function(r){ return r.section; }, function(r){ return String(r.group) === g2; });
       var sections = Object.keys(sc).sort();
+      var groupTotal = Object.values(sc).reduce(function(a, b){ return a + b; }, 0) || 1;
+
+      // Section distribution bar
+      var secBarHtml = '<div class="graph-bar-card" role="region" aria-label="Model distribution">' +
+        '<div class="graph-head">' +
+          '<div class="graph-title">' +
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>' +
+            'Model Breakdown / मॉडल वितरण</div>' +
+          '<div class="graph-total">' + groupTotal + ' parts in ' + sections.length + ' models</div>' +
+        '</div>' +
+        '<div class="graph-distribution-bar">';
+      
+      sections.forEach(function(s, idx){
+        var cnt = sc[s] || 0;
+        var pct = ((cnt / groupTotal) * 100).toFixed(1);
+        var color = 'hsl(' + ((idx * 47) % 360) + ', 65%, 40%)';
+        secBarHtml += '<div class="graph-segment" style="width:' + pct + '%;background:' + color + ';" ' +
+          'data-browse-section="' + esc(s) + '" title="' + esc(s) + ': ' + cnt + ' parts (' + pct + '%)"></div>';
+      });
+      secBarHtml += '</div></div>';
+
       body.innerHTML = '<button class="browse-back" id="browse-back" type="button">&larr; All groups / सभी समूह</button>' +
         '<div class="browse-head">' + esc((state.browseGroup + " · ") + (GROUP_LABELS[state.browseGroup] || "")) + '</div>' +
-        '<div class="tiles">' + sections.map(function(s){
+        secBarHtml +
+        '<div class="tiles">' + sections.map(function(s, idx){
+          var cnt = sc[s];
+          var pct = Math.round((cnt / groupTotal) * 100);
           return '<button class="tile" type="button" data-browse-section="' + esc(s) + '" aria-label="' + esc(s) + '">' +
             '<span class="t-name">' + esc(s) + '</span>' +
-            '<span class="t-count">' + sc[s] + ' parts</span></button>';
+            '<span class="t-count">' + cnt + ' parts (' + pct + '% of group)</span>' +
+            '<div class="tile-meter-wrap">' +
+              '<div class="tile-meter-bar">' +
+                '<div class="tile-meter-in" style="width:' + pct + '%;background:hsl(' + ((idx * 47) % 360) + ', 65%, 40%);"></div>' +
+              '</div>' +
+            '</div>' +
+          '</button>';
         }).join("") + '</div>';
       $("browse-back").onclick = function(){ state.browseGroup = null; $("filter-group").value = ""; refreshSectionOptions(); renderCatalogBody(); };
     }
@@ -6336,9 +6717,48 @@
     // nothing on screen to reveal it is exactly the trap the two-tier Back button exists for.
     var here = q ? "" : ($("filter-section").value ||
       (state.browseGroup ? ((state.browseGroup + " · ") + (GROUP_LABELS[state.browseGroup] || "")) : ""));
+    // Interactive Graphical Subsystem Flow Diagram
+    var subsystemFlowHtml = '';
+    if (!q && (state.browseGroup || $("filter-group").value)){
+      var curG = String(state.browseGroup || $("filter-group").value);
+      var curSec = $("filter-section").value;
+      var curRows = state.catalog.filter(function(r){
+        return listable(r) && String(r.group) === curG && (!curSec || r.section === curSec);
+      });
+      subsystemFlowHtml = '<div class="subsystem-flow-card">' +
+        '<div class="subsystem-flow-head">' +
+          '<span class="subsystem-flow-title">' +
+            '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>' +
+            'Subsystem Anatomy Explorer / कलपुर्जे आरेख</span>' +
+          '<span style="font-size:11px;font-weight:700;color:var(--muted);">' + (_selectedSubsystem ? 'Filtered' : 'Tap to focus') + '</span>' +
+        '</div>' +
+        '<div class="subsystem-flow-strip">' +
+          '<button type="button" class="subsystem-flow-item' + (!_selectedSubsystem ? ' active' : '') + '" data-sub-flow="">' +
+            '<span class="subsystem-flow-ico">⚡</span>' +
+            '<span class="subsystem-flow-name">All (' + curRows.length + ')</span>' +
+          '</button>' +
+          COMMON_SUBSYSTEMS.map(function(sub){
+            var matchCount = curRows.filter(function(r){
+              var hay = (String(r.particular||"") + " " + String(r.hindi_name||"") + " " + String(r.fits||"")).toLowerCase();
+              return sub.tokens.some(function(t){ return hay.indexOf(t) !== -1; });
+            }).length;
+            if (matchCount === 0) return '';
+            var isActive = _selectedSubsystem === sub.id;
+            var shortLabel = sub.label.split("/")[0].trim();
+            return '<button type="button" class="subsystem-flow-item' + (isActive ? ' active' : '') + '" data-sub-flow="' + esc(sub.id) + '">' +
+              '<span class="subsystem-flow-ico">' + (sub.ico || '⚙️') + '</span>' +
+              '<span class="subsystem-flow-name">' + esc(shortLabel) + '</span>' +
+              '<span class="subsystem-flow-count">' + matchCount + '</span>' +
+            '</button>';
+          }).join('') +
+        '</div>' +
+      '</div>';
+    }
+
     var head = '<button class="list-reset" id="list-reset" type="button">&larr; ' +
       (upOne ? 'Back to sections / अनुभाग पर वापस' : 'Browse all machines / सभी देखें') + '</button>' +
       (here ? '<div class="browse-head">' + esc(here) + '</div>' : '') +
+      subsystemFlowHtml +
       '<div class="result-count" role="status" aria-live="polite">' + total + ' item' + (total === 1 ? "" : "s") +
       (total > shown.length ? ' — showing ' + shown.length : '') + scopeNote + '</div>';
     if (q) announce(total + (total === 1 ? " part" : " parts") + " found");
@@ -7587,6 +8007,14 @@
     if (sectionTile){
       $("filter-section").value = sectionTile.getAttribute("data-browse-section");
       state.mode = "list"; state.renderLimit = RENDER_CHUNK; renderCatalogBody(); return;
+    }
+    var subFlowBtn = e.target.closest("[data-sub-flow]");
+    if (subFlowBtn){
+      var subId = subFlowBtn.getAttribute("data-sub-flow");
+      _selectedSubsystem = subId || null;
+      renderSubsystemChips();
+      renderCatalogBody();
+      return;
     }
     var addBtn = e.target.closest("[data-add]");
     if (addBtn){
