@@ -1,22 +1,29 @@
 import { useState, useMemo, type FC } from 'react';
-import { CheckCircle2, Clock, X, Receipt, Building2, Wrench, Search, Share2, Filter, Truck } from 'lucide-react';
+import { CheckCircle2, Clock, X, Receipt, Building2, Wrench, Search, Share2, Filter, Truck, PlusCircle } from 'lucide-react';
 import type { SparesTransaction, MonthlyTrendData } from '../data/krishigearsData';
 
 interface DrillDownTableProps {
-  selectedPeriod: string;
+  selectedPeriod: string | null;
   monthData?: MonthlyTrendData;
+  allTransactions?: SparesTransaction[];
   onClearSelection: () => void;
+  onOpenNewRequest: () => void;
 }
 
 export const DrillDownTable: FC<DrillDownTableProps> = ({
   selectedPeriod,
   monthData,
+  allTransactions = [],
   onClearSelection,
+  onOpenNewRequest,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'Completed' | 'Pending'>('ALL');
 
-  const rawTransactions = monthData?.transactions || [];
+  const rawTransactions = useMemo(() => {
+    const list = selectedPeriod ? (monthData?.transactions || []) : allTransactions;
+    return [...list].sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
+  }, [selectedPeriod, monthData, allTransactions]);
 
   // Filtered transactions by search query and status
   const filteredTransactions = useMemo(() => {
@@ -89,21 +96,25 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
           <div className="flex items-center gap-2">
             <Receipt className="h-5 w-5 text-[#1b7a43] dark:text-[#f0b429]" />
             <h3 className="text-base font-extrabold text-[#1c2420] dark:text-white">
-              विस्तृत पुर्जे चालान — {selectedPeriod} 2026 (Line-Item Dispatches)
+              {selectedPeriod
+                ? `विस्तृत पुर्जे चालान — ${selectedPeriod} 2026 (Line-Item Dispatches)`
+                : "ताज़ा नेटवर्क मांग व चालान • Recent Network Requests & Dispatches"}
             </h3>
             <span className="rounded-md bg-[#e9f4ed] px-2.5 py-0.5 text-xs font-bold text-[#14532d] dark:bg-[#14532d] dark:text-[#f6f8f5] border border-[#dbe7de] dark:border-[#1b7a43]">
               {filteredTransactions.length} ऑर्डर्स ({totalQty} पार्ट्स)
             </span>
           </div>
           <p className="text-xs font-medium text-[#5f6f66] dark:text-[#dbe7de]/90 mt-0.5">
-            {selectedPeriod} 2026 में डीलर केंद्रों को भेजे गए असली फिटमेंट-जांच पूर्ण पार्ट्स व ट्रांसपोर्ट बिल्टी विवरण।
+            {selectedPeriod
+              ? `${selectedPeriod} 2026 में डीलर केंद्रों को भेजे गए असली फिटमेंट-जांच पूर्ण पार्ट्स व ट्रांसपोर्ट बिल्टी विवरण।`
+              : "डीलर केंद्रों से प्राप्त हालिया मांग अनुरोध, ड्रॉप-डिस्पैच फिटमेंट-जांच व ट्रांसपोर्ट बिल्टी विवरण।"}
           </p>
         </div>
 
-        <div className="flex items-center gap-3 self-end lg:self-auto">
+        <div className="flex flex-wrap items-center gap-3 self-start lg:self-auto">
           <div className="text-right sm:border-r sm:pr-4 border-[#dbe7de] dark:border-[#14532d]">
             <span className="text-xs uppercase font-bold tracking-wider text-[#5f6f66] dark:text-[#dbe7de] block">
-              फ़िल्टर टर्नओवर
+              {selectedPeriod ? "फ़िल्टर टर्नओवर" : "कुल नेटवर्क मांग"}
             </span>
             <span className="text-base font-extrabold text-[#1c2420] dark:text-white tabular-nums">
               {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(totalAmount)}
@@ -112,12 +123,24 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
 
           <button
             type="button"
-            onClick={onClearSelection}
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-[#dbe7de] bg-white px-3.5 py-2.5 text-xs font-bold text-[#1c2420] shadow-xs hover:bg-[#e9f4ed] dark:border-[#14532d] dark:bg-[#0e3d22] dark:text-[#f6f8f5] dark:hover:bg-[#14532d] transition-colors cursor-pointer"
+            data-testid="table-new-request-btn"
+            onClick={onOpenNewRequest}
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl bg-[#1b7a43] px-3.5 py-2.5 text-xs font-extrabold text-white shadow-xs hover:bg-[#14532d] focus:outline-hidden focus:ring-2 focus:ring-[#f0b429] transition-all cursor-pointer"
           >
-            <X className="h-4 w-4" />
-            चयन हटाएं (Clear)
+            <PlusCircle className="h-4 w-4" />
+            <span>+ नया नेटवर्क अनुरोध (+ New Request)</span>
           </button>
+
+          {selectedPeriod && (
+            <button
+              type="button"
+              onClick={onClearSelection}
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-[#dbe7de] bg-white px-3.5 py-2.5 text-xs font-bold text-[#1c2420] shadow-xs hover:bg-[#e9f4ed] dark:border-[#14532d] dark:bg-[#0e3d22] dark:text-[#f6f8f5] dark:hover:bg-[#14532d] transition-colors cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+              <span>सभी दिखाएं (Show All)</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -229,10 +252,21 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
               filteredTransactions.map((tx) => (
                 <tr
                   key={tx.id}
-                  className="transition-colors hover:bg-[#e9f4ed]/50 dark:hover:bg-[#14532d]/60"
+                  className={`transition-colors ${
+                    tx.isNew
+                      ? 'bg-[#f0fdf4] dark:bg-[#14532d]/80 border-l-4 border-l-[#1b7a43]'
+                      : 'hover:bg-[#e9f4ed]/50 dark:hover:bg-[#14532d]/60'
+                  }`}
                 >
                   <td className="whitespace-nowrap px-5 py-4 font-mono text-xs font-bold text-[#1c2420] dark:text-white tabular-nums">
-                    {tx.id}
+                    <div className="flex items-center gap-1.5">
+                      <span>{tx.id}</span>
+                      {tx.isNew && (
+                        <span className="inline-flex items-center rounded-md bg-[#dcfce7] px-1.5 py-0.5 text-[10px] font-extrabold text-[#15803d] border border-[#86efac] animate-pulse">
+                          NEW
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-start gap-2.5">

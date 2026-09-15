@@ -3,13 +3,15 @@ import { Header } from './components/Header';
 import { KPICards } from './components/KPICards';
 import { RevenueUsersChart } from './components/RevenueUsersChart';
 import { DrillDownTable } from './components/DrillDownTable';
-import { EmptyState } from './components/EmptyState';
-import { getKrishiGearsMetrics, type TimeframeFilter } from './data/krishigearsData';
+import { NewRequestModal } from './components/NewRequestModal';
+import { getKrishiGearsMetrics, type TimeframeFilter, type SparesTransaction } from './data/krishigearsData';
 
 export function App() {
   const [filter, setFilter] = useState<TimeframeFilter>('all');
   const [selectedCategory, setSelectedCategory] = useState<number>(0); // 0 = all
   const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
+  const [extraTransactions, setExtraTransactions] = useState<SparesTransaction[]>([]);
+  const [isNewModalOpen, setIsNewModalOpen] = useState<boolean>(false);
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       return (
@@ -35,10 +37,15 @@ export function App() {
 
   const toggleTheme = () => setIsDark((prev) => !prev);
 
-  // Compute metrics and scoped chart data
+  // Handle adding a new network request dynamically
+  const handleAddNewRequest = (newTx: SparesTransaction) => {
+    setExtraTransactions((prev) => [newTx, ...prev]);
+  };
+
+  // Compute metrics and scoped chart data (including any newly submitted dealer requests)
   const metrics = useMemo(
-    () => getKrishiGearsMetrics(filter, selectedCategory),
-    [filter, selectedCategory]
+    () => getKrishiGearsMetrics(filter, selectedCategory, extraTransactions),
+    [filter, selectedCategory, extraTransactions]
   );
 
   // If filter changes and selected month is no longer in scope, reset selectedPeriod
@@ -63,6 +70,7 @@ export function App() {
         onCategoryChange={setSelectedCategory}
         isDark={isDark}
         onToggleTheme={toggleTheme}
+        onOpenNewRequest={() => setIsNewModalOpen(true)}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -101,34 +109,39 @@ export function App() {
           />
         </section>
 
-        {/* Layer 3: Details-on-Demand - Granular Drill-Down Data Table OR Clean Empty State */}
+        {/* Layer 3: Front-and-Center Network Requests & Line-Item Dispatches */}
         <section aria-labelledby="drilldown-heading">
           <div className="flex items-center justify-between mb-3">
             <h2 id="drilldown-heading" className="text-xs font-extrabold uppercase tracking-wider text-[#3d4a42] dark:text-[#dbe7de]">
               चालान व पुर्जे विवरण • Line-Item Invoices &amp; Dispatches
             </h2>
-            {selectedPeriod && (
+            {selectedPeriod ? (
               <span className="text-xs font-bold text-[#1b7a43] dark:text-[#f0b429]">
                 {selectedPeriod} 2026 के चालानों पर फ़िल्टर
+              </span>
+            ) : (
+              <span className="text-xs font-bold text-[#14532d] dark:text-[#f6f8f5]">
+                ताज़ा नेटवर्क मांग अनुरोध (Recent Network Requests)
               </span>
             )}
           </div>
 
-          {selectedPeriod ? (
-            <DrillDownTable
-              selectedPeriod={selectedPeriod}
-              monthData={selectedMonthData}
-              onClearSelection={() => setSelectedPeriod(null)}
-            />
-          ) : (
-            <EmptyState
-              data={metrics.filteredMonthlyData}
-              onSelectPeriod={setSelectedPeriod}
-              onSelectCategory={setSelectedCategory}
-            />
-          )}
+          <DrillDownTable
+            selectedPeriod={selectedPeriod}
+            monthData={selectedMonthData}
+            allTransactions={metrics.filteredTransactions}
+            onClearSelection={() => setSelectedPeriod(null)}
+            onOpenNewRequest={() => setIsNewModalOpen(true)}
+          />
         </section>
       </main>
+
+      {/* New Request Modal */}
+      <NewRequestModal
+        isOpen={isNewModalOpen}
+        onClose={() => setIsNewModalOpen(false)}
+        onSubmit={handleAddNewRequest}
+      />
 
       {/* Footer */}
       <footer className="border-t border-[#dbe7de] bg-white py-6 text-center text-xs text-[#5f6f66] dark:border-[#14532d] dark:bg-[#0e3d22] dark:text-[#dbe7de]/90">

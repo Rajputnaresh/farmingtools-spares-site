@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import { Calendar, Sun, Moon, ArrowUpRight, Wrench, Layers } from 'lucide-react';
+import { Calendar, Sun, Moon, ArrowUpRight, Wrench, Layers, PlusCircle } from 'lucide-react';
 import type { TimeframeFilter } from '../data/krishigearsData';
 import { GROUP_INFO } from '../data/krishigearsData';
 
@@ -10,6 +10,7 @@ interface HeaderProps {
   onCategoryChange: (cat: number) => void;
   isDark: boolean;
   onToggleTheme: () => void;
+  onOpenNewRequest: () => void;
 }
 
 export const Header: FC<HeaderProps> = ({
@@ -19,6 +20,7 @@ export const Header: FC<HeaderProps> = ({
   onCategoryChange,
   isDark,
   onToggleTheme,
+  onOpenNewRequest,
 }) => {
   return (
     <header className="border-b border-[#dbe7de] bg-white/95 backdrop-blur-md sticky top-0 z-30 dark:border-[#14532d] dark:bg-[#0e3d22]/95 transition-colors">
@@ -44,18 +46,39 @@ export const Header: FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Quick store link on small screens - 44px touch target */}
-          <a
-            href="../"
-            className="sm:hidden inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 rounded-xl border border-[#dbe7de] bg-[#f6f8f5] px-3 py-2 text-xs font-bold text-[#1b7a43] hover:bg-[#e9f4ed] dark:border-[#14532d] dark:bg-[#0e3d22] dark:text-[#f6f8f5]"
-          >
-            <span>स्टोर</span>
-            <ArrowUpRight className="h-3.5 w-3.5" />
-          </a>
+          {/* Quick actions on small screens - 44px touch targets */}
+          <div className="sm:hidden flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={onOpenNewRequest}
+              data-testid="mobile-header-new-request-btn"
+              className="inline-flex min-h-[44px] items-center gap-1 rounded-xl bg-[#1b7a43] px-2.5 py-2 text-xs font-extrabold text-white shadow-xs hover:bg-[#14532d] focus:outline-hidden focus:ring-2 focus:ring-[#f0b429] cursor-pointer"
+            >
+              <PlusCircle className="h-3.5 w-3.5" />
+              <span>+ मांग</span>
+            </button>
+            <a
+              href="../"
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 rounded-xl border border-[#dbe7de] bg-[#f6f8f5] px-2.5 py-2 text-xs font-bold text-[#1b7a43] hover:bg-[#e9f4ed] dark:border-[#14532d] dark:bg-[#0e3d22] dark:text-[#f6f8f5]"
+            >
+              <span>स्टोर</span>
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </a>
+          </div>
         </div>
 
         {/* Actions: Machine Group Filter, Timeframe Filter, Theme Toggle, Catalog Link */}
         <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto">
+          {/* Desktop New Request Button */}
+          <button
+            type="button"
+            onClick={onOpenNewRequest}
+            data-testid="header-new-request-btn"
+            className="hidden sm:inline-flex min-h-[44px] h-11 items-center gap-1.5 rounded-xl bg-[#1b7a43] px-3.5 py-2 text-xs font-extrabold text-white shadow-xs hover:bg-[#14532d] focus:outline-hidden focus:ring-2 focus:ring-[#f0b429] transition-all cursor-pointer shrink-0"
+          >
+            <PlusCircle className="h-4 w-4" />
+            <span>+ नया नेटवर्क अनुरोध</span>
+          </button>
           {/* Category Filter */}
           <div className="relative inline-flex items-center flex-1 sm:flex-initial">
             <label htmlFor="category-filter" className="sr-only">
