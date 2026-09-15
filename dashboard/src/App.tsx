@@ -10,7 +10,17 @@ export function App() {
   const [filter, setFilter] = useState<TimeframeFilter>('all');
   const [selectedCategory, setSelectedCategory] = useState<number>(0); // 0 = all
   const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
-  const [extraTransactions, setExtraTransactions] = useState<SparesTransaction[]>([]);
+  const [extraTransactions, setExtraTransactions] = useState<SparesTransaction[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('kg_dealer_requests');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse local dealer requests', e);
+      }
+    }
+    return [];
+  });
   const [isNewModalOpen, setIsNewModalOpen] = useState<boolean>(false);
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -22,6 +32,17 @@ export function App() {
     }
     return false;
   });
+
+  // Persist dealer requests to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('kg_dealer_requests', JSON.stringify(extraTransactions));
+      } catch (e) {
+        console.error('Failed to save dealer requests to localStorage', e);
+      }
+    }
+  }, [extraTransactions]);
 
   // Apply dark mode class to root
   useEffect(() => {

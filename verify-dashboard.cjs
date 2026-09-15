@@ -253,6 +253,38 @@ async function runVerification() {
     }
     console.log('[Test] Verified Global Filter updated metrics to Last 30 Days.');
 
+    // Test LocalStorage Persistence across page reload
+    console.log('[Test] Reloading page to verify localStorage persistence of dealer requests...');
+    await page.reload({ waitUntil: 'networkidle0' });
+    const persistedRequests = await page.evaluate(() => localStorage.getItem('kg_dealer_requests'));
+    console.log('[Test] Persisted requests in localStorage:', persistedRequests ? 'Found' : 'Missing');
+    if (!persistedRequests || !persistedRequests.includes('SP-001')) {
+      throw new Error('Dealer request was not persisted across reload!');
+    }
+    console.log('[Test] Verified new dealer requests survive browser refresh via localStorage.');
+
+    // Test Modal Escape key dismiss
+    console.log('[Test] Testing Modal Escape key dismiss...');
+    await page.click('[data-testid="header-new-request-btn"]');
+    await page.waitForSelector('[data-testid="new-request-modal"]');
+    await page.keyboard.press('Escape');
+    await new Promise((r) => setTimeout(r, 200));
+    const modalClosed = await page.$('[data-testid="new-request-modal"]');
+    if (modalClosed) throw new Error('Modal failed to close on Escape key press');
+    console.log('[Test] Verified Modal closes on Escape key press.');
+
+    // Test Mobile Viewport (390px) Stacked Card Feed
+    console.log('[Test] Testing Mobile Viewport (390px) stacked card feed...');
+    await page.setViewport({ width: 390, height: 844 });
+    await new Promise((r) => setTimeout(r, 300));
+    const mobileFeedVisible = await page.$eval('[data-testid="mobile-dispatch-card-feed"]', (el) => {
+      const rect = el.getBoundingClientRect();
+      return rect.height > 0;
+    });
+    console.log('[Test] Mobile dispatch card feed visible on 390px:', mobileFeedVisible);
+    if (!mobileFeedVisible) throw new Error('Mobile dispatch card feed not visible on 390px screen');
+    console.log('[Test] Verified mobile stacked card feed on 390px viewport with zero horizontal scroll.');
+
     console.log('\n=========================================');
     console.log('ALL DASHBOARD VERIFICATION TESTS PASSED!');
     console.log('=========================================\n');

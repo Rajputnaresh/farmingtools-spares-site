@@ -1,4 +1,4 @@
-import { useState, type FC, type FormEvent } from 'react';
+import { useState, useEffect, type FC, type FormEvent } from 'react';
 import { X, PlusCircle, CheckCircle2, Building2, Wrench, Truck } from 'lucide-react';
 import type { SparesTransaction } from '../data/krishigearsData';
 
@@ -54,6 +54,17 @@ export const NewRequestModal: FC<NewRequestModalProps> = ({ isOpen, onClose, onS
   const [transportName, setTransportName] = useState<string>('Jaipur Golden');
   const [status, setStatus] = useState<'Completed' | 'Pending'>('Completed');
   const [notes, setNotes] = useState<string>('');
+
+  // Dismiss modal on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   const selectedPart = POPULAR_SKUS[selectedSkuIdx] || POPULAR_SKUS[0];
   const unitPrice = selectedPart.price;
@@ -187,11 +198,34 @@ export const NewRequestModal: FC<NewRequestModalProps> = ({ isOpen, onClose, onS
               onChange={(e) => setSelectedSkuIdx(Number(e.target.value))}
               className="w-full h-11 min-h-[44px] rounded-xl border border-[#dbe7de] bg-[#f6f8f5] px-3 text-xs font-bold text-[#1c2420] focus:border-[#1b7a43] focus:bg-white focus:outline-hidden dark:border-[#14532d] dark:bg-[#14532d] dark:text-white"
             >
-              {POPULAR_SKUS.map((p, i) => (
-                <option key={p.sku} value={i}>
-                  [{p.sku}] {p.particular} — ₹{p.price}/pc ({p.groupName})
-                </option>
-              ))}
+              <optgroup label="ब्रश कटर व पुर्जे • Brush Cutters">
+                {POPULAR_SKUS.map((p, i) => p.group === 1 && (
+                  <option key={p.sku} value={i}>
+                    [{p.sku}] {p.particular} — ₹{p.price}/pc
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="पावर वीडर व गियरबॉक्स • Tillers & Weeders">
+                {POPULAR_SKUS.map((p, i) => p.group === 2 && (
+                  <option key={p.sku} value={i}>
+                    [{p.sku}] {p.particular} — ₹{p.price}/pc
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="58cc चेनसॉ व गाइड बार • Chainsaws">
+                {POPULAR_SKUS.map((p, i) => p.group === 3 && (
+                  <option key={p.sku} value={i}>
+                    [{p.sku}] {p.particular} — ₹{p.price}/pc
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="स्प्रेयर, पंप व इंजन • Sprayers & Pumps">
+                {POPULAR_SKUS.map((p, i) => p.group === 4 && (
+                  <option key={p.sku} value={i}>
+                    [{p.sku}] {p.particular} — ₹{p.price}/pc
+                  </option>
+                ))}
+              </optgroup>
             </select>
           </div>
 

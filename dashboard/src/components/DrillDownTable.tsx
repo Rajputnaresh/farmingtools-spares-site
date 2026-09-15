@@ -208,13 +208,13 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
                 : "bg-[#f6f8f5] text-[#1c2420] hover:bg-[#e9f4ed] border border-[#dbe7de] dark:bg-[#0e3d22] dark:text-[#f6f8f5] dark:border-[#14532d]"
             }`}
           >
-            बिलिंग (Pending Challan)
+            बिलिंग (Challan Issued)
           </button>
         </div>
       </div>
 
-      {/* Table Content */}
-      <div className="overflow-x-auto">
+      {/* Table Content (Desktop / Tablets) */}
+      <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-left text-sm" data-testid="drill-down-table">
           <thead className="border-b border-[#dbe7de] bg-[#f6f8f5] text-xs uppercase font-extrabold tracking-wider text-[#3d4a42] dark:border-[#14532d] dark:bg-[#0e3d22]/80 dark:text-[#dbe7de]">
             <tr>
@@ -244,8 +244,21 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
           <tbody className="divide-y divide-[#dbe7de] dark:divide-[#14532d]">
             {filteredTransactions.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-10 text-center text-sm font-semibold text-[#5f6f66] dark:text-[#dbe7de]">
-                  कोई चालान रिकॉर्ड नहीं मिला। कृपया खोज शब्द बदलें।
+                <td colSpan={7} className="px-6 py-12 text-center text-sm font-semibold text-[#5f6f66] dark:text-[#dbe7de]">
+                  <p className="mb-3">कोई चालान रिकॉर्ड नहीं मिला। कृपया खोज शब्द बदलें।</p>
+                  {(searchQuery || statusFilter !== 'ALL') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery('');
+                        setStatusFilter('ALL');
+                      }}
+                      className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-[#dbe7de] bg-[#f6f8f5] px-4 py-2 text-xs font-bold text-[#1b7a43] hover:bg-[#e9f4ed] dark:border-[#14532d] dark:bg-[#0e3d22] dark:text-[#f6f8f5] cursor-pointer"
+                    >
+                      <X className="h-4 w-4" />
+                      <span>खोज व फ़िल्टर रीसेट करें (Reset Search)</span>
+                    </button>
+                  )}
                 </td>
               </tr>
             ) : (
@@ -336,6 +349,107 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Stacked Dispatch Card Feed (sm:hidden) */}
+      <div className="sm:hidden divide-y divide-[#dbe7de] dark:divide-[#14532d]" data-testid="mobile-dispatch-card-feed">
+        {filteredTransactions.length === 0 ? (
+          <div className="p-6 text-center text-sm font-semibold text-[#5f6f66] dark:text-[#dbe7de]">
+            <p className="mb-3">कोई चालान रिकॉर्ड नहीं मिला।</p>
+            {(searchQuery || statusFilter !== 'ALL') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setStatusFilter('ALL');
+                }}
+                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-[#dbe7de] bg-[#f6f8f5] px-4 py-2 text-xs font-bold text-[#1b7a43] dark:border-[#14532d] dark:bg-[#0e3d22] dark:text-[#f6f8f5] cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+                <span>खोज रीसेट करें</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          filteredTransactions.map((tx) => (
+            <div
+              key={`mob-${tx.id}`}
+              className={`p-4 space-y-3 transition-colors ${
+                tx.isNew
+                  ? 'bg-[#f0fdf4] dark:bg-[#14532d]/80 border-l-4 border-l-[#1b7a43]'
+                  : 'bg-white dark:bg-[#0e3d22]/40'
+              }`}
+            >
+              {/* Card Header: PO & Status */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono text-xs font-bold text-[#1c2420] dark:text-white tabular-nums">
+                    {tx.id}
+                  </span>
+                  {tx.isNew && (
+                    <span className="inline-flex items-center rounded-md bg-[#dcfce7] px-1.5 py-0.5 text-[10px] font-extrabold text-[#15803d] border border-[#86efac] animate-pulse">
+                      NEW
+                    </span>
+                  )}
+                </div>
+                {getStatusBadge(tx.status)}
+              </div>
+
+              {/* Part Particular & Fitment */}
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-extrabold text-[#1c2420] dark:text-white">
+                    {tx.sku}
+                  </span>
+                  <span className="rounded-md bg-[#e9f4ed] px-2 py-0.5 text-xs font-bold text-[#14532d] dark:bg-[#0e3d22] dark:text-[#f6f8f5] border border-[#dbe7de] dark:border-[#1b7a43]">
+                    {tx.groupName}
+                  </span>
+                </div>
+                <p className="text-xs font-semibold text-[#3d4a42] dark:text-[#dbe7de] mt-0.5">
+                  {tx.particular}
+                </p>
+                <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px] font-semibold text-[#5f6f66] dark:text-[#dbe7de]/80">
+                  <span className="rounded bg-[#f6f8f5] dark:bg-[#0e3d22] px-1.5 py-0.5 text-[#14532d] dark:text-[#f6f8f5] border border-[#dbe7de] dark:border-[#1b7a43]">
+                    {tx.fitmentNote}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Truck className="h-3 w-3 text-[#1b7a43]" />
+                    {tx.transportName} • {tx.biltyNumber} ({tx.dispatchOrigin})
+                  </span>
+                </div>
+              </div>
+
+              {/* Dealer Node */}
+              <div className="flex items-center gap-2 text-xs">
+                <Building2 className="h-4 w-4 text-[#5f6f66] dark:text-[#dbe7de] shrink-0" />
+                <span className="font-bold text-[#1c2420] dark:text-white">{tx.client}</span>
+                <span className="text-[#5f6f66] dark:text-[#dbe7de]/80">({tx.clientCity})</span>
+              </div>
+
+              {/* Amount, Qty & 1-Tap WhatsApp Button */}
+              <div className="flex items-center justify-between gap-3 pt-2 border-t border-[#dbe7de]/60 dark:border-[#14532d]">
+                <div>
+                  <span className="text-xs font-extrabold text-[#5f6f66] dark:text-[#dbe7de] mr-2">
+                    {tx.quantity} pcs
+                  </span>
+                  <span className="font-extrabold text-[#1c2420] dark:text-white tabular-nums text-sm">
+                    {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(tx.amount)}
+                  </span>
+                </div>
+                <a
+                  href={createWhatsAppLink(tx)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-[#25d366] text-[#0a3622] font-black hover:bg-[#20ba59] shadow-xs px-3.5 py-2 text-xs cursor-pointer"
+                  title="डीलर को WhatsApp चालान विवरण भेजें"
+                >
+                  <Share2 className="h-4 w-4 mr-1" />
+                  <span>WhatsApp</span>
+                </a>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
