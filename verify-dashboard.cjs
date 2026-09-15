@@ -128,13 +128,13 @@ async function runVerification() {
     await febButton.click();
     await new Promise((r) => setTimeout(r, 400));
 
-    // Verify State Sync: KPI Cards should now reflect February (₹2,87,500)
+    // Verify State Sync: KPI Cards should now reflect February (₹3,78,500 across all machine groups)
     const kpiFebText = await page.$eval('section[aria-label="Executive Overview KPIs"]', el => el.innerText);
     console.log('[Test] State Sync KPI text during Feb selection:', kpiFebText.slice(0, 100));
-    if (!kpiFebText.includes('2,87,500')) {
-      throw new Error('KPI cards failed state sync! Expected February turnover ₹2,87,500.');
+    if (!kpiFebText.includes('3,78,500')) {
+      throw new Error(`KPI cards failed state sync! Expected February turnover ₹3,78,500, got: ${kpiFebText.slice(0, 100)}`);
     }
-    console.log('[Test] Verified KPI cards state-sync with February dispatches (₹2,87,500).');
+    console.log('[Test] Verified KPI cards state-sync with February dispatches (₹3,78,500).');
 
     // Wait for Drill-Down Table to appear
     await page.waitForSelector('[data-testid="drill-down-table-container"]', { timeout: 3000 });
@@ -197,13 +197,15 @@ async function runVerification() {
     await page.screenshot({ path: screenshot3Path, fullPage: true });
     console.log(`[Test] Saved screenshot 3: ${screenshot3Path}`);
 
-    // Test Global Filter Dropdown
+    // Test Global Filter Dropdown (reset category to all first)
     console.log('[Test] Testing Global Filter dropdown...');
+    await page.select('[data-testid="category-filter-select"]', '0');
+    await new Promise((r) => setTimeout(r, 200));
     await page.select('[data-testid="global-filter-select"]', 'last30');
     await new Promise((r) => setTimeout(r, 500));
     const filteredText = await page.evaluate(() => document.body.innerText);
-    if (!filteredText.includes('₹') && !filteredText.includes('2,06,000')) {
-      throw new Error('Filter did not update to Last 30 Days March data');
+    if (!filteredText.includes('₹') || !filteredText.includes('2,57,500')) {
+      throw new Error(`Filter did not update to Last 30 Days March data. Snippet: ${filteredText.slice(0, 150)}`);
     }
     console.log('[Test] Verified Global Filter updated metrics to Last 30 Days.');
 

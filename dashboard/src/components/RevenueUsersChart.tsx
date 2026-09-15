@@ -56,7 +56,7 @@ const CustomTooltip: FC<CustomTooltipProps> = ({ active, payload, label, selecte
 
           <div className="flex items-center justify-between gap-5">
             <span className="flex items-center gap-1.5 text-[#3d4a42] dark:text-[#dbe7de]">
-              <span className="h-3 w-3 rounded-full bg-[#f0b429]" />
+              <span className="h-3 w-3 rounded-full bg-[#9a3412]" />
               भेजे गए पुर्जे (Units):
             </span>
             <span className="font-extrabold text-[#1c2420] dark:text-white tabular-nums">
@@ -106,23 +106,23 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
               मासिक पुर्जे मांग व चालान (Spares Demand &amp; Turnover)
             </h2>
             {selectedPeriod && (
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#e9f4ed] px-2.5 py-1 text-xs font-bold text-[#14532d] dark:bg-[#0e3d22] dark:text-[#f6f8f5] border border-[#dbe7de] dark:border-[#1b7a43]">
-                {selectedPeriod} चयनित
+              <span className="inline-flex items-center gap-1 rounded-xl bg-[#e9f4ed] pl-3 pr-1 py-0.5 text-xs font-bold text-[#14532d] dark:bg-[#0e3d22] dark:text-[#f6f8f5] border border-[#dbe7de] dark:border-[#1b7a43]">
+                <span>{selectedPeriod} चयनित</span>
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     onSelectPeriod(null);
                   }}
-                  className="ml-1 h-5 w-5 flex items-center justify-center rounded-full hover:bg-[#dbe7de] dark:hover:bg-[#14532d] text-[#14532d] dark:text-[#f6f8f5]"
+                  className="h-11 w-11 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-[#dbe7de] dark:hover:bg-[#14532d] text-[#14532d] dark:text-[#f6f8f5] transition-colors cursor-pointer"
                   aria-label="Clear drill-down"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-4 w-4" />
                 </button>
               </span>
             )}
           </div>
-          <p className="text-xs font-medium text-[#5f6f66] dark:text-[#dbe7de]/90 mt-0.5">
+          <p className="text-xs font-medium text-[#5f6f66] dark:text-[#dbe7de]/90 mt-0.5 max-w-2xl">
             1,746 चालू पुर्जों पर राजस्थान व पंजाब डीलर नेटवर्क की मासिक मांग। किसी भी माह पर टैप कर चालान सूची देखें।
           </p>
         </div>
@@ -154,7 +154,7 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
             <button
               type="button"
               onClick={() => onSelectPeriod(null)}
-              className="min-h-[44px] px-3 text-xs font-bold text-[#5f6f66] hover:text-[#1c2420] dark:text-[#dbe7de] dark:hover:text-white"
+              className="min-h-[44px] px-3 text-xs font-bold text-[#5f6f66] hover:text-[#1c2420] dark:text-[#dbe7de] dark:hover:text-white cursor-pointer"
             >
               रीसेट
             </button>
@@ -174,7 +174,7 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
             टर्नओवर (₹ INR)
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-full bg-[#f0b429]" />
+            <span className="h-3 w-3 rounded-full bg-[#9a3412]" />
             भेजे गए पार्ट्स (Units)
           </span>
         </div>
@@ -195,8 +195,8 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
                 <stop offset="95%" stopColor="#1b7a43" stopOpacity={0.02} />
               </linearGradient>
               <linearGradient id="unitsGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f0b429" stopOpacity={0.4} />
-                <stop offset="95%" stopColor="#f0b429" stopOpacity={0.02} />
+                <stop offset="5%" stopColor="#9a3412" stopOpacity={0.35} />
+                <stop offset="95%" stopColor="#9a3412" stopOpacity={0.02} />
               </linearGradient>
             </defs>
 
@@ -229,7 +229,7 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
               orientation="right"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#b45309', fontSize: 12, fontWeight: 700 }}
+              tick={{ fill: '#9a3412', fontSize: 12, fontWeight: 700 }}
               tickFormatter={(val) => `${val} pcs`}
               dx={5}
             />
@@ -250,7 +250,7 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
                 stroke: '#1b7a43',
                 strokeWidth: 2,
                 fill: '#ffffff',
-                className: 'cursor-pointer animate-pulse',
+                className: 'cursor-pointer',
               }}
             />
 
@@ -259,16 +259,16 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
               type="monotone"
               dataKey="units"
               name="Units Dispatched"
-              stroke="#f0b429"
+              stroke="#9a3412"
               strokeWidth={3}
               fillOpacity={1}
               fill="url(#unitsGrad)"
               activeDot={{
                 r: 7,
-                stroke: '#f0b429',
+                stroke: '#9a3412',
                 strokeWidth: 2,
                 fill: '#ffffff',
-                className: 'cursor-pointer animate-pulse',
+                className: 'cursor-pointer',
               }}
             />
           </AreaChart>
@@ -277,4 +277,3 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
     </div>
   );
 };
-

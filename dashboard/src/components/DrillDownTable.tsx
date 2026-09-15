@@ -1,5 +1,5 @@
 import { useState, useMemo, type FC } from 'react';
-import { CheckCircle2, Clock, X, Receipt, Building2, Wrench, Package, Search, Share2, Filter } from 'lucide-react';
+import { CheckCircle2, Clock, X, Receipt, Building2, Wrench, Search, Share2, Filter, Truck } from 'lucide-react';
 import type { SparesTransaction, MonthlyTrendData } from '../data/krishigearsData';
 
 interface DrillDownTableProps {
@@ -21,13 +21,16 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
   // Filtered transactions by search query and status
   const filteredTransactions = useMemo(() => {
     return rawTransactions.filter((tx) => {
+      const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
-        searchQuery.trim() === '' ||
-        tx.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tx.particular.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tx.client.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tx.clientCity.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tx.id.toLowerCase().includes(searchQuery.toLowerCase());
+        q === '' ||
+        tx.sku.toLowerCase().includes(q) ||
+        tx.particular.toLowerCase().includes(q) ||
+        tx.client.toLowerCase().includes(q) ||
+        tx.clientCity.toLowerCase().includes(q) ||
+        tx.id.toLowerCase().includes(q) ||
+        tx.transportName.toLowerCase().includes(q) ||
+        tx.biltyNumber.toLowerCase().includes(q);
 
       const matchesStatus =
         statusFilter === 'ALL' || tx.status === statusFilter;
@@ -51,15 +54,8 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
       case 'Pending':
         return (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fef3c7] px-3 py-1 text-xs font-bold text-[#92400e] dark:bg-[#0e3d22] dark:text-[#f0b429] border border-[#fde68a] dark:border-[#f0b429]/60">
-            <Clock className="h-4 w-4 text-[#f0b429]" />
+            <Clock className="h-4 w-4 text-[#b45309]" />
             बिलिंग (Challan Issued)
-          </span>
-        );
-      case 'Orderable':
-        return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e0f2fe] px-3 py-1 text-xs font-bold text-[#0369a1] dark:bg-[#0e3d22] dark:text-[#38bdf8] border border-[#bae6fd]">
-            <Package className="h-4 w-4" />
-            मंगाया जा सकता है
           </span>
         );
       default:
@@ -71,9 +67,11 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
     const text = `नमस्ते! कृषि गियर्स (FarmingTools.in) द्वारा आपका ऑर्डर चालान विवरण:\n` +
       `• ऑर्डर नंबर: ${tx.id}\n` +
       `• पुर्जा (SKU): ${tx.sku} - ${tx.particular}\n` +
+      `• फिटमेंट: ${tx.fitmentNote}\n` +
       `• डीलर: ${tx.client} (${tx.clientCity})\n` +
-      `• मात्रा: ${tx.quantity} pcs\n` +
-      `• कुल राशि: ₹${tx.amount.toLocaleString('en-IN')}\n` +
+      `• मात्रा: ${tx.quantity} pcs | कुल राशि: ₹${tx.amount.toLocaleString('en-IN')}\n` +
+      `• ट्रांसपोर्ट: ${tx.transportName} (बिल्टी सं.: ${tx.biltyNumber})\n` +
+      `• ओरिजिन: ${tx.dispatchOrigin}\n` +
       `• स्थिति: ${tx.status === 'Completed' ? 'डिस्पैच पूर्ण (Dispatched)' : 'चालान जारी (Pending Dispatch)'}\n\n` +
       `किसी भी सहायता हेतु कृषि गियर्स जयपुर से संपर्क करें।`;
 
@@ -98,7 +96,7 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
             </span>
           </div>
           <p className="text-xs font-medium text-[#5f6f66] dark:text-[#dbe7de]/90 mt-0.5">
-            {selectedPeriod} 2026 में डीलर केंद्रों को भेजे गए असली फिटमेंट-जांच पूर्ण पार्ट्स।
+            {selectedPeriod} 2026 में डीलर केंद्रों को भेजे गए असली फिटमेंट-जांच पूर्ण पार्ट्स व ट्रांसपोर्ट बिल्टी विवरण।
           </p>
         </div>
 
@@ -115,7 +113,7 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
           <button
             type="button"
             onClick={onClearSelection}
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-[#dbe7de] bg-white px-3.5 text-xs font-bold text-[#1c2420] shadow-xs hover:bg-[#e9f4ed] dark:border-[#14532d] dark:bg-[#0e3d22] dark:text-[#f6f8f5] dark:hover:bg-[#14532d] transition-colors"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-[#dbe7de] bg-white px-3.5 py-2.5 text-xs font-bold text-[#1c2420] shadow-xs hover:bg-[#e9f4ed] dark:border-[#14532d] dark:bg-[#0e3d22] dark:text-[#f6f8f5] dark:hover:bg-[#14532d] transition-colors cursor-pointer"
           >
             <X className="h-4 w-4" />
             चयन हटाएं (Clear)
@@ -128,12 +126,12 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
         {/* Live Search Input */}
         <div className="relative w-full sm:max-w-xs">
           <label htmlFor="sku-search" className="sr-only">
-            पार्ट्स कोड या डीलर खोजें (Search SKU / Dealer)
+            पार्ट्स कोड, डीलर या बिल्टी खोजें (Search SKU / Dealer / Bilty)
           </label>
           <input
             id="sku-search"
             type="text"
-            placeholder="SKU (उदा. SP-001) या डीलर खोजें..."
+            placeholder="SKU (उदा. SP-001), डीलर या बिल्टी खोजें..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full min-h-[44px] rounded-xl border border-[#dbe7de] bg-[#f6f8f5] pl-10 pr-4 text-xs sm:text-sm font-semibold text-[#1c2420] placeholder-[#5f6f66] focus:border-[#1b7a43] focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#f0b429] dark:border-[#14532d] dark:bg-[#0e3d22] dark:text-white dark:placeholder-[#dbe7de]/60"
@@ -143,7 +141,7 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#5f6f66] hover:text-[#1c2420]"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#5f6f66] hover:text-[#1c2420] p-1"
             >
               <X className="h-4 w-4" />
             </button>
@@ -159,7 +157,7 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
           <button
             type="button"
             onClick={() => setStatusFilter('ALL')}
-            className={`min-h-[44px] px-3.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+            className={`min-h-[44px] px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
               statusFilter === 'ALL'
                 ? "bg-[#1b7a43] text-white shadow-xs"
                 : "bg-[#f6f8f5] text-[#1c2420] hover:bg-[#e9f4ed] border border-[#dbe7de] dark:bg-[#0e3d22] dark:text-[#f6f8f5] dark:border-[#14532d]"
@@ -170,7 +168,7 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
           <button
             type="button"
             onClick={() => setStatusFilter('Completed')}
-            className={`min-h-[44px] px-3.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+            className={`min-h-[44px] px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
               statusFilter === 'Completed'
                 ? "bg-[#1b7a43] text-white shadow-xs"
                 : "bg-[#f6f8f5] text-[#1c2420] hover:bg-[#e9f4ed] border border-[#dbe7de] dark:bg-[#0e3d22] dark:text-[#f6f8f5] dark:border-[#14532d]"
@@ -181,9 +179,9 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
           <button
             type="button"
             onClick={() => setStatusFilter('Pending')}
-            className={`min-h-[44px] px-3.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+            className={`min-h-[44px] px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
               statusFilter === 'Pending'
-                ? "bg-[#f0b429] text-[#3d2c00] shadow-xs"
+                ? "bg-[#fef3c7] text-[#92400e] border border-[#fde68a] shadow-xs"
                 : "bg-[#f6f8f5] text-[#1c2420] hover:bg-[#e9f4ed] border border-[#dbe7de] dark:bg-[#0e3d22] dark:text-[#f6f8f5] dark:border-[#14532d]"
             }`}
           >
@@ -201,7 +199,7 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
                 ऑर्डर / PO
               </th>
               <th scope="col" className="px-5 py-3.5">
-                असली पार्ट SKU व विवरण
+                असली पार्ट SKU व फिटमेंट
               </th>
               <th scope="col" className="px-5 py-3.5">
                 डीलर / केंद्र
@@ -251,6 +249,16 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
                         <p className="text-xs font-semibold text-[#3d4a42] dark:text-[#dbe7de] mt-1">
                           {tx.particular}
                         </p>
+                        {/* Drop-Dispatch Fitment & Transport LR Info */}
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px] font-semibold text-[#5f6f66] dark:text-[#dbe7de]/80">
+                          <span className="rounded bg-[#f6f8f5] dark:bg-[#0e3d22] px-1.5 py-0.5 text-[#14532d] dark:text-[#f6f8f5] border border-[#dbe7de] dark:border-[#1b7a43]">
+                            {tx.fitmentNote}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Truck className="h-3 w-3 text-[#1b7a43]" />
+                            {tx.transportName} • {tx.biltyNumber} ({tx.dispatchOrigin})
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -281,11 +289,11 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
                       href={createWhatsAppLink(tx)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-[#25d366] text-white hover:bg-[#1ebc59] shadow-xs px-3 py-1 text-xs font-bold transition-transform hover:scale-105"
+                      className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-[#25d366] text-[#0a3622] font-black hover:bg-[#20ba59] shadow-xs px-3.5 py-2 text-xs transition-transform hover:scale-105 cursor-pointer"
                       title="डीलर को WhatsApp चालान विवरण भेजें"
                       aria-label={`Send WhatsApp dispatch info for ${tx.id}`}
                     >
-                      <Share2 className="h-4 w-4 mr-1" />
+                      <Share2 className="h-4 w-4 mr-1.5" />
                       <span>WhatsApp</span>
                     </a>
                   </td>
@@ -298,4 +306,3 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
     </div>
   );
 };
-
