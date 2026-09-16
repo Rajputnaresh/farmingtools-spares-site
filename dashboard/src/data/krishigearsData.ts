@@ -451,10 +451,13 @@ export interface DashboardMetrics {
 export function getKrishiGearsMetrics(
   timeframe: TimeframeFilter,
   selectedCategory: number, // 0 = all, 1 = Brush Cutters, 2 = Tillers, etc.
-  extraTransactions: SparesTransaction[] = []
+  extraTransactions: SparesTransaction[] = [],
+  statusOverrides: Record<string, "Completed" | "Pending"> = {}
 ): DashboardMetrics {
   // Filter transactions by category if selected, combining any newly logged requests with historical dispatches
-  let txList = [...extraTransactions, ...REAL_TRANSACTIONS];
+  let txList = [...extraTransactions, ...REAL_TRANSACTIONS].map(t =>
+    statusOverrides[t.id] ? { ...t, status: statusOverrides[t.id] } : t
+  );
   if (selectedCategory > 0) {
     txList = txList.filter(t => t.group === selectedCategory);
   }

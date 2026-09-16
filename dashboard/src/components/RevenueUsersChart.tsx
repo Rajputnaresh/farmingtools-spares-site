@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import { useState, type FC } from 'react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -8,7 +8,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from 'recharts';
-import { MousePointerClick, X, Info } from 'lucide-react';
+import { MousePointerClick, X, Info, ChevronUp, BarChart3 } from 'lucide-react';
 import type { MonthlyTrendData } from '../data/krishigearsData';
 
 interface RevenueUsersChartProps {
@@ -81,6 +81,8 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
   selectedPeriod,
   onSelectPeriod,
 }) => {
+  const [isMobileExpanded, setIsMobileExpanded] = useState<boolean>(false);
+
   const handleChartClick = (state: any) => {
     if (state && state.activeLabel) {
       if (selectedPeriod === state.activeLabel) {
@@ -162,8 +164,33 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
         </div>
       </div>
 
+      {/* Mobile Chart Collapse/Expand Bar */}
+      <div className="sm:hidden mt-3 pt-3 border-t border-[#dbe7de] dark:border-[#14532d] flex items-center justify-between">
+        <button
+          type="button"
+          data-testid="mobile-chart-toggle-btn"
+          onClick={() => setIsMobileExpanded((prev) => !prev)}
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#dbe7de] bg-[#f6f8f5] px-3.5 py-2 text-xs font-bold text-[#1b7a43] hover:bg-[#e9f4ed] dark:border-[#14532d] dark:bg-[#0e3d22] dark:text-[#f6f8f5] cursor-pointer"
+        >
+          {isMobileExpanded ? (
+            <>
+              <ChevronUp className="h-4 w-4" />
+              <span>चार्ट छिपाएं (Hide Chart)</span>
+            </>
+          ) : (
+            <>
+              <BarChart3 className="h-4 w-4" />
+              <span>मासिक चार्ट देखें (View Chart)</span>
+            </>
+          )}
+        </button>
+        <span className="text-[11px] font-bold text-[#5f6f66] dark:text-[#dbe7de]/80">
+          {isMobileExpanded ? 'चालान नीचे हैं ↓' : 'चालान सीधे नीचे उपलब्ध ↓'}
+        </span>
+      </div>
+
       {/* Chart Instruction Banner */}
-      <div className="mt-3 flex items-center justify-between px-1 text-xs font-bold text-[#5f6f66] dark:text-[#dbe7de]">
+      <div className={`mt-3 items-center justify-between px-1 text-xs font-bold text-[#5f6f66] dark:text-[#dbe7de] ${isMobileExpanded ? 'flex' : 'hidden sm:flex'}`}>
         <span className="flex items-center gap-1.5">
           <Info className="h-4 w-4 text-[#1b7a43] dark:text-[#f0b429]" />
           सुझाव: ग्राफ के किसी भी बिंदु पर टैप कर पार्ट्स चालान देखें
@@ -181,7 +208,7 @@ export const RevenueUsersChart: FC<RevenueUsersChartProps> = ({
       </div>
 
       {/* Recharts Container */}
-      <div className="mt-4 h-72 sm:h-80 w-full" data-testid="recharts-area-chart-container">
+      <div className={`mt-4 h-72 sm:h-80 w-full ${isMobileExpanded ? 'block' : 'hidden sm:block'}`} data-testid="recharts-area-chart-container">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={data}

@@ -8,6 +8,7 @@ interface DrillDownTableProps {
   allTransactions?: SparesTransaction[];
   onClearSelection: () => void;
   onOpenNewRequest: () => void;
+  onToggleStatus?: (id: string) => void;
 }
 
 export const DrillDownTable: FC<DrillDownTableProps> = ({
@@ -16,6 +17,7 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
   allTransactions = [],
   onClearSelection,
   onOpenNewRequest,
+  onToggleStatus,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'Completed' | 'Pending'>('ALL');
@@ -49,21 +51,41 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
   const totalAmount = filteredTransactions.reduce((sum, tx) => sum + tx.amount, 0);
   const totalQty = filteredTransactions.reduce((sum, tx) => sum + tx.quantity, 0);
 
-  const getStatusBadge = (status: SparesTransaction['status']) => {
+  const getStatusBadge = (status: SparesTransaction['status'], id: string) => {
     switch (status) {
       case 'Completed':
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e9f4ed] px-3 py-1 text-xs font-bold text-[#14532d] dark:bg-[#0e3d22] dark:text-[#f6f8f5] border border-[#dbe7de] dark:border-[#1b7a43]">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleStatus?.(id);
+            }}
+            data-testid={`status-toggle-btn-${id}`}
+            title="स्थिति बदलें: क्लिक कर 'चालान जारी' (Pending) करें"
+            aria-label={`Toggle order ${id} status from Dispatched to Pending`}
+            className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-[#e9f4ed] px-3 py-1 text-xs font-bold text-[#14532d] dark:bg-[#0e3d22] dark:text-[#f6f8f5] border border-[#dbe7de] dark:border-[#1b7a43] hover:ring-2 hover:ring-[#1b7a43]/50 cursor-pointer transition-all"
+          >
             <CheckCircle2 className="h-4 w-4 text-[#1b7a43]" />
-            भेजा गया (Dispatched)
-          </span>
+            <span>भेजा गया (Dispatched)</span>
+          </button>
         );
       case 'Pending':
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fef3c7] px-3 py-1 text-xs font-bold text-[#92400e] dark:bg-[#0e3d22] dark:text-[#f0b429] border border-[#fde68a] dark:border-[#f0b429]/60">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleStatus?.(id);
+            }}
+            data-testid={`status-toggle-btn-${id}`}
+            title="स्थिति बदलें: क्लिक कर 'भेजा गया' (Dispatched) करें"
+            aria-label={`Toggle order ${id} status from Pending to Dispatched`}
+            className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-[#fef3c7] px-3 py-1 text-xs font-bold text-[#92400e] dark:bg-[#0e3d22] dark:text-[#f0b429] border border-[#fde68a] dark:border-[#f0b429]/60 hover:ring-2 hover:ring-[#b45309]/50 cursor-pointer transition-all"
+          >
             <Clock className="h-4 w-4 text-[#b45309]" />
-            बिलिंग (Challan Issued)
-          </span>
+            <span>बिलिंग (Challan Issued)</span>
+          </button>
         );
       default:
         return null;
@@ -267,7 +289,7 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
                   key={tx.id}
                   className={`transition-colors ${
                     tx.isNew
-                      ? 'bg-[#f0fdf4] dark:bg-[#14532d]/80 border-l-4 border-l-[#1b7a43]'
+                      ? 'bg-[#f0fdf4] dark:bg-[#14532d]/80 ring-1 ring-inset ring-[#1b7a43]/30'
                       : 'hover:bg-[#e9f4ed]/50 dark:hover:bg-[#14532d]/60'
                   }`}
                 >
@@ -329,7 +351,7 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
                     {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(tx.amount)}
                   </td>
                   <td className="whitespace-nowrap px-5 py-4 text-center">
-                    {getStatusBadge(tx.status)}
+                    {getStatusBadge(tx.status, tx.id)}
                   </td>
                   <td className="whitespace-nowrap px-5 py-4 text-center">
                     <a
@@ -376,7 +398,7 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
               key={`mob-${tx.id}`}
               className={`p-4 space-y-3 transition-colors ${
                 tx.isNew
-                  ? 'bg-[#f0fdf4] dark:bg-[#14532d]/80 border-l-4 border-l-[#1b7a43]'
+                  ? 'bg-[#f0fdf4] dark:bg-[#14532d]/80 ring-1 ring-inset ring-[#1b7a43]/30'
                   : 'bg-white dark:bg-[#0e3d22]/40'
               }`}
             >
@@ -392,7 +414,7 @@ export const DrillDownTable: FC<DrillDownTableProps> = ({
                     </span>
                   )}
                 </div>
-                {getStatusBadge(tx.status)}
+                {getStatusBadge(tx.status, tx.id)}
               </div>
 
               {/* Part Particular & Fitment */}

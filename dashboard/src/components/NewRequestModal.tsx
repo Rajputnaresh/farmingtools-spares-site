@@ -155,12 +155,24 @@ export const NewRequestModal: FC<NewRequestModalProps> = ({ isOpen, onClose, onS
               onChange={(e) => setDealerIdx(Number(e.target.value))}
               className="w-full h-11 min-h-[44px] rounded-xl border border-[#dbe7de] bg-[#f6f8f5] px-3 text-xs font-bold text-[#1c2420] focus:border-[#1b7a43] focus:bg-white focus:outline-hidden dark:border-[#14532d] dark:bg-[#14532d] dark:text-white"
             >
-              {PRESET_DEALERS.map((d, i) => (
-                <option key={d.name} value={i}>
-                  {d.name} ({d.city})
-                </option>
-              ))}
-              <option value={-1}>+ अन्य नया डीलर (Custom Dealer)...</option>
+              <optgroup label="राजस्थान केंद्रीय हब • Jaipur & Shekhawati (4)">
+                <option value={0}>{PRESET_DEALERS[0].name} ({PRESET_DEALERS[0].city})</option>
+                <option value={1}>{PRESET_DEALERS[1].name} ({PRESET_DEALERS[1].city})</option>
+                <option value={4}>{PRESET_DEALERS[4].name} ({PRESET_DEALERS[4].city})</option>
+                <option value={8}>{PRESET_DEALERS[8].name} ({PRESET_DEALERS[8].city})</option>
+              </optgroup>
+              <optgroup label="राजस्थान पश्चिमी व दक्षिणी • Marwar & Mewar (3)">
+                <option value={2}>{PRESET_DEALERS[2].name} ({PRESET_DEALERS[2].city})</option>
+                <option value={3}>{PRESET_DEALERS[3].name} ({PRESET_DEALERS[3].city})</option>
+                <option value={5}>{PRESET_DEALERS[5].name} ({PRESET_DEALERS[5].city})</option>
+              </optgroup>
+              <optgroup label="अंतर्राज्यीय डीलर नेटवर्क • Interstate Hub (2)">
+                <option value={6}>{PRESET_DEALERS[6].name} ({PRESET_DEALERS[6].city})</option>
+                <option value={7}>{PRESET_DEALERS[7].name} ({PRESET_DEALERS[7].city})</option>
+              </optgroup>
+              <optgroup label="कस्टम डीलर • New Dealer Node (1)">
+                <option value={-1}>+ अन्य नया डीलर (Custom Dealer)...</option>
+              </optgroup>
             </select>
 
             {dealerIdx === -1 && (

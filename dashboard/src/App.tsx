@@ -21,6 +21,17 @@ export function App() {
     }
     return [];
   });
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, 'Completed' | 'Pending'>>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('kg_status_overrides');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse status overrides', e);
+      }
+    }
+    return {};
+  });
   const [isNewModalOpen, setIsNewModalOpen] = useState<boolean>(false);
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -44,6 +55,17 @@ export function App() {
     }
   }, [extraTransactions]);
 
+  // Persist status overrides to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('kg_status_overrides', JSON.stringify(statusOverrides));
+      } catch (e) {
+        console.error('Failed to save status overrides to localStorage', e);
+      }
+    }
+  }, [statusOverrides]);
+
   // Apply dark mode class to root
   useEffect(() => {
     const root = document.documentElement;
@@ -63,10 +85,27 @@ export function App() {
     setExtraTransactions((prev) => [newTx, ...prev]);
   };
 
-  // Compute metrics and scoped chart data (including any newly submitted dealer requests)
+  // Toggle transaction lifecycle status (Challan Issued <-> Dispatched)
+  const handleToggleStatus = (id: string) => {
+    setStatusOverrides((prev) => {
+      const currentTx = metrics.filteredTransactions.find((t) => t.id === id);
+      const currentStatus = prev[id] || currentTx?.status || 'Completed';
+      const nextStatus = currentStatus === 'Completed' ? 'Pending' : 'Completed';
+      return { ...prev, [id]: nextStatus };
+    });
+    setExtraTransactions((prev) =>
+      prev.map((t) =>
+        t.id === id
+          ? { ...t, status: t.status === 'Completed' ? 'Pending' : 'Completed' }
+          : t
+      )
+    );
+  };
+
+  // Compute metrics and scoped chart data (including any newly submitted dealer requests and status overrides)
   const metrics = useMemo(
-    () => getKrishiGearsMetrics(filter, selectedCategory, extraTransactions),
-    [filter, selectedCategory, extraTransactions]
+    () => getKrishiGearsMetrics(filter, selectedCategory, extraTransactions, statusOverrides),
+    [filter, selectedCategory, extraTransactions, statusOverrides]
   );
 
   // If filter changes and selected month is no longer in scope, reset selectedPeriod
@@ -153,6 +192,7 @@ export function App() {
             allTransactions={metrics.filteredTransactions}
             onClearSelection={() => setSelectedPeriod(null)}
             onOpenNewRequest={() => setIsNewModalOpen(true)}
+            onToggleStatus={handleToggleStatus}
           />
         </section>
       </main>

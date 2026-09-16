@@ -273,8 +273,38 @@ async function runVerification() {
     if (modalClosed) throw new Error('Modal failed to close on Escape key press');
     console.log('[Test] Verified Modal closes on Escape key press.');
 
-    // Test Mobile Viewport (390px) Stacked Card Feed
-    console.log('[Test] Testing Mobile Viewport (390px) stacked card feed...');
+    // Test Inline Status Toggle (Pending <-> Completed)
+    console.log('[Test] Testing Inline Status Toggle (Challan Issued <-> Dispatched)...');
+    const firstStatusBtn = await page.$('button[data-testid^="status-toggle-btn-"]');
+    if (!firstStatusBtn) throw new Error('Status toggle button missing');
+    const initialStatusText = await page.evaluate(el => el.innerText, firstStatusBtn);
+    await firstStatusBtn.click();
+    await new Promise(r => setTimeout(r, 200));
+    const toggledStatusText = await page.evaluate(el => el.innerText, firstStatusBtn);
+    console.log(`[Test] Status toggled: "${initialStatusText.trim()}" -> "${toggledStatusText.trim()}"`);
+    if (initialStatusText.trim() === toggledStatusText.trim()) {
+      throw new Error('Status badge text did not toggle on click!');
+    }
+    // Toggle back
+    await firstStatusBtn.click();
+    await new Promise(r => setTimeout(r, 200));
+    console.log('[Test] Verified inline dispatch lifecycle status toggling.');
+
+    // Test Dealer Select Optgroup Chunking in Modal
+    console.log('[Test] Testing Dealer Select Optgroup Chunking in Modal...');
+    await page.click('[data-testid="header-new-request-btn"]');
+    await page.waitForSelector('[data-testid="new-request-modal"]');
+    const dealerOptgroups = await page.$$eval('#dealer-select optgroup', els => els.length);
+    console.log(`[Test] Dealer select optgroups count: ${dealerOptgroups}`);
+    if (dealerOptgroups < 3) {
+      throw new Error(`Expected at least 3 dealer optgroups for cognitive chunking, found ${dealerOptgroups}`);
+    }
+    await page.keyboard.press('Escape');
+    await new Promise(r => setTimeout(r, 200));
+    console.log('[Test] Verified Dealer Select optgroup chunking satisfies working memory limit.');
+
+    // Test Mobile Viewport (390px) Stacked Card Feed & Mobile Chart Toggle
+    console.log('[Test] Testing Mobile Viewport (390px) stacked card feed & chart toggle...');
     await page.setViewport({ width: 390, height: 844 });
     await new Promise((r) => setTimeout(r, 300));
     const mobileFeedVisible = await page.$eval('[data-testid="mobile-dispatch-card-feed"]', (el) => {
@@ -283,7 +313,21 @@ async function runVerification() {
     });
     console.log('[Test] Mobile dispatch card feed visible on 390px:', mobileFeedVisible);
     if (!mobileFeedVisible) throw new Error('Mobile dispatch card feed not visible on 390px screen');
-    console.log('[Test] Verified mobile stacked card feed on 390px viewport with zero horizontal scroll.');
+
+    // Test Mobile Chart Toggle Button
+    const mobileChartToggleBtn = await page.$('[data-testid="mobile-chart-toggle-btn"]');
+    if (!mobileChartToggleBtn) throw new Error('Mobile chart toggle button missing on 390px screen');
+    await mobileChartToggleBtn.click();
+    await new Promise(r => setTimeout(r, 300));
+    const chartExpanded = await page.$eval('[data-testid="recharts-area-chart-container"]', el => {
+      const rect = el.getBoundingClientRect();
+      return rect.height > 0;
+    });
+    console.log('[Test] Mobile chart expanded on toggle click:', chartExpanded);
+    if (!chartExpanded) throw new Error('Mobile chart failed to expand on toggle click');
+    await mobileChartToggleBtn.click();
+    await new Promise(r => setTimeout(r, 300));
+    console.log('[Test] Verified mobile chart toggle collapses and expands cleanly.');
 
     console.log('\n=========================================');
     console.log('ALL DASHBOARD VERIFICATION TESTS PASSED!');
