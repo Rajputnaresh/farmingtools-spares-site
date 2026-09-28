@@ -24,31 +24,31 @@
 <meta name="color-scheme" content="light">
 <style>
   :root{
-    /* Brand palette - Deep industrial forest green with clean slate accents */
-    --green:#0F5132; --green-dark:#0A3622; --green-light:#E8F5E9; --green-mid:#A3D9B1; --amber:#d97706;
+    /* Brand palette - Elegant deep green with refined accents */
+    --green:#0F5132; --green-dark:#0A3622; --green-light:#F0FDF4; --green-mid:#BBF7D0; --amber:#F59E0B;
     --green-accent:#16A34A;
-    --border:#E2E8F0; --border-dark:#CBD5E1;
-    --text:#0F172A; --muted:#475569; --bg:#F8FAFC; --surface:#FFFFFF;
-    --focus:#2563EB;
+    --border:#E5E7EB; --border-dark:#D1D5DB;
+    --text:#111827; --muted:#6B7280; --bg:#FAFAFA; --surface:#FFFFFF;
+    --focus:#0F5132;
 
     /* Semantic roles: danger, warning, calm */
-    --danger:#DC2626;   --danger-tint:#FEF2F2; --danger-border:#FECACA;
-    --warn-ink:#854D0E; --warn-tint:#FEFCE8;   --warn-border:#FEF08A; --warn-tint-faint:#FFFDF5;
-    --calm-tint:#F1F5F9;
+    --danger:#EF4444;   --danger-tint:#FEF2F2; --danger-border:#FECACA;
+    --warn-ink:#92400E; --warn-tint:#FFFBEB;   --warn-border:#FDE68A; --warn-tint-faint:#FFFDF5;
+    --calm-tint:#F3F4F6;
 
     /* Hover washes */
-    --hover:#DCFCE7; --hover-faint:#F0FDF4; --hover-faintest:#F8FAFC;
-    --scrim:#F1F5F9;
-    --scrim-modal:rgba(15,23,42,0.75);
+    --hover:#DCFCE7; --hover-faint:#F0FDF4; --hover-faintest:#FAFAFA;
+    --scrim:rgba(17, 24, 39, 0.4);
+    --scrim-modal:rgba(17, 24, 39, 0.6);
 
-    /* Elevation & shadows */
-    --shadow-xs:0 1px 2px rgba(15,23,42,0.04);
-    --shadow-sm:0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04);
-    --shadow-md:0 4px 6px -1px rgba(15,23,42,0.07), 0 2px 4px -2px rgba(15,23,42,0.05);
-    --shadow-lg:0 10px 15px -3px rgba(15,23,42,0.08), 0 4px 6px -4px rgba(15,23,42,0.04);
+    /* Elevation & shadows - Soft and elegant Apple-style shadows */
+    --shadow-xs:0 2px 8px -2px rgba(0, 0, 0, 0.04);
+    --shadow-sm:0 4px 12px -2px rgba(0, 0, 0, 0.05);
+    --shadow-md:0 8px 24px -4px rgba(0, 0, 0, 0.06);
+    --shadow-lg:0 12px 32px -4px rgba(0, 0, 0, 0.08);
 
-    /* Radius scale */
-    --r-xs:6px; --r-sm:8px; --r-md:10px; --r-lg:14px; --r-pill:9999px;
+    /* Radius scale - More rounded for a modern look */
+    --r-xs:8px; --r-sm:10px; --r-md:12px; --r-lg:16px; --r-pill:9999px;
 
     --z-nav:20; --z-modal:50;
   }
@@ -86,18 +86,19 @@
   /* header & navigation architecture */
   header.app-header{
     position:sticky; top:0; z-index:var(--z-nav);
-    background:linear-gradient(180deg, var(--green) 0%, var(--green-dark) 100%); color:#fff;
+    background:rgba(255, 255, 255, 0.85); color:var(--text);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     display:flex; align-items:center; justify-content:space-between;
-    padding:8px 12px; gap:8px;
-    box-shadow:0 1px 4px rgba(0,0,0,0.18);
-    border-bottom:1px solid rgba(255,255,255,0.12);
+    padding:10px 16px; gap:8px;
+    box-shadow:var(--shadow-sm);
+    border-bottom:1px solid rgba(0,0,0,0.05);
   }
-  header.app-header h1{ font-size:15px; margin:0; font-weight:800; line-height:1.2; letter-spacing:-0.01em; color:#fff; }
-  header.app-header .sub{ display:block; font-size:11.5px; color:#fff; font-weight:600; letter-spacing:0.01em; }
-  header.app-header .sub .l-en, header.app-header .sub .l-hi{ color:#fff; }
+  header.app-header h1{ font-size:16px; margin:0; font-weight:700; line-height:1.2; letter-spacing:-0.01em; color:var(--text); }
+  header.app-header .sub{ display:block; font-size:11px; color:var(--muted); font-weight:600; letter-spacing:0.04em; text-transform:uppercase; margin-top:2px; }
+  header.app-header .sub .l-en, header.app-header .sub .l-hi{ color:var(--muted); }
   header.app-header.authed .sub{ display:none; }
   header.app-header.authed .brand-btn{ min-height:44px; }
-  .brand-btn{ background:none; border:none; padding:2px 4px; margin:0; text-align:left; color:#fff;
+  .brand-btn{ background:none; border:none; padding:2px 4px; margin:0; text-align:left; color:var(--text);
     min-height:44px; min-width:0; flex:1 1 auto; overflow:hidden; display:flex; align-items:center; gap:8px;
     border-radius:var(--r-sm); cursor:pointer; }
   .brand-btn:focus-visible{ outline:2px solid #fff; outline-offset:2px; }
@@ -111,14 +112,15 @@
   
   /* Header Quick Action Buttons */
   .hdr-btn{
-    background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.22); color:#fff;
+    background:var(--surface); border:1px solid var(--border); color:var(--text);
     border-radius:var(--r-md); min-height:44px; min-width:44px; padding:0 8px;
     display:inline-flex; align-items:center; justify-content:center; gap:6px;
-    font-size:13px; font-weight:700; cursor:pointer;
-    transition:background-color .15s ease, border-color .15s ease, transform .1s ease;
+    font-size:13px; font-weight:600; cursor:pointer;
+    transition:background-color .15s ease, border-color .15s ease, transform .1s ease, box-shadow .15s ease;
+    box-shadow:var(--shadow-xs);
   }
-  .hdr-btn:active{ background:rgba(255,255,255,.28); transform:scale(0.97); }
-  @media (hover:hover){ .hdr-btn:hover{ background:rgba(255,255,255,.22); border-color:rgba(255,255,255,.36); } }
+  .hdr-btn:active{ background:var(--calm-tint); transform:scale(0.97); box-shadow:none; }
+  @media (hover:hover){ .hdr-btn:hover{ background:var(--calm-tint); border-color:var(--border-dark); } }
 
   .hdr-cart-btn{ position:relative; }
   .hdr-cart-badge{
@@ -2159,9 +2161,9 @@
   "use strict";
 
   var SELLER = {
-    name: "KrishiGears Spares",
-    gstin: "08EQLPD7160R1Z2",
-    place: "Jaipur, Rajasthan",
+    name: "KrishiGears Spares (KRISHIGEARS INDIA PRIVATE LIMITED)",
+    gstin: "08AANCK2216L1ZA",
+    place: "Flat No.: T5-202, Mahima Shubh Nilay Apartments, Jaisinghpura, Jaipur, Rajasthan 302026",
     phone: "6006078815"
   };
   // The seller printed on a PI is the party actually selling: on a retail (shop) link that's the
